@@ -95,7 +95,7 @@ use codex_terminal_detection::TerminalName;
 #[clap(
     name = "myra-cli",
     author,
-    version,
+    version = "seraphine-0.1",
     // If a sub‑command is given, ignore requirements of the default args.
     subcommand_negates_reqs = true,
     // The executable is sometimes invoked via a platform‑specific name like
