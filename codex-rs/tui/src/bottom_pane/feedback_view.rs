@@ -272,7 +272,7 @@ pub(crate) fn should_show_feedback_connectivity_details(
 }
 
 fn gutter() -> Span<'static> {
-    "▌ ".cyan()
+    "▌ ".green().bold()
 }
 
 fn feedback_title_and_placeholder(category: FeedbackCategory) -> (String, String) {

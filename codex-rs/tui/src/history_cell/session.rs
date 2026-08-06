@@ -319,7 +319,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
         // Title line rendered inside the box: ">_ Myralith Myra (vX)"
         let title_spans: Vec<Span<'static>> = vec![
-            Span::from(">_ ").dim(),
+            Span::from(">_ ").green().bold(),
             Span::from("Myralith Myra").bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{})", self.version)).dim(),
