@@ -14,12 +14,12 @@ const require = createRequire(import.meta.url);
 const codexPackageRoot = realpathSync(path.join(__dirname, ".."));
 
 const PLATFORM_PACKAGE_BY_TARGET = {
-  "x86_64-unknown-linux-musl": "@openai/codex-linux-x64",
-  "aarch64-unknown-linux-musl": "@openai/codex-linux-arm64",
-  "x86_64-apple-darwin": "@openai/codex-darwin-x64",
-  "aarch64-apple-darwin": "@openai/codex-darwin-arm64",
-  "x86_64-pc-windows-msvc": "@openai/codex-win32-x64",
-  "aarch64-pc-windows-msvc": "@openai/codex-win32-arm64",
+  "x86_64-unknown-linux-musl": "@myralith/myra-linux-x64",
+  "aarch64-unknown-linux-musl": "@myralith/myra-linux-arm64",
+  "x86_64-apple-darwin": "@myralith/myra-darwin-x64",
+  "aarch64-apple-darwin": "@myralith/myra-darwin-arm64",
+  "x86_64-pc-windows-msvc": "@myralith/myra-win32-x64",
+  "aarch64-pc-windows-msvc": "@myralith/myra-win32-arm64",
 };
 
 const { platform, arch } = process;
@@ -85,12 +85,14 @@ function findCodexExecutable() {
     vendorRoot = path.join(__dirname, "..", "vendor");
   }
 
-  const codexExecutable = path.join(
-    vendorRoot,
-    targetTriple,
-    "bin",
-    process.platform === "win32" ? "codex.exe" : "codex",
-  );
+  const primaryBinaryName = process.platform === "win32" ? "myra.exe" : "myra";
+  const fallbackBinaryName = process.platform === "win32" ? "codex.exe" : "codex";
+
+  let codexExecutable = path.join(vendorRoot, targetTriple, "bin", primaryBinaryName);
+  if (!existsSync(codexExecutable)) {
+    codexExecutable = path.join(vendorRoot, targetTriple, "bin", fallbackBinaryName);
+  }
+
   if (existsSync(codexExecutable)) {
     return codexExecutable;
   }
@@ -98,12 +100,12 @@ function findCodexExecutable() {
   const packageManager = detectPackageManager();
   const updateCommand =
     packageManager === "bun"
-      ? "bun install -g @openai/codex@latest"
+      ? "bun install -g @myralith/myra@latest"
       : packageManager === "pnpm"
-        ? "pnpm add -g @openai/codex@latest"
-        : "npm install -g @openai/codex@latest";
+        ? "pnpm add -g @myralith/myra@latest"
+        : "npm install -g @myralith/myra@latest";
   throw new Error(
-    `Missing optional dependency ${platformPackage}. Reinstall Codex: ${updateCommand}`,
+    `Missing optional dependency ${platformPackage}. Reinstall Myra: ${updateCommand}`,
   );
 }
 
@@ -121,12 +123,17 @@ function isPnpmOwnedCodexInstall(nodeModulesDir) {
   }
 
   try {
-    return (
-      realpathSync(path.join(nodeModulesDir, "@openai", "codex")) ===
-      codexPackageRoot
-    );
+    const canonicalMyraPath = realpathSync(path.join(nodeModulesDir, "@myralith", "myra"));
+    return canonicalMyraPath === codexPackageRoot;
   } catch {
-    return false;
+    try {
+      return (
+        realpathSync(path.join(nodeModulesDir, "@openai", "codex")) ===
+        codexPackageRoot
+      );
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -179,18 +186,26 @@ function detectPackageManager() {
 const packageManager = detectPackageManager();
 const packageManagerEnvVar =
   packageManager === "bun"
+    ? "MYRA_MANAGED_BY_BUN"
+    : packageManager === "pnpm"
+      ? "MYRA_MANAGED_BY_PNPM"
+      : "MYRA_MANAGED_BY_NPM";
+const env = {
+  ...process.env,
+  MYRA_MANAGED_PACKAGE_ROOT: codexPackageRoot,
+  CODEX_MANAGED_PACKAGE_ROOT: codexPackageRoot,
+};
+delete env.MYRA_MANAGED_BY_NPM;
+delete env.MYRA_MANAGED_BY_BUN;
+delete env.MYRA_MANAGED_BY_PNPM;
+env[packageManagerEnvVar] = "1";
+env[
+  packageManager === "bun"
     ? "CODEX_MANAGED_BY_BUN"
     : packageManager === "pnpm"
       ? "CODEX_MANAGED_BY_PNPM"
-      : "CODEX_MANAGED_BY_NPM";
-const env = {
-  ...process.env,
-  CODEX_MANAGED_PACKAGE_ROOT: codexPackageRoot,
-};
-delete env.CODEX_MANAGED_BY_NPM;
-delete env.CODEX_MANAGED_BY_BUN;
-delete env.CODEX_MANAGED_BY_PNPM;
-env[packageManagerEnvVar] = "1";
+      : "CODEX_MANAGED_BY_NPM"
+] = "1";
 
 const child = spawn(binaryPath, process.argv.slice(2), {
   stdio: "inherit",
