@@ -15,49 +15,49 @@ CODEX_CLI_ROOT = SCRIPT_DIR.parent
 REPO_ROOT = CODEX_CLI_ROOT.parent
 RESPONSES_API_PROXY_NPM_ROOT = REPO_ROOT / "codex-rs" / "responses-api-proxy" / "npm"
 CODEX_SDK_ROOT = REPO_ROOT / "sdk" / "typescript"
-CODEX_NPM_NAME = "@openai/codex"
+CODEX_NPM_NAME = "@myralith/myra"
 CODEX_PACKAGE_COMPONENT = "codex-package"
 
-# `npm_name` is the local optional-dependency alias consumed by `bin/codex.js`.
-# The underlying package published to npm is always `@openai/codex`.
+# `npm_name` is the local optional-dependency alias consumed by `bin/myra.js`.
+# The underlying package published to npm is `@myralith/myra`.
 CODEX_PLATFORM_PACKAGES: dict[str, dict[str, str]] = {
     "codex-linux-x64": {
-        "npm_name": "@openai/codex-linux-x64",
+        "npm_name": "@myralith/myra-linux-x64",
         "npm_tag": "linux-x64",
         "target_triple": "x86_64-unknown-linux-musl",
         "os": "linux",
         "cpu": "x64",
     },
     "codex-linux-arm64": {
-        "npm_name": "@openai/codex-linux-arm64",
+        "npm_name": "@myralith/myra-linux-arm64",
         "npm_tag": "linux-arm64",
         "target_triple": "aarch64-unknown-linux-musl",
         "os": "linux",
         "cpu": "arm64",
     },
     "codex-darwin-x64": {
-        "npm_name": "@openai/codex-darwin-x64",
+        "npm_name": "@myralith/myra-darwin-x64",
         "npm_tag": "darwin-x64",
         "target_triple": "x86_64-apple-darwin",
         "os": "darwin",
         "cpu": "x64",
     },
     "codex-darwin-arm64": {
-        "npm_name": "@openai/codex-darwin-arm64",
+        "npm_name": "@myralith/myra-darwin-arm64",
         "npm_tag": "darwin-arm64",
         "target_triple": "aarch64-apple-darwin",
         "os": "darwin",
         "cpu": "arm64",
     },
     "codex-win32-x64": {
-        "npm_name": "@openai/codex-win32-x64",
+        "npm_name": "@myralith/myra-win32-x64",
         "npm_tag": "win32-x64",
         "target_triple": "x86_64-pc-windows-msvc",
         "os": "win32",
         "cpu": "x64",
     },
     "codex-win32-arm64": {
-        "npm_name": "@openai/codex-win32-arm64",
+        "npm_name": "@myralith/myra-win32-arm64",
         "npm_tag": "win32-arm64",
         "target_triple": "aarch64-pc-windows-msvc",
         "os": "win32",
@@ -178,14 +178,14 @@ def main() -> int:
                 print(
                     f"Staged version {version} for release in {staging_dir_str}\n\n"
                     "Verify the CLI:\n"
-                    f"    node {staging_dir_str}/bin/codex.js --version\n"
-                    f"    node {staging_dir_str}/bin/codex.js --help\n\n"
+                    f"    node {staging_dir_str}/bin/myra.js --version\n"
+                    f"    node {staging_dir_str}/bin/myra.js --help\n\n"
                 )
             elif package == "codex-responses-api-proxy":
                 print(
                     f"Staged version {version} for release in {staging_dir_str}\n\n"
                     "Verify the responses API proxy:\n"
-                    f"    node {staging_dir_str}/bin/codex-responses-api-proxy.js --help\n\n"
+                    f"    node {staging_dir_str}/bin/myra-responses-api-proxy.js --help\n\n"
                 )
             elif package in CODEX_PLATFORM_PACKAGES:
                 print(
@@ -233,7 +233,7 @@ def stage_sources(staging_dir: Path, version: str, package: str) -> None:
     if package == "codex":
         bin_dir = staging_dir / "bin"
         bin_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(CODEX_CLI_ROOT / "bin" / "codex.js", bin_dir / "codex.js")
+        shutil.copy2(CODEX_CLI_ROOT / "bin" / "myra.js", bin_dir / "myra.js")
 
         readme_src = REPO_ROOT / "README.md"
         if readme_src.exists():
@@ -272,8 +272,8 @@ def stage_sources(staging_dir: Path, version: str, package: str) -> None:
     elif package == "codex-responses-api-proxy":
         bin_dir = staging_dir / "bin"
         bin_dir.mkdir(parents=True, exist_ok=True)
-        launcher_src = RESPONSES_API_PROXY_NPM_ROOT / "bin" / "codex-responses-api-proxy.js"
-        shutil.copy2(launcher_src, bin_dir / "codex-responses-api-proxy.js")
+        launcher_src = RESPONSES_API_PROXY_NPM_ROOT / "bin" / "myra-responses-api-proxy.js"
+        shutil.copy2(launcher_src, bin_dir / "myra-responses-api-proxy.js")
 
         readme_src = RESPONSES_API_PROXY_NPM_ROOT / "README.md"
         if readme_src.exists():
@@ -292,7 +292,7 @@ def stage_sources(staging_dir: Path, version: str, package: str) -> None:
         package_json["version"] = version
 
     if package == "codex":
-        package_json["files"] = ["bin/codex.js"]
+        package_json["files"] = ["bin/myra.js"]
         package_json["optionalDependencies"] = {
             CODEX_PLATFORM_PACKAGES[platform_package]["npm_name"]: (
                 f"npm:{CODEX_NPM_NAME}@"
