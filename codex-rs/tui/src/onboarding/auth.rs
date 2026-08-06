@@ -415,8 +415,10 @@ impl AuthModeWidget {
 
             let line1 = if is_selected {
                 Line::from(vec![
-                    format!("{caret} {index}. ", index = idx + 1).green().bold(),
-                    text.to_string().green().bold(),
+                    format!("{caret} {index}. ", index = idx + 1)
+                        .fg(Color::Rgb(190, 242, 100))
+                        .bold(),
+                    text.to_string().fg(Color::Rgb(190, 242, 100)).bold(),
                 ])
             } else {
                 format!("  {index}. {text}", index = idx + 1).into()
@@ -424,7 +426,7 @@ impl AuthModeWidget {
 
             let line2 = if is_selected {
                 Line::from(format!("     {description}"))
-                    .fg(Color::LightGreen)
+                    .fg(Color::Rgb(190, 242, 100))
                     .add_modifier(Modifier::DIM)
             } else {
                 Line::from(format!("     {description}"))
@@ -585,9 +587,9 @@ impl AuthModeWidget {
             preferences_line,
             "".into(),
             HyperlinkLine::new(Line::from(vec![
-                "  Press ".fg(Color::LightGreen).bold(),
+                "  Press ".fg(Color::Rgb(190, 242, 100)).bold(),
                 self.confirm_binding().into(),
-                " to continue".fg(Color::LightGreen).bold(),
+                " to continue".fg(Color::Rgb(190, 242, 100)).bold(),
             ])),
         ];
 
@@ -600,7 +602,7 @@ impl AuthModeWidget {
     fn render_chatgpt_success(&self, area: Rect, buf: &mut Buffer) {
         let lines = vec![
             "✓ Signed in with your ChatGPT account"
-                .fg(Color::Green)
+                .fg(Color::Rgb(190, 242, 100))
                 .into(),
         ];
 
@@ -611,7 +613,7 @@ impl AuthModeWidget {
 
     fn render_api_key_configured(&self, area: Rect, buf: &mut Buffer) {
         let lines = vec![
-            "✓ API key configured".fg(Color::Green).into(),
+            "✓ API key configured".fg(Color::Rgb(190, 242, 100)).into(),
             "".into(),
             "  Myra will use usage-based billing with your API key.".into(),
         ];
@@ -631,7 +633,7 @@ impl AuthModeWidget {
 
         let mut intro_lines: Vec<Line> = vec![
             Line::from(vec![
-                "> ".green().bold(),
+                "> ".fg(Color::Rgb(190, 242, 100)).bold(),
                 "Use your own OpenAI API key for usage-based billing".bold(),
             ]),
             "".into(),

@@ -3,6 +3,7 @@ use crossterm::event::KeyEventKind;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::Widget;
+use ratatui::style::Color;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::widgets::Clear;
@@ -94,7 +95,7 @@ impl WidgetRef for &WelcomeWidget {
         lines.push(Line::from(vec![
             "  ".into(),
             "Welcome to ".into(),
-            "Myralith Myra".green().bold(),
+            "Myralith Myra".fg(Color::Rgb(190, 242, 100)).bold(),
             ", a local coding agent".into(),
         ]));
 

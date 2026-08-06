@@ -8,6 +8,7 @@ use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
 use ratatui::buffer::Buffer;
+use ratatui::style::Color;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
@@ -272,7 +273,7 @@ pub(crate) fn should_show_feedback_connectivity_details(
 }
 
 fn gutter() -> Span<'static> {
-    "▌ ".green().bold()
+    "▌ ".fg(Color::Rgb(190, 242, 100)).bold()
 }
 
 fn feedback_title_and_placeholder(category: FeedbackCategory) -> (String, String) {

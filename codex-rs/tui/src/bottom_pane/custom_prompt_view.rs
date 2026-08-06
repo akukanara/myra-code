@@ -3,6 +3,7 @@ use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
+use ratatui::style::Color;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::text::Span;
@@ -295,5 +296,5 @@ impl CustomPromptView {
 }
 
 fn gutter() -> Span<'static> {
-    "▌ ".green().bold()
+    "▌ ".fg(Color::Rgb(190, 242, 100)).bold()
 }
