@@ -11,14 +11,15 @@ use std::path::PathBuf;
 /// - If `CODEX_HOME` is not set, this function does not verify that the
 ///   directory exists.
 pub fn find_codex_home() -> std::io::Result<AbsolutePathBuf> {
-    let codex_home_env = std::env::var("CODEX_HOME")
+    let codex_home_env = std::env::var("MYRA_HOME")
+        .or_else(|_| std::env::var("CODEX_HOME"))
         .ok()
         .filter(|val| !val.is_empty());
     find_codex_home_from_env(codex_home_env.as_deref())
 }
 
 fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<AbsolutePathBuf> {
-    // Honor the `CODEX_HOME` environment variable when it is set to allow users
+    // Honor the `MYRA_HOME` / `CODEX_HOME` environment variable when it is set to allow users
     // (and tests) to override the default location.
     match codex_home_env {
         Some(val) => {
@@ -26,38 +27,47 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
             let metadata = std::fs::metadata(&path).map_err(|err| match err.kind() {
                 std::io::ErrorKind::NotFound => std::io::Error::new(
                     std::io::ErrorKind::NotFound,
-                    format!("CODEX_HOME points to {val:?}, but that path does not exist"),
+                    format!("MYRA_HOME/CODEX_HOME points to {val:?}, but that path does not exist"),
                 ),
                 _ => std::io::Error::new(
                     err.kind(),
-                    format!("failed to read CODEX_HOME {val:?}: {err}"),
+                    format!("failed to read MYRA_HOME/CODEX_HOME {val:?}: {err}"),
                 ),
             })?;
 
             if !metadata.is_dir() {
                 Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
-                    format!("CODEX_HOME points to {val:?}, but that path is not a directory"),
+                    format!("MYRA_HOME/CODEX_HOME points to {val:?}, but that path is not a directory"),
                 ))
             } else {
                 let canonical = path.canonicalize().map_err(|err| {
                     std::io::Error::new(
                         err.kind(),
-                        format!("failed to canonicalize CODEX_HOME {val:?}: {err}"),
+                        format!("failed to canonicalize MYRA_HOME/CODEX_HOME {val:?}: {err}"),
                     )
                 })?;
                 AbsolutePathBuf::from_absolute_path(canonical)
             }
         }
         None => {
-            let mut p = home_dir().ok_or_else(|| {
+            let home = home_dir().ok_or_else(|| {
                 std::io::Error::new(
                     std::io::ErrorKind::NotFound,
                     "Could not find home directory",
                 )
             })?;
-            p.push(".codex");
-            AbsolutePathBuf::from_absolute_path(p)
+            let myra_home = home.join(".myra");
+            if myra_home.exists() {
+                AbsolutePathBuf::from_absolute_path(myra_home)
+            } else {
+                let codex_home = home.join(".codex");
+                if codex_home.exists() {
+                    AbsolutePathBuf::from_absolute_path(codex_home)
+                } else {
+                    AbsolutePathBuf::from_absolute_path(myra_home)
+                }
+            }
         }
     }
 }
