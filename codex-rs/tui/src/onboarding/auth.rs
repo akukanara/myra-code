@@ -396,11 +396,7 @@ impl AuthModeWidget {
         let mut lines: Vec<Line> = vec![
             Line::from(vec![
                 "  ".into(),
-                "Sign in with ChatGPT to use Myra as part of your paid plan".into(),
-            ]),
-            Line::from(vec![
-                "  ".into(),
-                "or connect an API key for usage-based billing".into(),
+                "Sign in to use Myra".into(),
             ]),
             "".into(),
         ];
@@ -449,7 +445,7 @@ impl AuthModeWidget {
                     lines.extend(create_mode_item(
                         idx,
                         option,
-                        "Sign in with ChatGPT",
+                        "Sign in with Oauth2",
                         chatgpt_description,
                     ));
                 }
