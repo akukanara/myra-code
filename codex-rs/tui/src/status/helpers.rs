@@ -97,16 +97,12 @@ pub(crate) fn compose_account_display(
 }
 
 pub(crate) fn plan_type_display_name(plan_type: PlanType) -> String {
-    if plan_type == PlanType::EnterpriseCbpAutomation {
-        "Enterprise (Automation)".to_string()
-    } else if plan_type.is_team_like() {
-        "Business".to_string()
-    } else if plan_type.is_business_like() {
-        "Enterprise".to_string()
-    } else if plan_type == PlanType::ProLite {
-        "Pro Lite".to_string()
-    } else {
-        title_case(format!("{plan_type:?}").as_str())
+    match plan_type {
+        PlanType::Free | PlanType::Plus => "Cryolith".to_string(),
+        PlanType::Pro | PlanType::ProLite => "Xenolith".to_string(),
+        PlanType::Team | PlanType::Business | PlanType::SelfServeBusinessProLite | PlanType::SelfServeBusinessUsageBased => "Monolith".to_string(),
+        PlanType::Enterprise | PlanType::EnterpriseCbpAutomation | PlanType::EnterpriseCbpUsageBased => "Myralith".to_string(),
+        _ => title_case(format!("{plan_type:?}").as_str()),
     }
 }
 
@@ -215,18 +211,18 @@ mod tests {
     #[test]
     fn plan_type_display_name_remaps_display_labels() {
         let cases = [
-            (PlanType::Free, "Free"),
+            (PlanType::Free, "Cryolith"),
             (PlanType::Go, "Go"),
-            (PlanType::Plus, "Plus"),
-            (PlanType::Pro, "Pro"),
-            (PlanType::ProLite, "Pro Lite"),
-            (PlanType::Team, "Business"),
-            (PlanType::SelfServeBusinessProLite, "Business"),
-            (PlanType::SelfServeBusinessUsageBased, "Business"),
-            (PlanType::Business, "Enterprise"),
-            (PlanType::EnterpriseCbpAutomation, "Enterprise (Automation)"),
-            (PlanType::EnterpriseCbpUsageBased, "Enterprise"),
-            (PlanType::Enterprise, "Enterprise"),
+            (PlanType::Plus, "Cryolith"),
+            (PlanType::Pro, "Xenolith"),
+            (PlanType::ProLite, "Xenolith"),
+            (PlanType::Team, "Monolith"),
+            (PlanType::SelfServeBusinessProLite, "Monolith"),
+            (PlanType::SelfServeBusinessUsageBased, "Monolith"),
+            (PlanType::Business, "Monolith"),
+            (PlanType::EnterpriseCbpAutomation, "Myralith"),
+            (PlanType::EnterpriseCbpUsageBased, "Myralith"),
+            (PlanType::Enterprise, "Myralith"),
             (PlanType::Edu, "Edu"),
             (PlanType::Unknown, "Unknown"),
         ];
