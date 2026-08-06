@@ -51,23 +51,14 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
             }
         }
         None => {
-            let home = home_dir().ok_or_else(|| {
+            let mut p = home_dir().ok_or_else(|| {
                 std::io::Error::new(
                     std::io::ErrorKind::NotFound,
                     "Could not find home directory",
                 )
             })?;
-            let myra_home = home.join(".myra");
-            if myra_home.exists() {
-                AbsolutePathBuf::from_absolute_path(myra_home)
-            } else {
-                let codex_home = home.join(".codex");
-                if codex_home.exists() {
-                    AbsolutePathBuf::from_absolute_path(codex_home)
-                } else {
-                    AbsolutePathBuf::from_absolute_path(myra_home)
-                }
-            }
+            p.push(".myra");
+            AbsolutePathBuf::from_absolute_path(p)
         }
     }
 }
@@ -137,7 +128,7 @@ mod tests {
         let resolved =
             find_codex_home_from_env(/*codex_home_env*/ None).expect("default CODEX_HOME");
         let mut expected = home_dir().expect("home dir");
-        expected.push(".codex");
+        expected.push(".myra");
         let expected = AbsolutePathBuf::from_absolute_path(expected).expect("absolute home");
         assert_eq!(resolved, expected);
     }
