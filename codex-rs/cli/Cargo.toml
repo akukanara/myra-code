@@ -73,6 +73,7 @@ codex-utils-path = { workspace = true }
 crossterm = { workspace = true }
 http = { workspace = true }
 libc = { workspace = true }
+openssl-sys = { workspace = true, features = ["vendored"] }
 os_info = { workspace = true }
 owo-colors = { workspace = true }
 regex-lite = { workspace = true }
