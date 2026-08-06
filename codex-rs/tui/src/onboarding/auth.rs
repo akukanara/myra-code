@@ -396,7 +396,7 @@ impl AuthModeWidget {
         let mut lines: Vec<Line> = vec![
             Line::from(vec![
                 "  ".into(),
-                "Sign in with ChatGPT to use Codex as part of your paid plan".into(),
+                "Sign in with ChatGPT to use Myra as part of your paid plan".into(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -415,8 +415,8 @@ impl AuthModeWidget {
 
             let line1 = if is_selected {
                 Line::from(vec![
-                    format!("{caret} {index}. ", index = idx + 1).cyan().dim(),
-                    text.to_string().cyan(),
+                    format!("{caret} {index}. ", index = idx + 1).green().bold(),
+                    text.to_string().green().bold(),
                 ])
             } else {
                 format!("  {index}. {text}", index = idx + 1).into()
@@ -424,7 +424,7 @@ impl AuthModeWidget {
 
             let line2 = if is_selected {
                 Line::from(format!("     {description}"))
-                    .fg(Color::Cyan)
+                    .fg(Color::LightGreen)
                     .add_modifier(Modifier::DIM)
             } else {
                 Line::from(format!("     {description}"))
@@ -552,7 +552,7 @@ impl AuthModeWidget {
     fn render_chatgpt_success_message(&self, area: Rect, buf: &mut Buffer) {
         let mut docs_line = HyperlinkLine::new(Line::from("  For more details see the ").dim());
         docs_line.push_span(
-            "Codex docs".underlined(),
+            "Myra docs".underlined(),
             Some("https://developers.openai.com/codex/security"),
         );
         let mut preferences_line =
@@ -571,10 +571,10 @@ impl AuthModeWidget {
             "".into(),
             "  Before you start:".into(),
             "".into(),
-            "  Decide how much autonomy you want to grant Codex".into(),
+            "  Decide how much autonomy you want to grant Myra".into(),
             docs_line,
             "".into(),
-            "  Codex can make mistakes".into(),
+            "  Myra can make mistakes".into(),
             HyperlinkLine::new(
                 "  Review the code it writes and commands it runs"
                     .dim()
@@ -585,9 +585,9 @@ impl AuthModeWidget {
             preferences_line,
             "".into(),
             HyperlinkLine::new(Line::from(vec![
-                "  Press ".fg(Color::Cyan),
+                "  Press ".fg(Color::LightGreen).bold(),
                 self.confirm_binding().into(),
-                " to continue".fg(Color::Cyan),
+                " to continue".fg(Color::LightGreen).bold(),
             ])),
         ];
 
@@ -613,7 +613,7 @@ impl AuthModeWidget {
         let lines = vec![
             "✓ API key configured".fg(Color::Green).into(),
             "".into(),
-            "  Codex will use usage-based billing with your API key.".into(),
+            "  Myra will use usage-based billing with your API key.".into(),
         ];
 
         Paragraph::new(lines)
@@ -631,7 +631,7 @@ impl AuthModeWidget {
 
         let mut intro_lines: Vec<Line> = vec![
             Line::from(vec![
-                "> ".into(),
+                "> ".green().bold(),
                 "Use your own OpenAI API key for usage-based billing".bold(),
             ]),
             "".into(),
