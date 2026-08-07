@@ -625,7 +625,7 @@ impl AuthModeWidget {
         let mut intro_lines: Vec<Line> = vec![
             Line::from(vec![
                 "> ".fg(Color::Rgb(190, 242, 100)).bold(),
-                "Use your own OpenAI API key for usage-based billing".bold(),
+                "Use your own MyraRouter API key for usage-based billing".bold(),
             ]),
             "".into(),
             "  Paste or type your API key below. It will be stored locally in auth.json.".into(),
