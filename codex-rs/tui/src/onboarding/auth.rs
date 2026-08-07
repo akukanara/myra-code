@@ -553,16 +553,11 @@ impl AuthModeWidget {
             "Myra docs".underlined(),
             Some("https://developers.openai.com/codex/security"),
         );
-        let mut preferences_line =
-            HyperlinkLine::new(Line::from("  Uses your plan's rate limits and ").dim());
-        preferences_line.push_span(
-            "training data preferences".underlined(),
-            Some("https://chatgpt.com/#settings"),
-        );
+        let preferences_line = HyperlinkLine::new(Line::from("  Uses your plan's rate limits and credits.").dim());
 
         let lines = vec![
             HyperlinkLine::new(
-                "✓ Signed in with your Myra account"
+                "✓ Signed in with your MyraRouter account"
                     .fg(Color::Rgb(190, 242, 100))
                     .into(),
             ),
@@ -597,7 +592,7 @@ impl AuthModeWidget {
 
     fn render_chatgpt_success(&self, area: Rect, buf: &mut Buffer) {
         let lines = vec![
-            "✓ Signed in with your Myra account"
+            "✓ Signed in with your MyraRouter account"
                 .fg(Color::Rgb(190, 242, 100))
                 .into(),
         ];
