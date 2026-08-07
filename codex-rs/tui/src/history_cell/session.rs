@@ -317,9 +317,8 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
         let make_row = |spans: Vec<Span<'static>>| Line::from(spans);
 
-        // Title line rendered inside the box: ">_ Myralith Myra (vX)"
         let title_spans: Vec<Span<'static>> = vec![
-            Span::from(">_ ").fg(Color::Rgb(190, 242, 100)).bold(),
+            Span::from("✦ ").fg(Color::Rgb(190, 242, 100)).bold(),
             Span::from("Myralith Myra").bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{})", self.version)).dim(),
@@ -327,23 +326,11 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
         const CHANGE_MODEL_HINT_COMMAND: &str = "/model";
         const CHANGE_MODEL_HINT_EXPLANATION: &str = " to change";
-        const DIR_LABEL: &str = "directory:";
-        const PERMISSIONS_LABEL: &str = "permissions:";
-        let label_width = if self.yolo_mode {
-            DIR_LABEL.len().max(PERMISSIONS_LABEL.len())
-        } else {
-            DIR_LABEL.len()
-        };
 
-        let model_label = format!(
-            "{model_label:<label_width$}",
-            model_label = "model:",
-            label_width = label_width
-        );
         let reasoning_label = self.reasoning_label();
         let model_spans: Vec<Span<'static>> = {
             let mut spans = vec![
-                Span::from(format!("{model_label} ")).dim(),
+                Span::from("model:     ").dim(),
                 Span::styled(self.model.clone(), self.model_style),
             ];
             if let Some(reasoning) = reasoning_label {
@@ -360,9 +347,8 @@ impl HistoryCell for SessionHeaderHistoryCell {
             spans
         };
 
-        let dir_label = format!("{DIR_LABEL:<label_width$}");
-        let dir_prefix = format!("{dir_label} ");
-        let dir_prefix_width = display_width(dir_prefix.as_str());
+        let dir_prefix = "workspace: ";
+        let dir_prefix_width = display_width(dir_prefix);
         let dir_max_width = inner_width.saturating_sub(dir_prefix_width);
         let dir = self.format_directory(Some(dir_max_width));
         let dir_spans = vec![Span::from(dir_prefix).dim(), Span::from(dir)];
@@ -375,9 +361,8 @@ impl HistoryCell for SessionHeaderHistoryCell {
         ];
 
         if self.yolo_mode {
-            let permissions_label = format!("{PERMISSIONS_LABEL:<label_width$}");
             lines.push(make_row(vec![
-                Span::from(format!("{permissions_label} ")).dim(),
+                Span::from("mode:      ").dim(),
                 "YOLO mode".magenta().bold(),
             ]));
         }
@@ -391,7 +376,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(format!("OpenAI Codex (v{})", self.version)),
+            Line::from(format!("Myralith Myra (v{})", self.version)),
             Line::from(format!(
                 "model: {}{}",
                 self.model,
