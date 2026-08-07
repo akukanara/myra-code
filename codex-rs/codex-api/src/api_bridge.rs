@@ -180,6 +180,22 @@ fn api_error_user_message(status: http::StatusCode, body: &str) -> Option<String
         && body.contains("blocked")
     {
         Some(format!("{CLOUDFLARE_BLOCKED_MESSAGE} (status {status})"))
+    } else if let Ok(parsed) = serde_json::from_str::<Value>(body) {
+        if let Some(msg) = parsed.get("message").and_then(Value::as_str) {
+            Some(msg.to_string())
+        } else if let Some(error) = parsed.get("error") {
+            if let Some(msg) = error.get("message").and_then(Value::as_str) {
+                Some(msg.to_string())
+            } else if let Some(msg) = error.as_str() {
+                Some(msg.to_string())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else if !body.trim().is_empty() {
+        Some(body.trim().to_string())
     } else {
         None
     }
