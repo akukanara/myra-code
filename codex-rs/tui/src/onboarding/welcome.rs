@@ -96,7 +96,7 @@ impl WidgetRef for &WelcomeWidget {
             "  ".into(),
             "Welcome to ".into(),
             "Myralith Myra".fg(Color::Rgb(190, 242, 100)).bold(),
-            ", a local coding agent".into(),
+            ", an expert AI coding agent".into(),
         ]));
 
         Paragraph::new(lines)
