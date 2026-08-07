@@ -255,7 +255,10 @@ impl ToolPluginProvenance {
 }
 
 pub fn host_owned_codex_apps_enabled(config: &McpConfig, auth: Option<&CodexAuth>) -> bool {
-    config.apps_enabled && auth.is_some_and(CodexAuth::uses_codex_backend)
+    let env_enabled = std::env::var("MYRA_ENABLE_APPS")
+        .or_else(|_| std::env::var("CODEX_ENABLE_APPS"))
+        .is_ok_and(|val| val == "1" || val.eq_ignore_ascii_case("true"));
+    env_enabled && config.apps_enabled && auth.is_some_and(CodexAuth::uses_codex_backend)
 }
 
 pub fn configured_mcp_servers(config: &McpConfig) -> HashMap<String, McpServerConfig> {
