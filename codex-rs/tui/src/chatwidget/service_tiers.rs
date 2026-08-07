@@ -5,9 +5,7 @@ use crate::app_command::AppCommand;
 use crate::app_event::AppEvent;
 use crate::bottom_pane::slash_commands::ServiceTierCommand;
 use crate::service_tier_resolution;
-use codex_features::Feature;
 use codex_protocol::config_types::SERVICE_TIER_DEFAULT_REQUEST_VALUE;
-use codex_protocol::config_types::ServiceTier;
 use codex_protocol::openai_models::SPEED_TIER_FAST;
 
 impl ChatWidget {
@@ -33,15 +31,12 @@ impl ChatWidget {
         )
     }
 
-    pub(crate) fn should_show_fast_status(&self, model: &str, service_tier: Option<&str>) -> bool {
-        service_tier.is_some_and(|service_tier| {
-            service_tier == ServiceTier::Fast.request_value()
-                && self.model_supports_service_tier(model, service_tier)
-        }) && self.has_chatgpt_account
+    pub(crate) fn should_show_fast_status(&self, _model: &str, _service_tier: Option<&str>) -> bool {
+        false
     }
 
     pub(super) fn fast_mode_enabled(&self) -> bool {
-        self.config.features.enabled(Feature::FastMode)
+        false
     }
 
     pub(crate) fn can_toggle_fast_mode_from_keybinding(&self) -> bool {
@@ -124,6 +119,7 @@ impl ChatWidget {
             .send(AppEvent::PersistServiceTierSelection { service_tier });
     }
 
+    #[allow(dead_code)]
     fn model_supports_service_tier(&self, model: &str, service_tier: &str) -> bool {
         self.model_catalog
             .try_list_models()
