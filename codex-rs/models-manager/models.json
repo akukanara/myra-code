@@ -2,7 +2,7 @@
   "models": [
     {
       "slug": "gemini-3.6-flash",
-      "prefer_websockets": true,
+      "prefer_websockets": false,
       "support_verbosity": true,
       "default_verbosity": "low",
       "apply_patch_tool_type": "freeform",
@@ -107,7 +107,7 @@
     },
     {
       "slug": "gpt-5.2-codex",
-      "prefer_websockets": true,
+      "prefer_websockets": false,
       "support_verbosity": true,
       "default_verbosity": "low",
       "apply_patch_tool_type": "freeform",
@@ -211,7 +211,7 @@
     },
     {
       "slug": "deepseek-v4-flash",
-      "prefer_websockets": true,
+      "prefer_websockets": false,
       "support_verbosity": true,
       "default_verbosity": "low",
       "apply_patch_tool_type": "freeform",
@@ -323,7 +323,7 @@
     },
     {
       "slug": "codex-auto-review",
-      "prefer_websockets": true,
+      "prefer_websockets": false,
       "support_verbosity": true,
       "default_verbosity": "low",
       "apply_patch_tool_type": "freeform",
