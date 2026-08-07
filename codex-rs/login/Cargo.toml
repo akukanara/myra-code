@@ -37,6 +37,7 @@ tokio = { workspace = true, features = [
     "signal",
 ] }
 tracing = { workspace = true }
+openssl-sys = { workspace = true, features = ["vendored"] }
 url = { workspace = true }
 urlencoding = { workspace = true }
 webbrowser = { workspace = true }
