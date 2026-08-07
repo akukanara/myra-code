@@ -1,28 +1,17 @@
-Use /compact when the conversation gets long to summarize history and free up context.
-Start a fresh idea with /new; the previous session stays in history.
-Use /feedback to send logs to the maintainers when something looks off.
-Switch models or reasoning effort quickly with /model.
-Use /permissions to control when Codex asks for confirmation.
-Run /review to get a code review of your current changes.
-Use /skills to list available skills or ask Codex to use one.
-Use /status to see the current model, approvals, and token usage.
-Use /statusline to configure which items appear in the status line.
-Use /fork to branch the current chat into a new thread.
-Use /side to start a side conversation in a temporary fork without polluting the main thread.
-Use /init to create an AGENTS.md with project-specific guidance.
-Use /mcp to list configured MCP tools.
-Run `codex app` to open the Desktop app (it installs on macOS if needed).
-Use /personality to customize how Codex communicates.
-Use /rename to rename your threads for easier thread resuming.
-Use the OpenAI docs MCP for API questions; enable it with `codex mcp add openaiDeveloperDocs --url https://developers.openai.com/mcp`.
-Join the OpenAI community Discord: http://discord.gg/openai
-Visit the Codex community forum: https://community.openai.com/c/codex/37
-You can run any shell command from Codex using `!` (e.g. `!ls`)
-Type / to open the command popup; Tab autocompletes slash commands.
-When the composer is empty, press Esc to step back and edit your last message; Enter confirms.
-Press Tab to queue a message when a task is running; otherwise it sends immediately (except `!`).
-[tui.keymap] in ~/.codex/config.toml lets you rebind supported shortcuts.
-See the Codex keymap documentation for supported actions and examples.
-Paste an image with Ctrl+V to attach it to your next message.
-You can resume a previous conversation by running `codex resume`
-Use /copy or press Ctrl+O to copy the latest agent response as Markdown.
+Ada 10 jenis orang di dunia: yang paham biner, dan yang tidak.
+Programming itu 10% nulis kode, 90% bingung kenapa kodenya jalan padahal harusnya error.
+Kenapa programmer benci gelap? Karena takut ada bug!
+Kode yang bagus adalah dokumentasinya sendiri. Kode yang sangat bagus: gak ada yang paham kecuali pembuatnya dan Tuhan.
+Tersisa 0 warning dan 0 error... (Sesuatu yang sangat mencurigakan baru saja terjadi).
+Ctrl+Z adalah penemuan paling penyelamat dalam sejarah peradaban manusia.
+Feature adalah bug yang berhasil diberi nama keren oleh tim Marketing.
+Seorang programmer ke minimarket: "Beli 1 botol susu. Kalau ada telur, beli 6." Dia pulang membawa 6 botol susu.
+Tidak ada tempat seindah 127.0.0.1.
+Bug di production itu ibarat nyamuk jam 2 pagi: gak keliatan tapi sangat mengganggu.
+Ketik /model untuk mengganti model AI atau tingkat reasoning Myra.
+Ketik /compact untuk merangkum riwayat chat saat konteks mulai penuh.
+Ketik /new untuk memulai sesi diskusi baru tanpa menghapus riwayat lama.
+Ketik /status untuk melihat informasi model, token usage, dan konfigurasi Myra.
+Ketik /init untuk membuat dokumen AGENTS.md berisi aturan proyek.
+Tekan Ctrl+V untuk menempelkan gambar langsung ke percakapan Myra.
+Tekan Esc saat input kosong untuk menyunting kembali pesan terakhir Anda.
