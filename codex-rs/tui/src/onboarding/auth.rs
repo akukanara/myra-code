@@ -579,7 +579,7 @@ impl AuthModeWidget {
                     .into(),
             ),
             "".into(),
-            "  Powered by your Myra account".into(),
+            "  Powered by your MyraRouter account".into(),
             preferences_line,
             "".into(),
             HyperlinkLine::new(Line::from(vec![
