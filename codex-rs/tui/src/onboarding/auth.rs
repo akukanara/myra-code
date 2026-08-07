@@ -433,7 +433,7 @@ impl AuthModeWidget {
         };
 
         let chatgpt_description = if !self.is_chatgpt_login_allowed() {
-            "ChatGPT login is disabled"
+            "Oauth2 login is disabled"
         } else {
             "Usage included with Cryolith, Xenolith, Monolith, and Myralith plans"
         };
@@ -471,7 +471,7 @@ impl AuthModeWidget {
 
         if !self.is_api_login_allowed() {
             lines.push(
-                "  API key login is disabled by this workspace. Sign in with ChatGPT to continue."
+                "  API key login is disabled by this workspace. Sign in with Oauth2 to continue."
                     .dim()
                     .into(),
             );
@@ -562,8 +562,8 @@ impl AuthModeWidget {
 
         let lines = vec![
             HyperlinkLine::new(
-                "✓ Signed in with your ChatGPT account"
-                    .fg(Color::Green)
+                "✓ Signed in with your Myra account"
+                    .fg(Color::Rgb(190, 242, 100))
                     .into(),
             ),
             "".into(),
@@ -579,7 +579,7 @@ impl AuthModeWidget {
                     .into(),
             ),
             "".into(),
-            "  Powered by your ChatGPT account".into(),
+            "  Powered by your Myra account".into(),
             preferences_line,
             "".into(),
             HyperlinkLine::new(Line::from(vec![
@@ -597,7 +597,7 @@ impl AuthModeWidget {
 
     fn render_chatgpt_success(&self, area: Rect, buf: &mut Buffer) {
         let lines = vec![
-            "✓ Signed in with your ChatGPT account"
+            "✓ Signed in with your Myra account"
                 .fg(Color::Rgb(190, 242, 100))
                 .into(),
         ];
