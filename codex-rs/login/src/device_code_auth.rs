@@ -171,7 +171,7 @@ pub async fn request_device_code(opts: &ServerOptions) -> std::io::Result<Device
     let uc = request_user_code(&client, &api_base_url, &opts.client_id).await?;
 
     Ok(DeviceCode {
-        verification_url: format!("{base_url}/codex/device"),
+        verification_url: format!("{base_url}/device"),
         user_code: uc.user_code,
         device_auth_id: uc.device_auth_id,
         interval: uc.interval,
