@@ -1,8 +1,89 @@
 use super::*;
 use pretty_assertions::assert_eq;
 
+fn plugin_with_category(mut plugin: PluginSummary, category: &str) -> PluginSummary {
+    plugin
+        .interface
+        .as_mut()
+        .expect("test plugin interface")
+        .category = Some(category.to_string());
+    plugin
+}
+
 #[tokio::test]
-async fn plugins_popup_uses_product_labels_for_remote_and_personal_tabs() {
+async fn plugins_popup_replaces_curated_tab_with_required_myratools() {
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
+    chat.set_feature_enabled(Feature::Plugins, /*enabled*/ true);
+
+    render_loaded_plugins_popup(
+        &mut chat,
+        plugins_test_response(vec![plugins_test_remote_marketplace(
+            "myrarouter",
+            "MyraTools",
+            vec![
+                plugin_with_category(
+                    plugins_test_remote_summary(
+                        "myrarouter-image",
+                        "myrarouter-image",
+                        Some("Image Generation"),
+                        Some("Generate images through MyraRouter."),
+                        /*installed*/ true,
+                    ),
+                    "MyraTools",
+                ),
+                plugin_with_category(
+                    plugins_test_remote_summary(
+                        "myrarouter-web-fetch",
+                        "myrarouter-web-fetch",
+                        Some("Web Fetch"),
+                        Some("Fetch web pages."),
+                        /*installed*/ true,
+                    ),
+                    "MyraTools",
+                ),
+                plugin_with_category(
+                    plugins_test_remote_summary(
+                        "myrarouter-web-search",
+                        "myrarouter-web-search",
+                        Some("Web Search"),
+                        Some("Search the web."),
+                        /*installed*/ true,
+                    ),
+                    "MyraTools",
+                ),
+                plugin_with_category(
+                    plugins_test_remote_summary(
+                        "mcp-browserbase",
+                        "mcp-browserbase",
+                        Some("Browserbase"),
+                        Some("Automate browsers."),
+                        /*installed*/ false,
+                    ),
+                    "MCPs · Browser automation",
+                ),
+            ],
+        )]),
+    );
+
+    let popup = render_bottom_popup(&chat, /*width*/ 100);
+    let tab_line = popup
+        .lines()
+        .find(|line| line.contains("[All Plugins]"))
+        .expect("plugins tab line");
+    assert_eq!(
+        tab_line.trim(),
+        "[All Plugins]  Installed (3)  MyraTools  Add Marketplace"
+    );
+
+    let myratools = select_plugins_tab_containing(&mut chat, /*width*/ 100, "[MyraTools]");
+    assert!(myratools.contains("Image Generation"));
+    assert!(myratools.contains("Web Fetch"));
+    assert!(myratools.contains("Web Search"));
+    assert!(!myratools.contains("Browserbase"));
+}
+
+#[tokio::test]
+async fn plugins_popup_hides_workspace_and_shared_tabs_but_keeps_local() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(/*model_override*/ None).await;
     chat.set_feature_enabled(Feature::Plugins, /*enabled*/ true);
 
@@ -61,56 +142,13 @@ async fn plugins_popup_uses_product_labels_for_remote_and_personal_tabs() {
         ]),
     );
 
-    let rows = [
-        (
-            "[Workspace]",
-            "Workspace.",
-            "Buildkite",
-            "Raw Workspace Directory.",
-        ),
-        (
-            "[Shared with me]",
-            "Shared with me.",
-            "Docs",
-            "Raw Shared Private.",
-        ),
-        (
-            "[Shared with me (link)]",
-            "Shared with me (link).",
-            "Link Share",
-            "Raw Shared Link.",
-        ),
-        ("[Local]", "Local.", "Local Docs", "Personal."),
-    ]
-    .into_iter()
-    .map(|(selected_tab, product_label, plugin_name, raw_label)| {
-        let popup = select_plugins_tab_containing(&mut chat, /*width*/ 120, selected_tab);
-        assert!(
-            popup.contains(product_label)
-                && popup.contains(plugin_name)
-                && !popup.contains(raw_label),
-            "expected {selected_tab} to use its product label, got:\n{popup}"
-        );
-        popup
-            .lines()
-            .find(|line| line.contains(plugin_name))
-            .expect("expected plugin row")
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-    })
-    .collect::<Vec<_>>()
-    .join("\n");
+    let popup = render_bottom_popup(&chat, /*width*/ 120);
+    assert!(!popup.contains("Workspace"));
+    assert!(!popup.contains("Shared with me"));
 
-    insta::assert_snapshot!(
-        rows,
-        @r###"
-        › [-] Buildkite Available Press Enter to install or view plugin details.
-        › [-] Docs Available Press Enter to install or view plugin details.
-        › [-] Link Share Available Press Enter to install or view plugin details.
-        › [-] Local Docs Available Press Enter to install or view plugin details.
-        "###
-    );
+    let local = select_plugins_tab_containing(&mut chat, /*width*/ 120, "[Local]");
+    assert!(local.contains("Local Docs"));
+    assert!(!local.contains("Personal."));
 }
 
 #[tokio::test]

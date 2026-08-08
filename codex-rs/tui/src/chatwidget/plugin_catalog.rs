@@ -40,6 +40,7 @@ use codex_app_server_protocol::PluginSharePrincipal;
 use codex_app_server_protocol::PluginSource;
 use codex_app_server_protocol::PluginSummary;
 use codex_core_plugins::is_openai_curated_marketplace_name;
+use codex_core_plugins::myrarouter::MYRAROUTER_MARKETPLACE_NAME;
 use codex_core_plugins::remote::REMOTE_GLOBAL_MARKETPLACE_NAME;
 use codex_core_plugins::remote::REMOTE_WORKSPACE_MARKETPLACE_NAME;
 use codex_core_plugins::remote::REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME;
@@ -69,7 +70,7 @@ const REMOTE_LOADING_TAB_ID_PREFIX: &str = "remote-loading:";
 const REMOTE_EMPTY_TAB_ID_PREFIX: &str = "remote-empty:";
 const REMOTE_ERROR_TAB_ID_PREFIX: &str = "remote-error:";
 const OPENAI_CURATED_LOADING_DESCRIPTION: &str =
-    "This updates when Myralith Curated plugins finish loading.";
+    "This updates when the MyraTools catalog finishes loading.";
 const WORKSPACE_SECTION_TAB_ORDER: u8 = 0;
 const SHARED_WITH_ME_SECTION_TAB_ORDER: u8 = 1;
 const SHARED_WITH_ME_LINK_SECTION_TAB_ORDER: u8 = 2;
@@ -111,7 +112,8 @@ impl MarketplaceProduct {
     }
 
     fn from_marketplace_name(marketplace_name: &str) -> Self {
-        if is_openai_curated_marketplace_name(marketplace_name)
+        if marketplace_name == MYRAROUTER_MARKETPLACE_NAME
+            || is_openai_curated_marketplace_name(marketplace_name)
             || marketplace_name == REMOTE_GLOBAL_MARKETPLACE_NAME
         {
             return Self::OpenAiCurated;
@@ -128,7 +130,7 @@ impl MarketplaceProduct {
 
     fn label(self) -> Option<&'static str> {
         match self {
-            Self::OpenAiCurated => Some("Myralith Curated"),
+            Self::OpenAiCurated => Some("MyraTools"),
             Self::Workspace => Some("Workspace"),
             Self::SharedWithMe => Some("Shared with me"),
             Self::SharedWithMeLink => Some("Shared with me (link)"),
@@ -146,95 +148,33 @@ impl MarketplaceProduct {
             Self::OpenAiCurated | Self::Other => OTHER_MARKETPLACE_TAB_ORDER,
         }
     }
-
-    fn is_by_openai(self) -> bool {
-        matches!(self, Self::OpenAiCurated)
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
 struct RemoteMarketplaceSection {
     id: &'static str,
-    label: &'static str,
     loading_tab_id: &'static str,
-    loading_item_description: &'static str,
     marketplace_names: &'static [&'static str],
-    show_empty_tab: bool,
-    empty_item_name: &'static str,
-    empty_item_description: &'static str,
-    tab_order: u8,
 }
 
 const REMOTE_MARKETPLACE_SECTIONS: [RemoteMarketplaceSection; 2] = [
     RemoteMarketplaceSection {
         id: "workspace",
-        label: "Workspace",
         loading_tab_id: "workspace-loading",
-        loading_item_description: "This updates when workspace plugins finish loading.",
         marketplace_names: &[REMOTE_WORKSPACE_MARKETPLACE_NAME],
-        show_empty_tab: true,
-        empty_item_name: "No workspace plugins available",
-        empty_item_description: "No workspace directory plugins are available.",
-        tab_order: WORKSPACE_SECTION_TAB_ORDER,
     },
     RemoteMarketplaceSection {
         id: "shared-with-me",
-        label: "Shared with me",
         loading_tab_id: "shared-with-me-loading",
-        loading_item_description: "This updates when shared plugins finish loading.",
         marketplace_names: &[
             REMOTE_WORKSPACE_SHARED_WITH_ME_MARKETPLACE_NAME,
             REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME,
             REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME,
         ],
-        show_empty_tab: false,
-        empty_item_name: "No shared plugins available",
-        empty_item_description: "No plugins have been shared with you.",
-        tab_order: SHARED_WITH_ME_SECTION_TAB_ORDER,
     },
 ];
 
 impl RemoteMarketplaceSection {
-    fn fallback_tab(
-        self,
-        marketplaces: &[PluginMarketplaceEntry],
-        remote_sections_loading: bool,
-        remote_sections_loaded: bool,
-        section_errors: &[PluginRemoteSectionError],
-    ) -> Option<(u8, SelectionTab)> {
-        if marketplaces
-            .iter()
-            .any(|marketplace| self.contains_marketplace(&marketplace.name))
-        {
-            return None;
-        }
-
-        let tab = if remote_sections_loading {
-            remote_section_loading_tab(
-                self.loading_tab_id,
-                self.label,
-                self.loading_item_description,
-            )
-        } else if remote_sections_loaded {
-            if let Some(section_error) = plugin_remote_section_error(section_errors, self.id) {
-                remote_section_error_tab(section_error)
-            } else if !self.show_empty_tab {
-                return None;
-            } else {
-                remote_section_empty_tab(
-                    self.id,
-                    self.label,
-                    self.empty_item_name,
-                    self.empty_item_description,
-                )
-            }
-        } else {
-            return None;
-        };
-
-        Some((self.tab_order, tab))
-    }
-
     fn contains_marketplace(self, marketplace_name: &str) -> bool {
         self.marketplace_names.contains(&marketplace_name)
     }
@@ -742,7 +682,15 @@ impl ChatWidget {
         let marketplaces = &response.marketplaces;
         let preferred_local_sources = preferred_local_plugin_sources(marketplaces);
 
-        let all_entries = plugin_entries_for_marketplaces(marketplaces);
+        let visible_marketplaces = marketplaces.iter().filter(|marketplace| {
+            !matches!(
+                MarketplaceProduct::from_marketplace(marketplace),
+                MarketplaceProduct::Workspace
+                    | MarketplaceProduct::SharedWithMe
+                    | MarketplaceProduct::SharedWithMeLink
+            )
+        });
+        let all_entries = plugin_entries_for_marketplaces(visible_marketplaces);
         let total = all_entries.len();
         let installed = all_entries
             .iter()
@@ -797,10 +745,22 @@ impl ChatWidget {
             ),
         });
 
-        let curated_entries =
-            plugin_entries_for_marketplaces(marketplaces.iter().filter(|marketplace| {
-                MarketplaceProduct::from_marketplace(marketplace).is_by_openai()
-            }));
+        let curated_entries = plugin_entries_for_marketplaces(
+            marketplaces
+                .iter()
+                .filter(|marketplace| marketplace.name == MYRAROUTER_MARKETPLACE_NAME),
+        )
+        .into_iter()
+        .filter(|(_, plugin, _)| {
+            plugin
+                .interface
+                .as_ref()
+                .and_then(|interface| interface.category.as_deref())
+                .is_some_and(|category| {
+                    category == "MyraTools" || category.starts_with("MyraTools ·")
+                })
+        })
+        .collect::<Vec<_>>();
         let curated_total = curated_entries.len();
         let curated_installed = curated_entries
             .iter()
@@ -814,17 +774,17 @@ impl ChatWidget {
         let (curated_empty_name, curated_empty_description) =
             if curated_loading && !curated_has_entries {
                 (
-                    "Loading Myralith Curated plugins...",
+                    "Loading MyraTools plugins...",
                     OPENAI_CURATED_LOADING_DESCRIPTION,
                 )
             } else if let Some(section_error) = by_openai_section_error
                 && !curated_has_entries
             {
-                ("Myralith Curated unavailable", section_error.message.as_str())
+                ("MyraTools unavailable", section_error.message.as_str())
             } else {
                 (
-                    "No Myralith Curated plugins available",
-                    "No Myralith Curated plugins available.",
+                    "Required MyraTools are loading",
+                    "Image Generation, Web Fetch, and Web Search are always included.",
                 )
             };
         let mut curated_items = self.plugin_selection_items(
@@ -836,7 +796,7 @@ impl ChatWidget {
         );
         if curated_loading && curated_has_entries {
             curated_items.push(remote_section_loading_item(
-                "Myralith Curated",
+                "MyraTools",
                 OPENAI_CURATED_LOADING_DESCRIPTION,
             ));
         }
@@ -850,17 +810,27 @@ impl ChatWidget {
         }
         tabs.push(SelectionTab {
             id: OPENAI_CURATED_TAB_ID.to_string(),
-            label: "Myralith Curated".to_string(),
+            label: "MyraTools".to_string(),
             header: plugins_header(
-                "Myralith Curated marketplace.".to_string(),
-                format!("Installed {curated_installed} of {curated_total} Myralith Curated plugins."),
+                "MyraTools marketplace · powered by MyraRouter.".to_string(),
+                format!(
+                    "Installed {curated_installed} of {curated_total} plugins. Core MyraTools are required."
+                ),
             ),
             items: curated_items,
         });
 
         let mut additional_marketplaces: Vec<&PluginMarketplaceEntry> = marketplaces
             .iter()
-            .filter(|marketplace| !MarketplaceProduct::from_marketplace(marketplace).is_by_openai())
+            .filter(|marketplace| {
+                !matches!(
+                    MarketplaceProduct::from_marketplace(marketplace),
+                    MarketplaceProduct::OpenAiCurated
+                        | MarketplaceProduct::Workspace
+                        | MarketplaceProduct::SharedWithMe
+                        | MarketplaceProduct::SharedWithMeLink
+                )
+            })
             .collect();
         additional_marketplaces.sort_by_cached_key(|marketplace| {
             let display_name = marketplace_display_name(marketplace);
@@ -873,17 +843,6 @@ impl ChatWidget {
         });
 
         let mut additional_tabs = Vec::new();
-        for section in REMOTE_MARKETPLACE_SECTIONS {
-            if let Some(fallback_tab) = section.fallback_tab(
-                marketplaces,
-                self.plugin_remote_sections_loading,
-                self.plugin_remote_sections_loaded,
-                &self.plugin_remote_section_errors,
-            ) {
-                additional_tabs.push(fallback_tab);
-            }
-        }
-
         let labels = disambiguate_duplicate_tab_labels(
             additional_marketplaces
                 .iter()
@@ -1732,55 +1691,6 @@ fn plugin_remote_section_error<'a>(
     section_errors
         .iter()
         .find(|section_error| section_error.section_id == section_id)
-}
-
-fn remote_section_loading_tab(id: &str, label: &str, item_description: &str) -> SelectionTab {
-    SelectionTab {
-        id: format!("{REMOTE_LOADING_TAB_ID_PREFIX}{id}"),
-        label: label.to_string(),
-        header: plugins_header(
-            format!("Loading {label} plugins."),
-            "Local plugin functionality is already available.".to_string(),
-        ),
-        items: vec![remote_section_loading_item(label, item_description)],
-    }
-}
-
-fn remote_section_empty_tab(
-    id: &str,
-    label: &str,
-    item_name: &str,
-    item_description: &str,
-) -> SelectionTab {
-    SelectionTab {
-        id: format!("{REMOTE_EMPTY_TAB_ID_PREFIX}{id}"),
-        label: label.to_string(),
-        header: plugins_header(
-            format!("{label}."),
-            "This section loaded successfully.".to_string(),
-        ),
-        items: vec![SelectionItem {
-            name: item_name.to_string(),
-            description: Some(item_description.to_string()),
-            is_disabled: true,
-            ..Default::default()
-        }],
-    }
-}
-
-fn remote_section_error_tab(section_error: &PluginRemoteSectionError) -> SelectionTab {
-    SelectionTab {
-        id: format!("{REMOTE_ERROR_TAB_ID_PREFIX}{}", section_error.section_id),
-        label: section_error.label.clone(),
-        header: plugins_header(
-            format!("{} unavailable.", section_error.label),
-            "Local plugin functionality is still available.".to_string(),
-        ),
-        items: vec![remote_section_error_item(
-            &section_error.label,
-            &section_error.message,
-        )],
-    }
 }
 
 fn disambiguate_duplicate_tab_labels(labels: Vec<String>) -> Vec<String> {

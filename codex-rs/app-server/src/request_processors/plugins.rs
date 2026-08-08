@@ -13,6 +13,7 @@ use codex_core_plugins::PluginListBackgroundTaskOptions;
 use codex_core_plugins::is_openai_curated_marketplace_name;
 use codex_core_plugins::loader::load_configured_plugin_mcp_servers;
 use codex_core_plugins::manifest::is_agent_plugin_manifest;
+use codex_core_plugins::myrarouter::MYRAROUTER_MARKETPLACE_NAME;
 use codex_core_plugins::remote::REMOTE_CREATED_BY_ME_MARKETPLACE_NAME;
 use codex_core_plugins::remote::REMOTE_GLOBAL_MARKETPLACE_NAME;
 use codex_core_plugins::remote::REMOTE_WORKSPACE_MARKETPLACE_NAME;
@@ -154,6 +155,20 @@ fn remote_plugin_service_config(config: &Config) -> RemotePluginServiceConfig {
         config.chatgpt_base_url.clone(),
         config.http_client_factory(),
     )
+}
+
+fn myrarouter_plugin_service_config(
+    config: &Config,
+    auth: Option<&CodexAuth>,
+) -> Result<RemotePluginServiceConfig, JSONRPCErrorError> {
+    let provider = config
+        .model_provider
+        .to_api_provider(auth.map(CodexAuth::api_auth_mode))
+        .map_err(|err| internal_error(format!("failed to resolve provider endpoint: {err}")))?;
+    Ok(RemotePluginServiceConfig::new(
+        provider.base_url,
+        config.http_client_factory(),
+    ))
 }
 
 fn share_context_for_source(
@@ -689,6 +704,62 @@ impl PluginRequestProcessor {
             (Vec::new(), Vec::new())
         };
 
+        if include_local {
+            match myrarouter_plugin_service_config(&config, auth.as_ref()) {
+                Ok(myrarouter_config) => {
+                    match codex_core_plugins::myrarouter::fetch_marketplace(
+                        &myrarouter_config,
+                        auth.as_ref(),
+                    )
+                    .await
+                    {
+                        Ok(marketplace) => {
+                            // MyraTools replaces the fork's built-in curated
+                            // marketplace. It remains one unified router catalog
+                            // containing MyraTools, MCPs, and Skills.
+                            data.retain(|marketplace| {
+                                marketplace.name != MYRAROUTER_MARKETPLACE_NAME
+                                    && !is_openai_curated_marketplace_name(&marketplace.name)
+                            });
+                            data.insert(0, remote_marketplace_to_info(marketplace));
+                        }
+                        Err(err) => {
+                            warn!(
+                                error = %err,
+                                "plugin/list MyraRouter catalog fetch failed; using required MyraTools fallback"
+                            );
+                            data.retain(|marketplace| {
+                                marketplace.name != MYRAROUTER_MARKETPLACE_NAME
+                                    && !is_openai_curated_marketplace_name(&marketplace.name)
+                            });
+                            data.insert(
+                                0,
+                                remote_marketplace_to_info(
+                                    codex_core_plugins::myrarouter::required_marketplace(),
+                                ),
+                            );
+                        }
+                    }
+                }
+                Err(err) => {
+                    warn!(
+                        error = ?err,
+                        "plugin/list could not resolve MyraRouter provider endpoint; using required MyraTools fallback"
+                    );
+                    data.retain(|marketplace| {
+                        marketplace.name != MYRAROUTER_MARKETPLACE_NAME
+                            && !is_openai_curated_marketplace_name(&marketplace.name)
+                    });
+                    data.insert(
+                        0,
+                        remote_marketplace_to_info(
+                            codex_core_plugins::myrarouter::required_marketplace(),
+                        ),
+                    );
+                }
+            }
+        }
+
         // TODO(remote plugins): Remove this once remote plugins are ready and vertical plugins are
         // served directly from the normal remote catalog.
         if include_vertical && !config.features.enabled(Feature::RemotePlugin) {
@@ -1180,37 +1251,85 @@ impl PluginRequestProcessor {
                         "remote plugin read is not enabled for marketplace {remote_marketplace_name}"
                     )));
                 }
-                let remote_plugin_service_config = remote_plugin_service_config(&config);
-                validate_remote_plugin_id(&plugin_name)?;
-                let remote_detail = codex_core_plugins::remote::fetch_remote_plugin_detail(
-                    &remote_plugin_service_config,
-                    auth.as_ref(),
-                    &remote_marketplace_name,
-                    &plugin_name,
-                )
-                .await
-                .map_err(|err| {
-                    remote_plugin_catalog_error_to_jsonrpc(err, "read remote plugin details")
-                })?;
-                let plugin_apps = remote_detail
-                    .app_ids
-                    .iter()
-                    .cloned()
-                    .map(codex_plugin::AppConnectorId)
-                    .collect::<Vec<_>>();
-                let app_category_by_id = remote_detail
-                    .app_manifest
-                    .as_ref()
-                    .map(plugin_app_category_by_id_from_value)
-                    .unwrap_or_default();
-                let app_summaries = load_plugin_app_summaries(
-                    &config,
-                    auth.as_ref(),
-                    &plugin_apps,
-                    &app_category_by_id,
-                )
-                .await;
-                remote_plugin_detail_to_info(remote_detail, app_summaries)
+                if remote_marketplace_name == MYRAROUTER_MARKETPLACE_NAME {
+                    let myrarouter_config =
+                        myrarouter_plugin_service_config(&config, auth.as_ref())?;
+                    let marketplace = codex_core_plugins::myrarouter::fetch_marketplace(
+                        &myrarouter_config,
+                        auth.as_ref(),
+                    )
+                    .await
+                    .map_err(|err| {
+                        internal_error(format!("failed to read MyraRouter plugin catalog: {err}"))
+                    })?;
+                    let summary = marketplace
+                        .plugins
+                        .into_iter()
+                        .find(|plugin| {
+                            plugin.name == plugin_name || plugin.remote_plugin_id == plugin_name
+                        })
+                        .ok_or_else(|| {
+                            invalid_request(format!(
+                                "plugin {plugin_name} was not found in MyraRouter"
+                            ))
+                        })?;
+                    let description = summary
+                        .interface
+                        .as_ref()
+                        .and_then(|interface| interface.long_description.clone());
+                    let mcp_servers = summary
+                        .interface
+                        .as_ref()
+                        .and_then(|interface| interface.category.as_deref())
+                        .filter(|category| category.starts_with("MCPs"))
+                        .map(|_| vec![summary.name.clone()])
+                        .unwrap_or_default();
+                    PluginDetail {
+                        marketplace_name: MYRAROUTER_MARKETPLACE_NAME.to_string(),
+                        marketplace_path: None,
+                        summary: remote_plugin_summary_to_info(summary),
+                        share_url: None,
+                        description,
+                        skills: Vec::new(),
+                        hooks: Vec::new(),
+                        apps: Vec::new(),
+                        app_templates: Vec::new(),
+                        mcp_servers,
+                        scheduled_tasks: None,
+                    }
+                } else {
+                    let remote_plugin_service_config = remote_plugin_service_config(&config);
+                    validate_remote_plugin_id(&plugin_name)?;
+                    let remote_detail = codex_core_plugins::remote::fetch_remote_plugin_detail(
+                        &remote_plugin_service_config,
+                        auth.as_ref(),
+                        &remote_marketplace_name,
+                        &plugin_name,
+                    )
+                    .await
+                    .map_err(|err| {
+                        remote_plugin_catalog_error_to_jsonrpc(err, "read remote plugin details")
+                    })?;
+                    let plugin_apps = remote_detail
+                        .app_ids
+                        .iter()
+                        .cloned()
+                        .map(codex_plugin::AppConnectorId)
+                        .collect::<Vec<_>>();
+                    let app_category_by_id = remote_detail
+                        .app_manifest
+                        .as_ref()
+                        .map(plugin_app_category_by_id_from_value)
+                        .unwrap_or_default();
+                    let app_summaries = load_plugin_app_summaries(
+                        &config,
+                        auth.as_ref(),
+                        &plugin_apps,
+                        &app_category_by_id,
+                    )
+                    .await;
+                    remote_plugin_detail_to_info(remote_detail, app_summaries)
+                }
             }
         };
 
