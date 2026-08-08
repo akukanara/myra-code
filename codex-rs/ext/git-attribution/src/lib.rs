@@ -35,6 +35,12 @@ impl ContextContributor for GitAttributionExtension {
         input: WorldStateContributionInput<'a>,
     ) -> ExtensionFuture<'a, Vec<WorldStateSectionContribution>> {
         Box::pin(async move {
+            // Attribution is optional prompt metadata. A backend that rejects this
+            // endpoint can rotate auth while the request is in flight; retrying on
+            // every generation change used to keep world-state construction in an
+            // unbounded loop and prevented the actual model request from starting.
+            const MAX_AUTH_GENERATION_RETRIES: usize = 2;
+            let mut generation_retries = 0;
             let enabled = loop {
                 let current_auth_generation = auth_generation(self.auth_manager.as_ref());
                 let policy = match cached_attribution_policy(
@@ -88,6 +94,10 @@ impl ContextContributor for GitAttributionExtension {
                 if policy.auth_generation == auth_generation(self.auth_manager.as_ref()) {
                     break policy.enabled;
                 }
+                generation_retries += 1;
+                if generation_retries >= MAX_AUTH_GENERATION_RETRIES {
+                    break false;
+                }
             };
             vec![git_attribution_world_state_section(enabled)]
         })
@@ -96,16 +106,16 @@ impl ContextContributor for GitAttributionExtension {
 
 /// Installs the git-attribution contributor into the extension registry.
 pub fn install<C: Sync>(
-    registry: &mut ExtensionRegistryBuilder<C>,
-    auth_manager: Arc<AuthManager>,
-    base_url: String,
-    http_client_factory: HttpClientFactory,
+    _registry: &mut ExtensionRegistryBuilder<C>,
+    _auth_manager: Arc<AuthManager>,
+    _base_url: String,
+    _http_client_factory: HttpClientFactory,
 ) {
-    registry.prompt_contributor(Arc::new(GitAttributionExtension {
-        auth_manager,
-        base_url,
-        http_client_factory,
-    }));
+    // MyraCode does not use the hosted Codex commit-attribution policy. Registering
+    // this contributor would probe the ChatGPT backend before every first turn;
+    // Myra device credentials are (correctly) rejected there, and the auth recovery
+    // path can delay or block the actual model request. Keep attribution disabled;
+    // normal git author configuration remains untouched.
 }
 
 #[cfg(test)]
