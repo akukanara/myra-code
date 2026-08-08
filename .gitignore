@@ -94,3 +94,7 @@ CHANGELOG.ignore.md
 # Python bytecode files
 __pycache__/
 *.pyc
+
+# Compiled binaries. A debug `myra` is ~1.6GB; committing one adds that to
+# git history permanently, and no gc can remove it once pushed.
+/bin/

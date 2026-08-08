@@ -55,6 +55,7 @@ mod plugin_cmd;
 mod remote_control_cmd;
 #[cfg(target_os = "windows")]
 mod sandbox_setup;
+mod skills_cmd;
 mod state_db_recovery;
 #[cfg(not(windows))]
 mod wsl_paths;
@@ -63,6 +64,8 @@ use crate::mcp_cmd::McpCli;
 use crate::plugin_cmd::PluginCli;
 use crate::plugin_cmd::PluginSubcommand;
 use crate::remote_control_cmd::RemoteControlCommand;
+use crate::skills_cmd::SkillsCli;
+use crate::skills_cmd::SkillsSubcommand;
 use doctor::DoctorCommand;
 use state_db_recovery as local_state_db;
 
@@ -145,6 +148,9 @@ enum Subcommand {
 
     /// Manage Codex plugins.
     Plugin(PluginCli),
+
+    /// Install and manage agent skills published by the gateway.
+    Skills(SkillsCli),
 
     /// Start Codex as an MCP server (stdio).
     McpServer(McpServerCommand),
@@ -1126,6 +1132,27 @@ async fn cli_main(
                         .map_err(anyhow::Error::msg)?;
                     plugin_cmd::run_plugin_remove(overrides, args).await?;
                 }
+            }
+        }
+        Some(Subcommand::Skills(skills_cli)) => {
+            reject_remote_mode_for_subcommand(
+                root_remote.as_deref(),
+                root_remote_auth_token_env.as_deref(),
+                "skills",
+            )?;
+            let SkillsCli {
+                mut config_overrides,
+                subcommand,
+            } = skills_cli;
+            prepend_config_flags(&mut config_overrides, root_config_overrides.clone());
+            let overrides = config_overrides
+                .parse_overrides()
+                .map_err(anyhow::Error::msg)?;
+            match subcommand {
+                SkillsSubcommand::List(args) => skills_cmd::run_list(overrides, args).await?,
+                SkillsSubcommand::Install(args) => skills_cmd::run_install(overrides, args).await?,
+                SkillsSubcommand::Sync(args) => skills_cmd::run_sync(overrides, args).await?,
+                SkillsSubcommand::Remove(args) => skills_cmd::run_remove(overrides, args).await?,
             }
         }
         Some(Subcommand::AppServer(app_server_cli)) => {
@@ -2246,6 +2273,7 @@ fn unsupported_subcommand_name_for_strict_config(
         Some(Subcommand::RemoteControl(remote_control)) => Some(remote_control.subcommand_name()),
         Some(Subcommand::Mcp(_)) => Some("mcp"),
         Some(Subcommand::Plugin(_)) => Some("plugin"),
+        Some(Subcommand::Skills(_)) => Some("skills"),
         #[cfg(any(target_os = "macos", target_os = "windows"))]
         Some(Subcommand::App(_)) => Some("app"),
         Some(Subcommand::Login(_)) => Some("login"),

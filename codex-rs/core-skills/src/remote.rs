@@ -257,3 +257,185 @@ fn normalize_zip_name(name: &str, prefix_candidates: &[String]) -> Option<String
         Some(trimmed.to_string())
     }
 }
+
+// ── MyraRouter skill registry ────────────────────────────────────────────────
+//
+// The gateway publishes its skill catalog on the same base URL the model
+// requests already go to, so `myra skills` needs no separate host, key or
+// login: whatever authenticates a turn authenticates this.
+//
+//   GET {base}/skills                 -> { "object": "list", "data": [ ... ] }
+//   GET {base}/skills/{id}/export     -> application/zip, rooted at {id}/
+//
+// Deliberately NOT `ensure_codex_backend_auth`: a gateway API key is a
+// first-class credential here, unlike on the hosted backend above, and
+// refusing it would lock out every API-key user for no reason.
+
+/// One entry in `GET {base}/skills`. Metadata only -- the instructions live in
+/// the archive, so listing the catalog does not pull down every skill's body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RegistrySkill {
+    pub id: String,
+    pub display_name: String,
+    pub description: String,
+    pub category: Option<String>,
+    pub version: Option<String>,
+    pub installs: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct RegistryListResponse {
+    data: Vec<RegistrySkillPayload>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RegistrySkillPayload {
+    id: String,
+    #[serde(default)]
+    display_name: Option<String>,
+    #[serde(default)]
+    description: Option<String>,
+    #[serde(default)]
+    category: Option<String>,
+    #[serde(default)]
+    version: Option<String>,
+    #[serde(default)]
+    installs: Option<u64>,
+}
+
+/// reqwest is not a direct dependency of this crate, so its types are never
+/// named here -- the header map is only ever built inline at the call site.
+fn ensure_registry_auth(auth: Option<&CodexAuth>) -> Result<&CodexAuth> {
+    let Some(auth) = auth else {
+        anyhow::bail!("not signed in -- run `myra login` first");
+    };
+    Ok(auth)
+}
+
+/// Every skill the gateway publishes, in catalog order.
+pub async fn list_registry_skills(
+    base_url: &str,
+    auth: Option<&CodexAuth>,
+) -> Result<Vec<RegistrySkill>> {
+    let base_url = base_url.trim_end_matches('/');
+    let url = format!("{base_url}/skills");
+
+    let client = create_client_without_request_logging();
+    let response = client
+        .get(&url)
+        .timeout(REMOTE_SKILLS_API_TIMEOUT)
+        .headers(
+            codex_model_provider::auth_provider_from_auth(ensure_registry_auth(auth)?)
+                .to_auth_headers(),
+        )
+        .send()
+        .await
+        .with_context(|| format!("Failed to reach the skill registry at {url}"))?;
+
+    let status = response.status();
+    let body = response.text().await.unwrap_or_default();
+    if !status.is_success() {
+        anyhow::bail!("Skill registry returned {status} from {url}: {body}");
+    }
+
+    let parsed: RegistryListResponse =
+        serde_json::from_str(&body).context("Failed to parse the skill registry response")?;
+
+    Ok(parsed
+        .data
+        .into_iter()
+        .map(|skill| RegistrySkill {
+            display_name: skill.display_name.unwrap_or_else(|| skill.id.clone()),
+            description: skill.description.unwrap_or_default(),
+            category: skill.category,
+            version: skill.version,
+            installs: skill.installs.unwrap_or(0),
+            id: skill.id,
+        })
+        .collect())
+}
+
+/// Download one skill and unpack it into `{codex_home}/skills/{id}`.
+///
+/// Replaces the directory outright rather than merging into it: an install of a
+/// skill already present IS the update path, and merging would leave a file
+/// deleted upstream on disk forever. The cost is that local edits to a catalog
+/// skill do not survive an update -- documented in docs/skills.md, since there
+/// is no way to tell an edit apart from a stale file after the fact.
+pub async fn install_registry_skill(
+    base_url: &str,
+    codex_home: &Path,
+    auth: Option<&CodexAuth>,
+    skill_id: &str,
+) -> Result<RemoteSkillDownloadResult> {
+    validate_skill_id(skill_id)?;
+    let base_url = base_url.trim_end_matches('/');
+    let url = format!("{base_url}/skills/{skill_id}/export");
+
+    let client = create_client_without_request_logging();
+    let response = client
+        .get(&url)
+        .timeout(REMOTE_SKILLS_API_TIMEOUT)
+        .headers(
+            codex_model_provider::auth_provider_from_auth(ensure_registry_auth(auth)?)
+                .to_auth_headers(),
+        )
+        .send()
+        .await
+        .with_context(|| format!("Failed to download {skill_id} from {url}"))?;
+
+    let status = response.status();
+    let body = response.bytes().await.context("Failed to read download")?;
+    if status.as_u16() == 404 {
+        anyhow::bail!("No published skill named \"{skill_id}\"");
+    }
+    if !status.is_success() {
+        let body_text = String::from_utf8_lossy(&body);
+        anyhow::bail!("Download of {skill_id} failed with status {status}: {body_text}");
+    }
+    if !is_zip_payload(&body) {
+        anyhow::bail!("The payload for {skill_id} is not a zip archive");
+    }
+
+    let output_dir = codex_home.join("skills").join(skill_id);
+    if tokio::fs::try_exists(&output_dir).await.unwrap_or(false) {
+        tokio::fs::remove_dir_all(&output_dir)
+            .await
+            .with_context(|| format!("Failed to replace the existing {skill_id} skill"))?;
+    }
+    tokio::fs::create_dir_all(&output_dir)
+        .await
+        .context("Failed to create the skills directory")?;
+
+    let zip_bytes = body.to_vec();
+    let output_dir_clone = output_dir.clone();
+    let prefix_candidates = vec![skill_id.to_string()];
+    tokio::task::spawn_blocking(move || {
+        extract_zip_to_dir(zip_bytes, &output_dir_clone, &prefix_candidates)
+    })
+    .await
+    .context("Zip extraction task failed")??;
+
+    Ok(RemoteSkillDownloadResult {
+        id: skill_id.to_string(),
+        path: output_dir,
+    })
+}
+
+/// A skill id becomes a path segment and a URL segment, so it is checked before
+/// it reaches either. `safe_join` guards the archive's own entry names; this
+/// guards the name the caller typed.
+pub fn validate_skill_id(skill_id: &str) -> Result<()> {
+    let ok = !skill_id.is_empty()
+        && skill_id.len() <= 64
+        && skill_id
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && !skill_id.starts_with('-');
+    if !ok {
+        anyhow::bail!(
+            "\"{skill_id}\" is not a valid skill name (lowercase letters, digits and hyphens)"
+        );
+    }
+    Ok(())
+}
