@@ -1019,6 +1019,22 @@ async fn cli_main(
         profile_v2_for_subcommand(&interactive, subcommand)?;
     }
 
+    // Pull down any skill the gateway publishes that this machine does not
+    // have yet, before the session reads the skills directory. Only for the
+    // subcommands that actually start one -- `myra login` and `myra skills
+    // remove` have no use for it, and the second would fight the user.
+    if matches!(
+        subcommand,
+        None | Some(Subcommand::Exec(_)) | Some(Subcommand::Review(_))
+    ) {
+        // Parse failures are the subcommand's problem to report, not
+        // auto-sync's -- it just declines to run rather than pre-empting the
+        // error message the user is about to get anyway.
+        if let Ok(overrides) = root_config_overrides.clone().parse_overrides() {
+            skills_cmd::maybe_auto_sync(overrides).await;
+        }
+    }
+
     match subcommand {
         None => {
             prepend_config_flags(

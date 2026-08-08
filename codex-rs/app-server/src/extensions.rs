@@ -99,6 +99,11 @@ where
     codex_mcp_extension::install(&mut builder);
     codex_mcp_extension::install_executor_plugins(&mut builder, environment_manager);
     codex_web_search_extension::install(&mut builder, auth_manager.clone());
+    // Gateway-backed web_search / web_fetch. Offered alongside the hosted
+    // `web` namespace above rather than replacing it: that one is only
+    // available to an account on the hosted backend, and against a MyraRouter
+    // gateway it contributes nothing.
+    codex_myra_web_extension::install(&mut builder, auth_manager.clone());
     codex_image_generation_extension::install(&mut builder, auth_manager, |config: &Config| {
         Some(config.codex_home.clone())
     });

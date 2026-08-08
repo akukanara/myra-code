@@ -2032,6 +2032,7 @@ dependencies = [
  "codex-model-provider",
  "codex-model-provider-info",
  "codex-models-manager",
+ "codex-myra-web-extension",
  "codex-otel",
  "codex-plugin",
  "codex-protocol",
@@ -3714,6 +3715,23 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "codex-myra-web-extension"
+version = "0.1.0-seraphine"
+dependencies = [
+ "codex-core",
+ "codex-extension-api",
+ "codex-login",
+ "codex-model-provider",
+ "codex-model-provider-info",
+ "codex-tools",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]

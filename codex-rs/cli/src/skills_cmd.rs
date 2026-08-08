@@ -15,6 +15,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::path::PathBuf;
+use std::time::Duration;
 
 /// User-scope skills live directly under CODEX_HOME/skills. The bundled ones
 /// live in a dotted sibling (`.system`) that discovery treats as a separate
@@ -503,4 +504,120 @@ mod tests {
         }
         assert!(validate_skill_id("myrarouter-chat").is_ok());
     }
+}
+
+// ── Automatic sync ───────────────────────────────────────────────────────────
+
+/// How long a sync is considered fresh. Long enough that the network is not
+/// touched on every invocation, short enough that a skill published today is
+/// in place by tomorrow.
+const AUTO_SYNC_INTERVAL_HOURS: u64 = 6;
+
+/// Startup must not hang on an unreachable gateway, so the whole sync gets one
+/// short budget and is abandoned if it overruns. A skipped sync costs nothing;
+/// the next run picks it up.
+const AUTO_SYNC_BUDGET: Duration = Duration::from_secs(6);
+
+/// Records when the last successful sync ran. A file rather than a config
+/// entry: it is state, not something anyone should edit.
+const AUTO_SYNC_STAMP: &str = ".myra-autosync";
+
+/// Sync the gateway's catalog before a session starts, at most every few hours.
+///
+/// Awaited rather than backgrounded, and that is deliberate: install replaces
+/// a skill's directory in place, and the session is about to walk that same
+/// directory. A background task would be racing the loader for the file it is
+/// reading. Bounded by AUTO_SYNC_BUDGET so the cost of being correct here is a
+/// few seconds, rarely.
+///
+/// Never fails the caller. Every outcome except "it worked" is silence: an
+/// unreachable gateway, no credentials yet, a read-only home. Someone starting
+/// a coding session did not ask about skills, and an error on their first line
+/// would be noise, not information.
+pub async fn maybe_auto_sync(overrides: Vec<(String, toml::Value)>) {
+    if !auto_sync_enabled() {
+        return;
+    }
+    match tokio::time::timeout(AUTO_SYNC_BUDGET, run_auto_sync(overrides)).await {
+        Ok(Ok(count)) if count > 0 => {
+            tracing::info!("myra skills: synced {count} skill(s) from the gateway");
+        }
+        Ok(Ok(_)) => {}
+        Ok(Err(err)) => tracing::debug!("myra skills: auto-sync skipped: {err}"),
+        Err(_) => tracing::debug!("myra skills: auto-sync exceeded its time budget"),
+    }
+}
+
+/// `MYRA_SKILLS_AUTOSYNC=0` (or `false`/`off`) turns it off. On by default:
+/// a catalog nobody has is not a catalog, and the whole point of publishing a
+/// skill from the dashboard is that it arrives without anyone running anything.
+fn auto_sync_enabled() -> bool {
+    match std::env::var("MYRA_SKILLS_AUTOSYNC") {
+        Ok(value) => !matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "0" | "false" | "off" | "no"
+        ),
+        Err(_) => true,
+    }
+}
+
+async fn run_auto_sync(overrides: Vec<(String, toml::Value)>) -> Result<usize> {
+    let ctx = SkillsContext::load(overrides).await?;
+    if ctx.auth.is_none() {
+        anyhow::bail!("not signed in");
+    }
+
+    let stamp = ctx.skills_root().join(AUTO_SYNC_STAMP);
+    if recently_synced(&stamp) {
+        return Ok(0);
+    }
+
+    let available = list_registry_skills(&ctx.base_url, ctx.auth.as_ref()).await?;
+    let installed: Vec<String> = read_installed_skills(&ctx.skills_root())?
+        .into_iter()
+        .map(|skill| skill.name)
+        .collect();
+
+    let mut changed = 0usize;
+    for skill in &available {
+        // Only what is missing. Re-downloading everything on a schedule would
+        // overwrite an edit the user made between syncs, every few hours,
+        // without them asking -- `myra skills sync` is where that is explicit.
+        if installed.contains(&skill.id) {
+            continue;
+        }
+        if install_registry_skill(&ctx.base_url, &ctx.codex_home, ctx.auth.as_ref(), &skill.id)
+            .await
+            .is_ok()
+        {
+            changed += 1;
+        }
+    }
+
+    // Stamped even when nothing changed: the point is that the gateway was
+    // asked, not that it had news.
+    touch_stamp(&stamp);
+    Ok(changed)
+}
+
+fn recently_synced(stamp: &Path) -> bool {
+    let Ok(metadata) = std::fs::metadata(stamp) else {
+        return false;
+    };
+    let Ok(modified) = metadata.modified() else {
+        return false;
+    };
+    modified
+        .elapsed()
+        .map(|age| age < Duration::from_secs(AUTO_SYNC_INTERVAL_HOURS * 3600))
+        // A clock that moved backwards makes elapsed() fail; treat that as
+        // fresh rather than syncing on every single start until it settles.
+        .unwrap_or(true)
+}
+
+fn touch_stamp(stamp: &Path) {
+    if let Some(parent) = stamp.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(stamp, "");
 }

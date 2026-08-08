@@ -61,6 +61,7 @@ members = [
     "ext/items",
     "ext/memories",
     "ext/mcp",
+    "ext/myra-web",
     "ext/queue",
     "ext/skills",
     "ext/web-search",
@@ -196,6 +197,7 @@ codex-goal-extension = { path = "ext/goal" }
 codex-git-attribution = { path = "ext/git-attribution" }
 codex-guardian = { path = "ext/guardian" }
 codex-image-generation-extension = { path = "ext/image-generation" }
+codex-myra-web-extension = { path = "ext/myra-web" }
 codex-external-agent-migration = { path = "external-agent-migration" }
 codex-experimental-api-macros = { path = "codex-experimental-api-macros" }
 codex-features = { path = "features" }
