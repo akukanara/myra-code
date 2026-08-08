@@ -1398,7 +1398,7 @@ mod tests {
             (
                 "Shared with me",
                 "old build fallback",
-                "Update Codex, then try opening the shared plugin again.",
+                "Update MyraCode, then try opening the shared plugin again.",
             ),
             (
                 "Shared with me",
@@ -1413,7 +1413,7 @@ mod tests {
             (
                 "Shared with me",
                 "plugin sharing is not enabled",
-                "Ask a workspace admin to enable Codex plugins or plugin sharing.",
+                "Ask a workspace admin to enable MyraCode plugins or plugin sharing.",
             ),
         ];
 
@@ -1432,7 +1432,7 @@ mod tests {
             PluginRemoteSectionError {
                 section_id: "shared-with-me".to_string(),
                 label: "Shared with me".to_string(),
-                message: "Plugin sharing is disabled for this Codex session. Enable plugin sharing to load shared plugins.".to_string(),
+                message: "Plugin sharing is disabled for this MyraCode session. Enable plugin sharing to load shared plugins.".to_string(),
             }
         );
     }

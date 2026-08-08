@@ -8,7 +8,7 @@ use codex_utils_cli::SharedCliOptions;
 #[derive(Parser, Clone, Debug)]
 #[command(version)]
 pub struct Cli {
-    /// Process-only PSP routing selected by the parent Codex CLI.
+    /// Process-only PSP routing selected by the parent MyraCode CLI.
     #[clap(skip)]
     pub psp: bool,
 
@@ -16,7 +16,7 @@ pub struct Cli {
     #[arg(value_name = "PROMPT", value_hint = clap::ValueHint::Other)]
     pub prompt: Option<String>,
 
-    /// Error out when config.toml contains fields that are not recognized by this version of Codex.
+    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
     #[arg(long = "strict-config", default_value_t = false)]
     pub strict_config: bool,
 

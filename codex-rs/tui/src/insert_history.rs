@@ -910,7 +910,7 @@ mod tests {
         assert!(
             rows.iter()
                 .any(|row| row.trim_end() == "alpha beta gamma del"),
-            "expected terminal soft-wrap instead of Codex word pre-wrap, rows: {rows:?}"
+            "expected terminal soft-wrap instead of MyraCode word pre-wrap, rows: {rows:?}"
         );
     }
 

@@ -1256,7 +1256,7 @@ mod tests {
 
         assert_eq!(
             collect_osc8_chars(&buf, area, "https://developers.openai.com/codex/security"),
-            "Codex docs"
+            "MyraCode docs"
         );
         assert_eq!(
             collect_osc8_chars(&buf, area, "https://chatgpt.com/#settings"),
@@ -1295,10 +1295,10 @@ mod tests {
 
           Before you start:
 
-          Decide how much autonomy you want to grant Codex
-          For more details see the Codex docs
+          Decide how much autonomy you want to grant MyraCode
+          For more details see the MyraCode docs
 
-          Codex can make mistakes
+          MyraCode can make mistakes
           Review the code it writes and commands it runs
 
           Powered by your ChatGPT account
