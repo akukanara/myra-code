@@ -50,7 +50,10 @@ class PackageInputs:
 PACKAGE_VARIANTS: dict[str, PackageVariant] = {
     "codex": PackageVariant(
         name="codex",
-        cargo_bin="codex",
+        # The CLI bin target was renamed to `myra` in codex-rs/cli/Cargo.toml.
+        # The staged executable keeps the `codex` stem because install.sh and
+        # bin/myra.js resolve `bin/codex` as a fallback.
+        cargo_bin="myra",
         executable_stem="codex",
     ),
     "codex-app-server": PackageVariant(

@@ -19,7 +19,9 @@ from typing import Sequence
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BUILD_SCRIPT = REPO_ROOT / "codex-cli" / "scripts" / "build_npm_package.py"
 WORKFLOW_NAME = ".github/workflows/rust-release.yml"
-GITHUB_REPO = "openai/codex"
+# Only used by the `gh`-based artifact download path. Defaults to the repo the
+# workflow runs in so forks do not pull artifacts from upstream.
+GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY") or "myralith/myra"
 BINARY_TARGETS = (
     "x86_64-unknown-linux-musl",
     "aarch64-unknown-linux-musl",
