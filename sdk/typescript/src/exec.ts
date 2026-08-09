@@ -42,15 +42,15 @@ export type CodexExecArgs = {
 
 const INTERNAL_ORIGINATOR_ENV = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
 const TYPESCRIPT_SDK_ORIGINATOR = "codex_sdk_ts";
-const CODEX_NPM_NAME = "@openai/codex";
+const CODEX_NPM_NAME = "@myralith/myra";
 
 const PLATFORM_PACKAGE_BY_TARGET: Record<string, string> = {
-  "x86_64-unknown-linux-musl": "@openai/codex-linux-x64",
-  "aarch64-unknown-linux-musl": "@openai/codex-linux-arm64",
-  "x86_64-apple-darwin": "@openai/codex-darwin-x64",
-  "aarch64-apple-darwin": "@openai/codex-darwin-arm64",
-  "x86_64-pc-windows-msvc": "@openai/codex-win32-x64",
-  "aarch64-pc-windows-msvc": "@openai/codex-win32-arm64",
+  "x86_64-unknown-linux-musl": "@myralith/myra-linux-x64",
+  "aarch64-unknown-linux-musl": "@myralith/myra-linux-arm64",
+  "x86_64-apple-darwin": "@myralith/myra-darwin-x64",
+  "aarch64-apple-darwin": "@myralith/myra-darwin-arm64",
+  "x86_64-pc-windows-msvc": "@myralith/myra-win32-x64",
+  "aarch64-pc-windows-msvc": "@myralith/myra-win32-arm64",
 };
 
 const moduleRequire = createRequire(import.meta.url);
@@ -398,8 +398,14 @@ function findCodexPath(): CodexPathResolution {
     );
   }
 
-  const codexBinaryName = process.platform === "win32" ? "codex.exe" : "codex";
-  const nativePackage = resolveNativePackage(vendorRoot, targetTriple, codexBinaryName);
+  // Packages built from this repo stage the entrypoint as `bin/codex`, but
+  // accept `bin/myra` too so a renamed entrypoint still resolves.
+  const binaryNames =
+    process.platform === "win32" ? ["myra.exe", "codex.exe"] : ["myra", "codex"];
+  const nativePackage = binaryNames.reduce<CodexPathResolution | null>(
+    (found, name) => found ?? resolveNativePackage(vendorRoot, targetTriple, name),
+    null,
+  );
   if (!nativePackage) {
     throw new Error(
       `Unable to locate Codex CLI binaries for ${targetTriple}. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
