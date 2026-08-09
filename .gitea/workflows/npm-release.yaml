@@ -1,0 +1,179 @@
+name: npm-release
+
+# Builds the Linux platform packages and publishes the npm packages.
+#
+# macOS and Windows targets are intentionally out of scope: Gitea Actions has no
+# hosted runners for them, and cross-compiling darwin/win32 needs an Apple SDK
+# and MSVC respectively. Keep CODEX_PLATFORM_PACKAGES in
+# codex-cli/scripts/build_npm_package.py in sync with the targets built here, or
+# the root wrapper will alias optional dependencies that were never published.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "npm version to publish (e.g. 0.1.0 or 0.1.0-alpha.1)"
+        required: true
+      npm_tag:
+        description: "dist-tag for the root and sdk packages (blank = latest)"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            npm_package: codex-linux-x64
+          - target: aarch64-unknown-linux-musl
+            npm_package: codex-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install base tooling
+        run: |
+          set -euo pipefail
+          if ! command -v sudo >/dev/null; then
+            apt-get update && apt-get install -y sudo
+          fi
+          sudo apt-get update
+          sudo apt-get install -y curl git build-essential pkg-config xz-utils ca-certificates
+
+      # scripts/codex_package/v8.py needs tomllib (Python 3.11+); Ubuntu 22.04
+      # ships 3.10. uv provides a pinned interpreter without touching the system.
+      - name: Install Python 3.11
+        run: |
+          set -euo pipefail
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/uv" python install 3.11
+          echo "PY311=$("$HOME/.local/bin/uv" python find 3.11)" >> "$GITHUB_ENV"
+
+      - name: Install Rust
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Install Rust target
+        run: |
+          set -euo pipefail
+          # rust-toolchain.toml pins the channel; the target must be added to it,
+          # not to whatever rustup considers default.
+          toolchain="$(grep -oP 'channel\s*=\s*"\K[^"]+' codex-rs/rust-toolchain.toml)"
+          rustup toolchain install "$toolchain"
+          rustup target add --toolchain "$toolchain" "${{ matrix.target }}"
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.14.0
+          use-cache: false
+
+      # Exports CC/CXX/linker/pkg-config for the musl target and builds libcap.
+      # It writes to $GITHUB_ENV, so it must be its own step to take effect.
+      - name: Install musl build tools
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash .github/scripts/install-musl-build-tools.sh
+
+      - name: Disable aws-lc jitter entropy (musl)
+        run: echo "AWS_LC_SYS_NO_JITTER_ENTROPY=1" >> "$GITHUB_ENV"
+
+      - name: Build package directory
+        run: |
+          set -euo pipefail
+          "$PY311" scripts/build_codex_package.py \
+            --target "${{ matrix.target }}" \
+            --cargo-profile release \
+            --package-dir "vendor/${{ matrix.target }}" \
+            --force
+
+      - name: Stage npm tarball
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          "$PY311" codex-cli/scripts/build_npm_package.py \
+            --package "${{ matrix.npm_package }}" \
+            --release-version "${{ inputs.version }}" \
+            --vendor-src vendor \
+            --pack-output "dist/${{ matrix.npm_package }}-${{ inputs.version }}.tgz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ matrix.npm_package }}
+          path: dist/*.tgz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install pnpm
+        run: corepack enable pnpm
+
+      - name: Install Python 3.11
+        run: |
+          set -euo pipefail
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          "$HOME/.local/bin/uv" python install 3.11
+          echo "PY311=$("$HOME/.local/bin/uv" python find 3.11)" >> "$GITHUB_ENV"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # The root wrapper carries no native payload, and the SDK only needs a
+      # pnpm build, so both are packed here rather than in the matrix.
+      - name: Stage root and sdk tarballs
+        run: |
+          set -euo pipefail
+          "$PY311" codex-cli/scripts/build_npm_package.py \
+            --package codex --release-version "${{ inputs.version }}" \
+            --pack-output "dist/codex-${{ inputs.version }}.tgz"
+          "$PY311" codex-cli/scripts/build_npm_package.py \
+            --package codex-sdk --release-version "${{ inputs.version }}" \
+            --pack-output "dist/codex-sdk-${{ inputs.version }}.tgz"
+
+      # Order matters and is not negotiable: the root wrapper aliases the
+      # platform versions, and the SDK hard-depends on the root wrapper. npm
+      # advances @latest the moment a tarball lands, so the wrong order
+      # publishes a package whose dependencies do not exist yet.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          NPM_TAG: ${{ inputs.npm_tag }}
+        run: |
+          set -euo pipefail
+
+          publish() {
+            tarball="$1"; tag="$2"
+            args=(npm publish "$tarball" --access public)
+            if [ -n "$tag" ]; then args+=(--tag "$tag"); fi
+            echo "+ ${args[*]}"
+            if out="$("${args[@]}" 2>&1)"; then
+              echo "$out"
+              return 0
+            fi
+            echo "$out"
+            # Re-running a partially finished release must not fail the job.
+            grep -qiE "previously published|cannot publish over|version already exists" <<<"$out"
+            echo "already published, skipping"
+          }
+
+          prefix="${NPM_TAG:+${NPM_TAG}-}"
+          publish "dist/codex-linux-x64-${VERSION}.tgz"   "${prefix}linux-x64"
+          publish "dist/codex-linux-arm64-${VERSION}.tgz" "${prefix}linux-arm64"
+          publish "dist/codex-${VERSION}.tgz"             "$NPM_TAG"
+          publish "dist/codex-sdk-${VERSION}.tgz"         "$NPM_TAG"
