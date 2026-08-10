@@ -66,10 +66,20 @@ if [[ ! -f "${libcap_prefix}/lib/libcap.a" ]]; then
 
   tar -xJf "${libcap_tarball}" -C "${libcap_src_root}"
   libcap_source_dir="${libcap_src_root}/libcap-${libcap_version}"
+  # BUILD_CC must stay a host compiler: libcap compiles a _makenames helper and
+  # runs it during the build to generate cap_names.h. Letting it inherit the
+  # cross CC produces a target-arch helper that cannot execute here, which is
+  # why the aarch64 build died with "Exec format error".
+  # SHARED=no: only libcap.a is copied out below, and building the .so runs the
+  # host objcopy over a target-arch ELF to extract its .interp, which fails for
+  # aarch64. PTHREADS=no drops libpsx, which nothing here consumes either.
   make -C "${libcap_source_dir}/libcap" -j"$(nproc)" \
     CC="${musl_linker}" \
+    BUILD_CC=cc \
     AR=ar \
-    RANLIB=ranlib
+    RANLIB=ranlib \
+    SHARED=no \
+    PTHREADS=no
 
   cp "${libcap_source_dir}/libcap/libcap.a" "${libcap_prefix}/lib/libcap.a"
   cp "${libcap_source_dir}/libcap/include/uapi/linux/capability.h" "${libcap_prefix}/include/linux/capability.h"
@@ -235,16 +245,38 @@ if [[ -n "${sysroot}" && "${sysroot}" != "/" ]]; then
   echo "${boring_sysroot_var}=${sysroot}" >> "$GITHUB_ENV"
 fi
 
-cflags="-pthread"
-cxxflags="-pthread"
+# Keep the unsuffixed CFLAGS/CXXFLAGS target-neutral. Host build scripts and
+# proc macros read them too, and -Wno-error=frame-larger-than is a clang spelling
+# that host gcc rejects outright ("no option '-Wframe-larger-than'"). HOST_CFLAGS
+# does not reliably override the plain value, so target-only flags go in the
+# per-target variables below, which the cc crate resolves first and which never
+# apply to a host build.
+base_cflags="-pthread"
+target_cflags="${base_cflags}"
+target_cxxflags="${base_cflags}"
 if [[ "${TARGET}" == "aarch64-unknown-linux-musl" ]]; then
   # BoringSSL enables -Wframe-larger-than=25344 under clang and treats warnings as errors.
-  cflags="${cflags} -Wno-error=frame-larger-than"
-  cxxflags="${cxxflags} -Wno-error=frame-larger-than"
+  target_cflags="${target_cflags} -Wno-error=frame-larger-than"
+  target_cxxflags="${target_cxxflags} -Wno-error=frame-larger-than"
 fi
 
-echo "CFLAGS=${cflags}" >> "$GITHUB_ENV"
-echo "CXXFLAGS=${cxxflags}" >> "$GITHUB_ENV"
+echo "CFLAGS=${base_cflags}" >> "$GITHUB_ENV"
+echo "CXXFLAGS=${base_cflags}" >> "$GITHUB_ENV"
+echo "HOST_CFLAGS=${base_cflags}" >> "$GITHUB_ENV"
+echo "HOST_CXXFLAGS=${base_cflags}" >> "$GITHUB_ENV"
+
+target_cflags_var="CFLAGS_${TARGET//-/_}"
+target_cxxflags_var="CXXFLAGS_${TARGET//-/_}"
+echo "${target_cflags_var}=${target_cflags}" >> "$GITHUB_ENV"
+echo "${target_cxxflags_var}=${target_cxxflags}" >> "$GITHUB_ENV"
+# Build scripts and proc macros compile for the host, and the cc crate would
+# otherwise pick up the plain CC below -- which always targets ${zig_target}.
+# That produced target-arch objects inside host rlibs and failed the host link
+# with "incompatible with elf64-x86-64" whenever host != target. HOST_CC/HOST_CXX
+# take precedence over CC/CXX for host builds, so set them explicitly.
+echo "HOST_CC=cc" >> "$GITHUB_ENV"
+echo "HOST_CXX=c++" >> "$GITHUB_ENV"
+
 echo "CC=${cc}" >> "$GITHUB_ENV"
 echo "TARGET_CC=${cc}" >> "$GITHUB_ENV"
 target_cc_var="CC_${TARGET}"

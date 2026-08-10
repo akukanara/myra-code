@@ -81,7 +81,11 @@ def build_source_binaries(
     outputs = SourceBuildOutputs(
         entrypoint_bin=resolve_output_path(
             entrypoint_bin,
-            output_dir / variant.entrypoint_name(spec),
+            # Cargo names this file after the bin target (`myra`), not after the
+            # stem the package stages it under (`codex`) -- the two diverged when
+            # the CLI bin was renamed. Looking for the staged stem here made the
+            # build fail after a successful compile.
+            output_dir / f"{variant.cargo_bin}{spec.exe_suffix}",
         ),
         code_mode_host_bin=(
             code_mode_host_bin.resolve()
