@@ -1,0 +1,214 @@
+name: npm-release
+
+# Builds every platform package on a runner of its own OS and publishes the npm
+# packages. This is the GitHub counterpart to .gitea/workflows/npm-release.yaml,
+# which is limited to the two Linux targets because Gitea Actions has no macOS or
+# Windows runners. Nothing here cross-compiles: each target is built on its own
+# OS, so no Apple SDK, no MSVC redistribution and no musl cross toolchain is
+# needed. The one exception is x86_64-apple-darwin, which is built on the arm64
+# macOS runner because the Apple SDK targets both architectures and GitHub is
+# retiring its Intel runners.
+#
+# Keep CODEX_PLATFORM_PACKAGES in codex-cli/scripts/build_npm_package.py in sync
+# with the targets built here, or the root wrapper will alias optional
+# dependencies that were never published.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "npm version to publish (e.g. 0.1.0 or 0.1.0-alpha.1)"
+        required: true
+      npm_tag:
+        description: "dist-tag for the root and sdk packages (blank = latest)"
+        required: false
+        default: ""
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            npm_package: codex-linux-x64
+          # Native arm64 runner, so the musl build is not a cross build and the
+          # host/target compiler split that breaks cross musl builds cannot bite.
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            npm_package: codex-linux-arm64
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            npm_package: codex-darwin-arm64
+          - runner: macos-latest
+            target: x86_64-apple-darwin
+            npm_package: codex-darwin-x64
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            npm_package: codex-win32-x64
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            npm_package: codex-win32-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      # scripts/codex_package/v8.py needs tomllib (Python 3.11+). setup-python
+      # pins the same interpreter on all three operating systems, which is why
+      # this workflow does not need the uv dance the Gitea one performs.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Rust
+        run: |
+          set -euo pipefail
+          # rust-toolchain.toml pins the channel; the target must be added to it,
+          # not to whatever rustup considers default.
+          toolchain="$(grep -oP 'channel\s*=\s*"\K[^"]+' codex-rs/rust-toolchain.toml)"
+          rustup toolchain install "$toolchain"
+          rustup target add --toolchain "$toolchain" "${{ matrix.target }}"
+
+      - name: Install Zig
+        if: runner.os == 'Linux'
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.14.0
+          use-cache: false
+
+      # Exports CC/CXX/linker/pkg-config for the musl target and builds libcap.
+      # It writes to $GITHUB_ENV, so it must be its own step to take effect.
+      - name: Install musl build tools
+        if: runner.os == 'Linux'
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash .github/scripts/install-musl-build-tools.sh
+
+      - name: Disable aws-lc jitter entropy (musl)
+        if: runner.os == 'Linux'
+        run: echo "AWS_LC_SYS_NO_JITTER_ENTROPY=1" >> "$GITHUB_ENV"
+
+      - name: Build package directory
+        run: |
+          set -euo pipefail
+          python scripts/build_codex_package.py \
+            --target "${{ matrix.target }}" \
+            --cargo-profile release \
+            --package-dir "vendor/${{ matrix.target }}" \
+            --force
+
+      # codex-rs/Cargo.toml sets strip = false on purpose, expecting packaging to
+      # archive sidecar symbols and strip afterwards. Nothing in the package
+      # scripts does, so the staged entrypoint lands near 1.2GB on Linux and the
+      # npm tarball would be far past what the registry accepts. Windows keeps
+      # its debug info in a separate .pdb, so there is nothing to strip there.
+      - name: Strip staged binaries
+        if: runner.os != 'Windows'
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            strip_cmd=(strip -x)
+          else
+            strip_cmd=(strip)
+          fi
+          for name in codex codex-code-mode-host; do
+            f="vendor/${TARGET}/bin/${name}"
+            before=$(wc -c <"$f")
+            "${strip_cmd[@]}" "$f"
+            after=$(wc -c <"$f")
+            echo "${name}: $((before / 1048576))MB -> $((after / 1048576))MB"
+          done
+
+      - name: Stage npm tarball
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          python codex-cli/scripts/build_npm_package.py \
+            --package "${{ matrix.npm_package }}" \
+            --release-version "${{ inputs.version }}" \
+            --vendor-src vendor \
+            --pack-output "dist/${{ matrix.npm_package }}-${{ inputs.version }}.tgz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ matrix.npm_package }}
+          path: dist/*.tgz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install pnpm
+        run: corepack enable pnpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # The root wrapper carries no native payload, and the SDK only needs a
+      # pnpm build, so both are packed here rather than in the matrix.
+      - name: Stage root and sdk tarballs
+        run: |
+          set -euo pipefail
+          python codex-cli/scripts/build_npm_package.py \
+            --package codex --release-version "${{ inputs.version }}" \
+            --pack-output "dist/codex-${{ inputs.version }}.tgz"
+          python codex-cli/scripts/build_npm_package.py \
+            --package codex-sdk --release-version "${{ inputs.version }}" \
+            --pack-output "dist/codex-sdk-${{ inputs.version }}.tgz"
+
+      # Order matters and is not negotiable: the root wrapper aliases the
+      # platform versions, and the SDK hard-depends on the root wrapper. npm
+      # advances @latest the moment a tarball lands, so the wrong order
+      # publishes a package whose dependencies do not exist yet.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          NPM_TAG: ${{ inputs.npm_tag }}
+        run: |
+          set -euo pipefail
+
+          publish() {
+            tarball="$1"; tag="$2"
+            args=(npm publish "$tarball" --access public)
+            if [ -n "$tag" ]; then args+=(--tag "$tag"); fi
+            echo "+ ${args[*]}"
+            if out="$("${args[@]}" 2>&1)"; then
+              echo "$out"
+              return 0
+            fi
+            echo "$out"
+            # Re-running a partially finished release must not fail the job.
+            grep -qiE "previously published|cannot publish over|version already exists" <<<"$out"
+            echo "already published, skipping"
+          }
+
+          prefix="${NPM_TAG:+${NPM_TAG}-}"
+          publish "dist/codex-linux-x64-${VERSION}.tgz"     "${prefix}linux-x64"
+          publish "dist/codex-linux-arm64-${VERSION}.tgz"   "${prefix}linux-arm64"
+          publish "dist/codex-darwin-x64-${VERSION}.tgz"    "${prefix}darwin-x64"
+          publish "dist/codex-darwin-arm64-${VERSION}.tgz"  "${prefix}darwin-arm64"
+          publish "dist/codex-win32-x64-${VERSION}.tgz"     "${prefix}win32-x64"
+          publish "dist/codex-win32-arm64-${VERSION}.tgz"   "${prefix}win32-arm64"
+          publish "dist/codex-${VERSION}.tgz"               "$NPM_TAG"
+          publish "dist/codex-sdk-${VERSION}.tgz"           "$NPM_TAG"
