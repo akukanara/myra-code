@@ -212,7 +212,11 @@ jobs:
           set -euo pipefail
 
           publish() {
-            tarball="$1"; tag="$2"
+            # The path has to be absolute. npm parses a bare `dist/foo.tgz` as an
+            # owner/repo GitHub shorthand and tries to clone it over SSH, failing
+            # with "Permission denied (publickey)" and never looking at the file.
+            # rust-release.yml prefixes GITHUB_WORKSPACE for the same reason.
+            tarball="${GITHUB_WORKSPACE}/$1"; tag="$2"
             args=(npm publish "$tarball" --access public)
             if [ -n "$tag" ]; then args+=(--tag "$tag"); fi
             echo "+ ${args[*]}"
