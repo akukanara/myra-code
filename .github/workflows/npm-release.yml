@@ -69,8 +69,10 @@ jobs:
         run: |
           set -euo pipefail
           # rust-toolchain.toml pins the channel; the target must be added to it,
-          # not to whatever rustup considers default.
-          toolchain="$(grep -oP 'channel\s*=\s*"\K[^"]+' codex-rs/rust-toolchain.toml)"
+          # not to whatever rustup considers default. Parsed with tomllib rather
+          # than grep -oP: PCRE mode is GNU-only and the macOS runners ship BSD
+          # grep, which rejects -P outright.
+          toolchain="$(python -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("codex-rs/rust-toolchain.toml").read_text())["toolchain"]["channel"])')"
           rustup toolchain install "$toolchain"
           rustup target add --toolchain "$toolchain" "${{ matrix.target }}"
 
