@@ -138,7 +138,7 @@ jobs:
             --vendor-src vendor \
             --pack-output "dist/${{ matrix.npm_package }}-${{ inputs.version }}.tgz"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: npm-${{ matrix.npm_package }}
           path: dist/*.tgz
