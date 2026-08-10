@@ -324,6 +324,16 @@ def compute_platform_package_version(version: str, platform_tag: str) -> str:
     return f"{version}-{platform_tag}"
 
 
+def resolve_tool(name: str) -> str:
+    # npm and pnpm exist on Windows as npm.cmd / pnpm.cmd shims, and subprocess
+    # does not append the executable extensions when resolving a bare name, so it
+    # raises "WinError 2: The system cannot find the file specified" before the
+    # command ever runs. shutil.which performs the same lookup the shell would on
+    # every platform. Falling back to the bare name keeps a genuine
+    # tool-not-installed failure readable.
+    return shutil.which(name) or name
+
+
 def run_command(cmd: list[str], cwd: Path | None = None) -> None:
     print("+", " ".join(cmd), flush=True)
     subprocess.run(cmd, cwd=cwd, check=True)
@@ -332,8 +342,8 @@ def run_command(cmd: list[str], cwd: Path | None = None) -> None:
 def stage_codex_sdk_sources(staging_dir: Path) -> None:
     package_root = CODEX_SDK_ROOT
 
-    run_command(["pnpm", "install", "--frozen-lockfile"], cwd=package_root)
-    run_command(["pnpm", "run", "build"], cwd=package_root)
+    run_command([resolve_tool("pnpm"), "install", "--frozen-lockfile"], cwd=package_root)
+    run_command([resolve_tool("pnpm"), "run", "build"], cwd=package_root)
 
     dist_src = package_root / "dist"
     if not dist_src.exists():
@@ -421,7 +431,7 @@ def run_npm_pack(staging_dir: Path, output_path: Path) -> Path:
         env["NPM_CONFIG_CACHE"] = str(npm_cache_dir)
         env["NPM_CONFIG_LOGS_DIR"] = str(npm_logs_dir)
         stdout = subprocess.check_output(
-            ["npm", "pack", "--json", "--pack-destination", str(pack_dir)],
+            [resolve_tool("npm"), "pack", "--json", "--pack-destination", str(pack_dir)],
             cwd=staging_dir,
             env=env,
             text=True,
