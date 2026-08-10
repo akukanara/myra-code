@@ -32,7 +32,11 @@ jobs:
   build:
     runs-on: ${{ matrix.runner }}
     strategy:
-      fail-fast: true
+      # Each target is independent, and they take tens of minutes apiece. Under
+      # fail-fast one broken target cancels five healthy ones mid-compile, so a
+      # run costs full build time and returns a single failure. The publish job
+      # still needs every build to succeed, so nothing ships from a partial run.
+      fail-fast: false
       matrix:
         include:
           - runner: ubuntu-latest
@@ -94,6 +98,23 @@ jobs:
       - name: Disable aws-lc jitter entropy (musl)
         if: runner.os == 'Linux'
         run: echo "AWS_LC_SYS_NO_JITTER_ENTROPY=1" >> "$GITHUB_ENV"
+
+      # codex-cli and codex-login depend on openssl-sys with the vendored
+      # feature, so openssl-src compiles OpenSSL from source and shells out to
+      # perl to run its Configure. These steps run under shell: bash, which puts
+      # the MSYS perl first on PATH, and that perl has no
+      # Locale::Maketext::Simple -- Configure aborts before it reads a single
+      # option. Point openssl-src at Strawberry Perl, which ships the full module
+      # set. openssl-src reads OPENSSL_SRC_PERL first, then PERL, then bare perl.
+      - name: Provide a Perl that can configure OpenSSL
+        if: runner.os == 'Windows'
+        run: |
+          set -euo pipefail
+          if [ ! -x "/c/Strawberry/perl/bin/perl.exe" ]; then
+            choco install --no-progress -y strawberryperl
+          fi
+          "/c/Strawberry/perl/bin/perl.exe" -MLocale::Maketext::Simple -e 'print "perl ok\n"'
+          echo 'OPENSSL_SRC_PERL=C:\Strawberry\perl\bin\perl.exe' >> "$GITHUB_ENV"
 
       - name: Build package directory
         run: |
