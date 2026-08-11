@@ -15,6 +15,10 @@ from .targets import REPO_ROOT, TargetSpec
 
 DOWNLOAD_TIMEOUT_SECS = 120
 V8_ARTIFACT_PROFILE = "ptrcomp_sandbox_release"
+V8_RELEASE_BASE_URL = os.environ.get(
+    "MYRA_RUSTY_V8_RELEASE_BASE_URL",
+    "https://github.com/openai/codex/releases/download",
+)
 
 
 @dataclass(frozen=True)
@@ -56,9 +60,7 @@ def fetch_codex_v8_artifacts(
     cache_root: Path | None = None,
 ) -> RustyV8ArtifactPair:
     version = version or resolved_v8_crate_version()
-    release_url = (
-        f"https://github.com/akukanara/myra-code/releases/download/rusty-v8-v{version}"
-    )
+    release_url = f"{V8_RELEASE_BASE_URL}/rusty-v8-v{version}"
     target = spec.target
     cache_dir = (cache_root or default_cache_root()) / f"rusty-v8-{version}-{target}"
 
