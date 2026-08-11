@@ -84,12 +84,26 @@ jobs:
           rustup toolchain install "$toolchain"
           rustup target add --toolchain "$toolchain" "${{ matrix.target }}"
 
+      # GitHub-hosted runners are ephemeral. Without a Rust cache, every
+      # release recompiles the same vendored OpenSSL and third-party crates from
+      # scratch on every target. Keep a separate cache per target because Cargo
+      # artifacts are not portable across OSes or architectures. The cache
+      # action keeps dependency artifacts and can reuse unchanged workspace
+      # crates while Cargo still recompiles anything whose source changed.
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "codex-rs -> target"
+          shared-key: "myra-npm-${{ matrix.target }}"
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
       - name: Install Zig
         if: runner.os == 'Linux'
         uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
-          use-cache: false
+          use-cache: true
 
       # Exports CC/CXX/linker/pkg-config for the musl target and builds libcap.
       # It writes to $GITHUB_ENV, so it must be its own step to take effect.
