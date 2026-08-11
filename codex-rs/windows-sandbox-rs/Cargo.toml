@@ -46,7 +46,7 @@ windows = { version = "0.58", features = [
     "Win32_System_Variant",
 ] }
 
-[dependencies.myra-protocol]
+[dependencies.codex-protocol]
 package = "codex-protocol"
 path = "../protocol"
 
