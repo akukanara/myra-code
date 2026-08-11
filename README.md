@@ -1,81 +1,57 @@
-<p align="center"><strong>Codex CLI</strong> is a coding agent from OpenAI that runs locally on your computer.
-<p align="center">
-  <img src="https://github.com/openai/codex/blob/main/.github/codex-cli-splash.png" alt="Codex CLI splash" width="80%" />
-</p>
-</br>
-If you want Codex in your code editor (VS Code, Cursor, Windsurf), <a href="https://developers.openai.com/codex/ide">install in your IDE.</a>
-</br>If you want the desktop app experience, run <code>codex app</code> or visit <a href="https://chatgpt.com/codex?app-landing-page=true">the Codex App page</a>.
-</br>If you are looking for the <em>cloud-based agent</em> from OpenAI, <strong>Codex Web</strong>, go to <a href="https://chatgpt.com/codex">chatgpt.com/codex</a>.</p>
+<p align="center"><strong>Myra CLI</strong> is a coding agent that runs locally on your computer.</p>
 
 ---
 
 ## Quickstart
 
-### Installing and running Codex CLI
-
-Run the following on Mac or Linux to install Codex CLI:
+### Installing and running Myra CLI
 
 ```shell
-curl -fsSL https://chatgpt.com/codex/install.sh | sh
-```
-
-Run the following on Windows to install Codex CLI:
-
-```shell
-powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"
-```
-
-The standalone installers download from `https://releases.openai.com/codex` by default and fall back to GitHub Releases if a metadata or asset download is unavailable. To force GitHub Releases, set `CODEX_INSTALLER_USE_RELEASES_OPENAI_COM` to `false` (`0` and `no` are also accepted):
-
-```shell
-curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_INSTALLER_USE_RELEASES_OPENAI_COM=false sh
-```
-
-```powershell
-$env:CODEX_INSTALLER_USE_RELEASES_OPENAI_COM='false'; irm https://chatgpt.com/codex/install.ps1 | iex
-```
-
-Codex CLI can also be installed via the following package managers:
-
-```shell
-# Install using npm
 npm install -g @myralith/myra
 ```
 
+Then run `myra` to get started.
+
+The right native payload for your machine is selected automatically: the package
+declares one optional dependency per platform, and npm installs only the one
+matching your operating system and architecture.
+
+### Supported platforms
+
+| Platform | Architecture |
+| --- | --- |
+| Linux (musl, statically linked) | x64, arm64 |
+| macOS | x64, arm64 |
+| Windows | x64, arm64 |
+
+### Signing in
+
+Run `myra` and follow the sign-in prompt. See
+[**Authentication**](./docs/authentication.md) for the available methods and how
+credentials are stored.
+
+## Embedding Myra
+
+The TypeScript SDK spawns the CLI and exchanges JSONL events with it over
+stdin/stdout:
+
 ```shell
-# Install using Homebrew
-brew install --cask codex
+npm install @myralith/myra-sdk
 ```
-
-Then simply run `codex` to get started.
-
-<details>
-<summary>You can also go to the <a href="https://github.com/openai/codex/releases/latest">latest GitHub Release</a> and download the appropriate binary for your platform.</summary>
-
-Each GitHub Release contains many executables, but in practice, you likely want one of these:
-
-- macOS
-  - Apple Silicon/arm64: `codex-aarch64-apple-darwin.tar.gz`
-  - x86_64 (older Mac hardware): `codex-x86_64-apple-darwin.tar.gz`
-- Linux
-  - x86_64: `codex-x86_64-unknown-linux-musl.tar.gz`
-  - arm64: `codex-aarch64-unknown-linux-musl.tar.gz`
-
-Each archive contains a single entry with the platform baked into the name (e.g., `codex-x86_64-unknown-linux-musl`), so you likely want to rename it to `codex` after extracting it.
-
-</details>
-
-### Using Codex with your ChatGPT plan
-
-Run `codex` and select **Sign in with ChatGPT**. We recommend signing into your ChatGPT account to use Codex as part of your Plus, Pro, Business, Edu, or Enterprise plan. [Learn more about what's included in your ChatGPT plan](https://help.openai.com/en/articles/11369540-codex-in-chatgpt).
-
-You can also use Codex with an API key, but this requires [additional setup](https://developers.openai.com/codex/auth#sign-in-with-an-api-key).
 
 ## Docs
 
-- [**Codex Documentation**](https://developers.openai.com/codex)
-- [**Contributing**](./docs/contributing.md)
+- [**Getting started**](./docs/getting-started.md)
+- [**Configuration**](./docs/config.md)
 - [**Installing & building**](./docs/install.md)
-- [**Open source fund**](./docs/open-source-fund.md)
+- [**Non-interactive use**](./docs/exec.md)
+- [**Contributing**](./docs/contributing.md)
+
+## About this project
+
+Myra CLI is derived from [OpenAI Codex CLI](https://github.com/openai/codex) and
+carries its Apache-2.0 licence and attribution; see [NOTICE](NOTICE). It is not
+affiliated with or endorsed by OpenAI, and it does not install or update
+anything from OpenAI's distribution channels.
 
 This repository is licensed under the [Apache-2.0 License](LICENSE).

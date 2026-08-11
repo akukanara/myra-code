@@ -4,7 +4,7 @@
   "description": "TypeScript SDK for Myra APIs.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/myralith/myra.git",
+    "url": "git+https://github.com/akukanara/myra-code.git",
     "directory": "sdk/typescript"
   },
   "keywords": [
