@@ -51,7 +51,7 @@ pub const ONLINE_USERNAME: &str = "CodexSandboxOnline";
 const ERROR_CANCELLED: u32 = 1223;
 const SECURITY_BUILTIN_DOMAIN_RID: u32 = 0x0000_0020;
 const DOMAIN_ALIAS_RID_ADMINS: u32 = 0x0000_0220;
-const SETUP_EXE_FILENAME: &str = "codex-windows-sandbox-setup.exe";
+const SETUP_EXE_FILENAME: &str = "myra-windows-sandbox-setup.exe";
 const USERPROFILE_ROOT_EXCLUSIONS: &[&str] = &[
     ".ssh",
     ".tsh",
@@ -1253,8 +1253,8 @@ fn user_profile_child_name(path: &Path, user_profile: &Path) -> Option<String> {
 }
 
 fn filter_sensitive_write_roots(mut roots: Vec<PathBuf>, codex_home: &Path) -> Vec<PathBuf> {
-    // Never grant capability write access to CODEX_HOME or anything under CODEX_HOME/.sandbox,
-    // CODEX_HOME/.sandbox-bin, or CODEX_HOME/.sandbox-secrets. These locations contain sandbox
+    // Never grant capability write access to MYRA_HOME or anything under MYRA_HOME/.sandbox,
+    // MYRA_HOME/.sandbox-bin, or MYRA_HOME/.sandbox-secrets. These locations contain sandbox
     // control/state and helper binaries and must remain tamper-resistant.
     let codex_home_key = canonical_path_key(codex_home);
     let sbx_dir_key = canonical_path_key(&sandbox_dir(codex_home));
@@ -1581,7 +1581,7 @@ mod tests {
         fs::create_dir_all(&bin_dir).expect("create bin dir");
         fs::create_dir_all(&resources_dir).expect("create resources dir");
         let exe = bin_dir.join("codex.exe");
-        let setup_exe = resources_dir.join("codex-windows-sandbox-setup.exe");
+        let setup_exe = resources_dir.join("myra-windows-sandbox-setup.exe");
         fs::write(&exe, b"codex").expect("write exe");
         fs::write(&setup_exe, b"setup").expect("write setup");
 
@@ -2105,10 +2105,10 @@ mod tests {
         let command_cwd = tmp.path().join("workspace");
         let extra_write_root = tmp.path().join("extra-write-root");
         let command_git = command_cwd.join(".git");
-        let extra_codex = extra_write_root.join(".codex");
+        let extra_codex = extra_write_root.join(".myra");
         let explicit_deny = tmp.path().join("explicit-deny");
         fs::create_dir_all(&command_git).expect("create command .git");
-        fs::create_dir_all(&extra_codex).expect("create extra .codex");
+        fs::create_dir_all(&extra_codex).expect("create extra .myra");
         let writable_roots = vec![
             AbsolutePathBuf::from_absolute_path(&extra_write_root).expect("absolute writable root"),
         ];
@@ -2133,7 +2133,7 @@ mod tests {
         assert_eq!(
             [
                 dunce::canonicalize(&command_git).expect("canonical command .git"),
-                dunce::canonicalize(&extra_codex).expect("canonical extra .codex"),
+                dunce::canonicalize(&extra_codex).expect("canonical extra .myra"),
                 explicit_deny,
             ]
             .into_iter()

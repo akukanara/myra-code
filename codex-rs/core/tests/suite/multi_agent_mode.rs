@@ -108,7 +108,7 @@ async fn ultra_reasoning_uses_max_and_proactive_mode() -> Result<()> {
         .build(&server)
         .await?;
 
-    submit_turn(&test.codex, "hello", /*effort*/ None).await?;
+    submit_turn(&test.myra, "hello", /*effort*/ None).await?;
 
     let request = response.single_request();
     assert_eq!(
@@ -150,8 +150,8 @@ async fn configured_mode_hint_uses_custom_mode_across_reasoning_efforts() -> Res
         .with_config(configure_custom_mode_hint)
         .build(&server)
         .await?;
-    submit_turn(&test.codex, "explicit", Some(ReasoningEffort::High)).await?;
-    submit_turn(&test.codex, "proactive", Some(ReasoningEffort::Ultra)).await?;
+    submit_turn(&test.myra, "explicit", Some(ReasoningEffort::High)).await?;
+    submit_turn(&test.myra, "proactive", Some(ReasoningEffort::Ultra)).await?;
 
     let requests = responses.requests();
     let first_input = requests[0].input();
@@ -188,7 +188,7 @@ async fn empty_configured_mode_hint_emits_no_mode_message() -> Result<()> {
         .build(&server)
         .await?;
 
-    submit_turn(&test.codex, "hello", Some(ReasoningEffort::High)).await?;
+    submit_turn(&test.myra, "hello", Some(ReasoningEffort::High)).await?;
 
     let input = response.single_request().input();
     let texts = developer_texts(&input);
@@ -226,7 +226,7 @@ async fn changing_configured_mode_hint_to_empty_emits_no_update() -> Result<()> 
         .build(&server)
         .await?;
 
-    submit_turn(&initial.codex, "before resume", /*effort*/ None).await?;
+    submit_turn(&initial.myra, "before resume", /*effort*/ None).await?;
 
     let mut resume_builder = test_codex().with_config(|config| {
         configure_multi_agent_v2(config);
@@ -234,7 +234,7 @@ async fn changing_configured_mode_hint_to_empty_emits_no_update() -> Result<()> 
     });
     let resumed = resume_builder.restart(&server, &initial).await?;
     drop(initial);
-    submit_turn(&resumed.codex, "after resume", /*effort*/ None).await?;
+    submit_turn(&resumed.myra, "after resume", /*effort*/ None).await?;
 
     let requests = responses.requests();
     let first_input = requests[0].input();
@@ -285,8 +285,8 @@ async fn live_mode_change_appends_mode_without_reappending_usage_hint() -> Resul
         .clone()
         .expect("rollout path");
 
-    submit_turn(&test.codex, "proactive", /*effort*/ None).await?;
-    submit_turn(&test.codex, "explicit", Some(ReasoningEffort::High)).await?;
+    submit_turn(&test.myra, "proactive", /*effort*/ None).await?;
+    submit_turn(&test.myra, "explicit", Some(ReasoningEffort::High)).await?;
 
     let requests = responses.requests();
     let first_input = requests[0].input();
@@ -311,8 +311,8 @@ async fn live_mode_change_appends_mode_without_reappending_usage_hint() -> Resul
         ),
         (1, 1, 1),
     );
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
+    test.myra.ensure_rollout_materialized().await;
+    test.myra.flush_rollout().await?;
     let rollout_values = std::fs::read_to_string(rollout_path)?
         .lines()
         .map(serde_json::from_str::<Value>)
@@ -357,14 +357,14 @@ async fn leaving_ultra_after_cold_resume_emits_explicit_mode() -> Result<()> {
         .build(&server)
         .await?;
 
-    submit_turn(&initial.codex, "before resume", /*effort*/ None).await?;
+    submit_turn(&initial.myra, "before resume", /*effort*/ None).await?;
 
     let mut resume_builder = test_codex()
         .with_model_info_override("gpt-5.4", add_ultra_reasoning)
         .with_config(configure_ultra);
     let resumed = resume_builder.restart(&server, &initial).await?;
     drop(initial);
-    submit_turn(&resumed.codex, "after resume", Some(ReasoningEffort::High)).await?;
+    submit_turn(&resumed.myra, "after resume", Some(ReasoningEffort::High)).await?;
 
     let requests = responses.requests();
     assert_eq!(
@@ -410,7 +410,7 @@ async fn ultra_on_multi_agent_v1_uses_max_without_mode_instructions() -> Result<
         .build(&server)
         .await?;
 
-    submit_turn(&test.codex, "hello", /*effort*/ None).await?;
+    submit_turn(&test.myra, "hello", /*effort*/ None).await?;
 
     let request = response.single_request();
     assert_eq!(

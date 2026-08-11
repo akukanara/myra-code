@@ -91,7 +91,7 @@ pub(crate) enum TerminalTitleItem {
 impl TerminalTitleItem {
     pub(crate) fn description(self) -> &'static str {
         match self {
-            TerminalTitleItem::AppName => "MyraCode app name",
+            TerminalTitleItem::AppName => "Myra app name",
             TerminalTitleItem::Project => "Project name (falls back to current directory name)",
             TerminalTitleItem::CurrentDir => "Current working directory",
             TerminalTitleItem::Spinner => {
@@ -114,7 +114,7 @@ impl TerminalTitleItem {
             TerminalTitleItem::WeeklyLimit => {
                 "Remaining usage on the secondary usage limit (omitted when unavailable)"
             }
-            TerminalTitleItem::CodexVersion => "MyraCode application version",
+            TerminalTitleItem::CodexVersion => "Myra application version",
             TerminalTitleItem::UsedTokens => "Total tokens used in session (omitted when zero)",
             TerminalTitleItem::TotalInputTokens => "Total input tokens used in session",
             TerminalTitleItem::TotalOutputTokens => "Total output tokens used in session",

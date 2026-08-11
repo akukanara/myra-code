@@ -217,7 +217,7 @@ async fn seed_recent_thread(
     first_user_message: &str,
     slug: &str,
 ) -> Result<()> {
-    let db = test.codex.state_db().context("state db enabled")?;
+    let db = test.myra.state_db().context("state db enabled")?;
     let thread_id = ThreadId::new();
     let updated_at = Utc::now();
     let rollout_path = test
@@ -284,7 +284,7 @@ async fn conversation_start_audio_text_close_round_trip() -> Result<()> {
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -308,7 +308,7 @@ async fn conversation_start_audio_text_close_round_trip() -> Result<()> {
         }))
         .await?;
 
-    let started = wait_for_event_match(&test.codex, |msg| match msg {
+    let started = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationStarted(started) => Some(Ok(started.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -318,7 +318,7 @@ async fn conversation_start_audio_text_close_round_trip() -> Result<()> {
     assert!(started.realtime_session_id.is_some());
     assert_eq!(started.version, RealtimeConversationVersion::V1);
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -331,7 +331,7 @@ async fn conversation_start_audio_text_close_round_trip() -> Result<()> {
     .await;
     assert_eq!(session_updated, "sess_1");
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationAudio(ConversationAudioParams {
             frame: RealtimeAudioFrame {
                 data: "AQID".to_string(),
@@ -342,14 +342,14 @@ async fn conversation_start_audio_text_close_round_trip() -> Result<()> {
             },
         }))
         .await?;
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationText(ConversationTextParams {
             text: "hello".to_string(),
             role: ConversationTextRole::User,
         }))
         .await?;
 
-    let audio_out = wait_for_event_match(&test.codex, |msg| match msg {
+    let audio_out = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::AudioOut(frame),
         }) => Some(frame.clone()),
@@ -409,8 +409,8 @@ async fn conversation_start_audio_text_close_round_trip() -> Result<()> {
         ]
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
-    let closed = wait_for_event_match(&test.codex, |msg| match msg {
+    test.myra.submit(Op::RealtimeConversationClose).await?;
+    let closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -437,7 +437,7 @@ async fn conversation_start_defaults_to_v2_and_gpt_realtime_1_5() -> Result<()> 
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -461,7 +461,7 @@ async fn conversation_start_defaults_to_v2_and_gpt_realtime_1_5() -> Result<()> 
         }))
         .await?;
 
-    let started = wait_for_event_match(&test.codex, |msg| match msg {
+    let started = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationStarted(started) => Some(Ok(started.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -531,7 +531,7 @@ async fn conversation_webrtc_frameless_chatgpt_sends_codex_headers_to_backend() 
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -557,7 +557,7 @@ async fn conversation_webrtc_frameless_chatgpt_sends_codex_headers_to_backend() 
         }))
         .await?;
 
-    let created = wait_for_event_match(&test.codex, |msg| match msg {
+    let created = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(Ok(created.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -607,8 +607,8 @@ async fn conversation_webrtc_frameless_chatgpt_sends_codex_headers_to_backend() 
         })
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
-    let _closed = wait_for_event_match(&test.codex, |msg| match msg {
+    test.myra.submit(Op::RealtimeConversationClose).await?;
+    let _closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -658,7 +658,7 @@ async fn conversation_webrtc_start_posts_generated_session() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -686,7 +686,7 @@ async fn conversation_webrtc_start_posts_generated_session() -> Result<()> {
 
     // Phase 1: the client gets the SDP answer that configures its peer connection, and then the
     // normal realtime event stream from the joined sideband WebSocket.
-    let created = wait_for_event_match(&test.codex, |msg| match msg {
+    let created = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(Ok(created.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -699,14 +699,14 @@ async fn conversation_webrtc_start_posts_generated_session() -> Result<()> {
         "SDP should be emitted before the delayed sideband websocket joins"
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationText(ConversationTextParams {
             text: "queued before sideband".to_string(),
             role: ConversationTextRole::User,
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -799,8 +799,8 @@ async fn conversation_webrtc_start_posts_generated_session() -> Result<()> {
         Some("Bearer dummy")
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
-    let closed = wait_for_event_match(&test.codex, |msg| match msg {
+    test.myra.submit(Op::RealtimeConversationClose).await?;
+    let closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -852,7 +852,7 @@ async fn conversation_webrtc_start_uses_avas_query() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -878,7 +878,7 @@ async fn conversation_webrtc_start_uses_avas_query() -> Result<()> {
         }))
         .await?;
 
-    let created = wait_for_event_match(&test.codex, |msg| match msg {
+    let created = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(Ok(created.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -894,7 +894,7 @@ async fn conversation_webrtc_start_uses_avas_query() -> Result<()> {
         Some("intent=quicksilver&architecture=avas")
     );
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -916,7 +916,7 @@ async fn conversation_webrtc_start_uses_avas_query() -> Result<()> {
         Some("Bearer dummy")
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
+    test.myra.submit(Op::RealtimeConversationClose).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -957,7 +957,7 @@ async fn conversation_webrtc_default_v1_ignores_configured_v2_voice() -> Result<
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -983,7 +983,7 @@ async fn conversation_webrtc_default_v1_ignores_configured_v2_voice() -> Result<
         }))
         .await?;
 
-    let created = wait_for_event_match(&test.codex, |msg| match msg {
+    let created = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(Ok(created.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -1009,7 +1009,7 @@ async fn conversation_webrtc_default_v1_ignores_configured_v2_voice() -> Result<
         "cove"
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
+    test.myra.submit(Op::RealtimeConversationClose).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -1024,7 +1024,7 @@ async fn conversation_webrtc_default_v1_rejects_explicit_v2_voice() -> Result<()
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1050,7 +1050,7 @@ async fn conversation_webrtc_default_v1_rejects_explicit_v2_voice() -> Result<()
         }))
         .await?;
 
-    let error = wait_for_event_match(&test.codex, |msg| match msg {
+    let error = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::Error(message),
         }) => Some(message.clone()),
@@ -1101,7 +1101,7 @@ async fn conversation_webrtc_start_uses_configured_call_base_url_for_avas() -> R
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1127,7 +1127,7 @@ async fn conversation_webrtc_start_uses_configured_call_base_url_for_avas() -> R
         }))
         .await?;
 
-    let created = wait_for_event_match(&test.codex, |msg| match msg {
+    let created = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(Ok(created.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -1143,7 +1143,7 @@ async fn conversation_webrtc_start_uses_configured_call_base_url_for_avas() -> R
         Some("intent=quicksilver&architecture=avas")
     );
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -1165,7 +1165,7 @@ async fn conversation_webrtc_start_uses_configured_call_base_url_for_avas() -> R
         Some("Bearer dummy")
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
+    test.myra.submit(Op::RealtimeConversationClose).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -1215,7 +1215,7 @@ async fn conversation_webrtc_close_while_sideband_connecting_drops_pending_join(
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1241,7 +1241,7 @@ async fn conversation_webrtc_close_while_sideband_connecting_drops_pending_join(
         }))
         .await?;
 
-    let sdp = wait_for_event_match(&test.codex, |msg| match msg {
+    let sdp = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(created.sdp.clone()),
         _ => None,
     })
@@ -1251,8 +1251,8 @@ async fn conversation_webrtc_close_while_sideband_connecting_drops_pending_join(
         .await
         .context("timed out waiting for the sideband handshake")??;
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
-    let closed = wait_for_event_match(&test.codex, |msg| match msg {
+    test.myra.submit(Op::RealtimeConversationClose).await?;
+    let closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -1271,9 +1271,9 @@ async fn conversation_webrtc_close_while_sideband_connecting_drops_pending_join(
     );
 
     timeout(Duration::from_secs(10), async {
-        test.codex.submit(Op::Shutdown).await?;
+        test.myra.submit(Op::Shutdown).await?;
         loop {
-            match test.codex.next_event().await?.msg {
+            match test.myra.next_event().await?.msg {
                 EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
                     payload: RealtimeEvent::Error(message),
                 }) => {
@@ -1288,7 +1288,7 @@ async fn conversation_webrtc_close_while_sideband_connecting_drops_pending_join(
                 _ => {}
             }
         }
-        test.codex.wait_until_terminated().await;
+        test.myra.wait_until_terminated().await;
         Ok::<(), anyhow::Error>(())
     })
     .await
@@ -1322,7 +1322,7 @@ async fn conversation_webrtc_sideband_connect_failure_closes_with_error() -> Res
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1348,21 +1348,21 @@ async fn conversation_webrtc_sideband_connect_failure_closes_with_error() -> Res
         }))
         .await?;
 
-    let started = wait_for_event_match(&test.codex, |msg| match msg {
+    let started = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationStarted(started) => Some(started.clone()),
         _ => None,
     })
     .await;
     assert!(started.realtime_session_id.is_some());
 
-    let sdp = wait_for_event_match(&test.codex, |msg| match msg {
+    let sdp = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationSdp(created) => Some(created.sdp.clone()),
         _ => None,
     })
     .await;
     assert_eq!(sdp, "v=answer\r\n");
 
-    let err = wait_for_event_match(&test.codex, |msg| match msg {
+    let err = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::Error(message),
         }) => Some(message.clone()),
@@ -1371,20 +1371,20 @@ async fn conversation_webrtc_sideband_connect_failure_closes_with_error() -> Res
     .await;
     assert!(!err.is_empty());
 
-    let closed = wait_for_event_match(&test.codex, |msg| match msg {
+    let closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
     .await;
     assert_eq!(closed.reason.as_deref(), Some("error"));
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationText(ConversationTextParams {
             text: "after sideband failure".to_string(),
             role: ConversationTextRole::User,
         }))
         .await?;
-    let err = wait_for_event_match(&test.codex, |msg| match msg {
+    let err = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::Error(err) => Some(err.clone()),
         _ => None,
     })
@@ -1422,7 +1422,7 @@ async fn conversation_start_uses_openai_env_key_fallback_with_chatgpt_auth() -> 
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1446,7 +1446,7 @@ async fn conversation_start_uses_openai_env_key_fallback_with_chatgpt_auth() -> 
         }))
         .await?;
 
-    let started = wait_for_event_match(&test.codex, |msg| match msg {
+    let started = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationStarted(started) => Some(Ok(started.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -1455,7 +1455,7 @@ async fn conversation_start_uses_openai_env_key_fallback_with_chatgpt_auth() -> 
     .expect("conversation start failed");
     assert!(started.realtime_session_id.is_some());
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -1473,8 +1473,8 @@ async fn conversation_start_uses_openai_env_key_fallback_with_chatgpt_auth() -> 
         Some("Bearer env-realtime-key")
     );
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
-    let _closed = wait_for_event_match(&test.codex, |msg| match msg {
+    test.myra.submit(Op::RealtimeConversationClose).await?;
+    let _closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -1520,7 +1520,7 @@ async fn assert_transport_close_tail_flush(
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1544,7 +1544,7 @@ async fn assert_transport_close_tail_flush(
         }))
         .await?;
 
-    let started = wait_for_event_match(&test.codex, |msg| match msg {
+    let started = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationStarted(started) => Some(Ok(started.clone())),
         EventMsg::Error(err) => Some(Err(err.clone())),
         _ => None,
@@ -1553,7 +1553,7 @@ async fn assert_transport_close_tail_flush(
     .expect("conversation start failed");
     assert!(started.realtime_session_id.is_some());
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -1566,7 +1566,7 @@ async fn assert_transport_close_tail_flush(
     .await;
     assert_eq!(session_updated, "sess_1");
 
-    let closed = wait_for_event_match(&test.codex, |msg| match msg {
+    let closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -1604,7 +1604,7 @@ async fn conversation_audio_before_start_emits_error() -> Result<()> {
     let mut builder = test_codex();
     let test = builder.build_with_websocket_server(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationAudio(ConversationAudioParams {
             frame: RealtimeAudioFrame {
                 data: "AQID".to_string(),
@@ -1616,7 +1616,7 @@ async fn conversation_audio_before_start_emits_error() -> Result<()> {
         }))
         .await?;
 
-    let err = wait_for_event_match(&test.codex, |msg| match msg {
+    let err = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::Error(err) => Some(err.clone()),
         _ => None,
     })
@@ -1643,7 +1643,7 @@ async fn conversation_start_preflight_failure_emits_realtime_error_only() -> Res
     let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
     let test = builder.build_with_websocket_server(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1667,7 +1667,7 @@ async fn conversation_start_preflight_failure_emits_realtime_error_only() -> Res
         }))
         .await?;
 
-    let err = wait_for_event_match(&test.codex, |msg| match msg {
+    let err = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::Error(message),
         }) => Some(message.clone()),
@@ -1677,7 +1677,7 @@ async fn conversation_start_preflight_failure_emits_realtime_error_only() -> Res
     assert_eq!(err, "realtime conversation requires API key auth");
 
     let closed = timeout(Duration::from_millis(200), async {
-        wait_for_event_match(&test.codex, |msg| match msg {
+        wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
             _ => None,
         })
@@ -1701,7 +1701,7 @@ async fn conversation_start_connect_failure_emits_realtime_error_only() -> Resul
     });
     let test = builder.build_with_websocket_server(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1725,7 +1725,7 @@ async fn conversation_start_connect_failure_emits_realtime_error_only() -> Resul
         }))
         .await?;
 
-    let err = wait_for_event_match(&test.codex, |msg| match msg {
+    let err = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::Error(message),
         }) => Some(message.clone()),
@@ -1735,7 +1735,7 @@ async fn conversation_start_connect_failure_emits_realtime_error_only() -> Resul
     assert!(!err.is_empty());
 
     let closed = timeout(Duration::from_millis(200), async {
-        wait_for_event_match(&test.codex, |msg| match msg {
+        wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
             _ => None,
         })
@@ -1756,14 +1756,14 @@ async fn conversation_text_before_start_emits_error() -> Result<()> {
     let mut builder = test_codex();
     let test = builder.build_with_websocket_server(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationText(ConversationTextParams {
             text: "hello".to_string(),
             role: ConversationTextRole::User,
         }))
         .await?;
 
-    let err = wait_for_event_match(&test.codex, |msg| match msg {
+    let err = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::Error(err) => Some(err.clone()),
         _ => None,
     })
@@ -1807,7 +1807,7 @@ async fn conversation_second_start_replaces_runtime() -> Result<()> {
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1830,7 +1830,7 @@ async fn conversation_second_start_replaces_runtime() -> Result<()> {
             voice: None,
         }))
         .await?;
-    wait_for_event_match(&test.codex, |msg| match msg {
+    wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -1844,7 +1844,7 @@ async fn conversation_second_start_replaces_runtime() -> Result<()> {
     .await
     .expect("first conversation start failed");
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1867,7 +1867,7 @@ async fn conversation_second_start_replaces_runtime() -> Result<()> {
             voice: None,
         }))
         .await?;
-    wait_for_event_match(&test.codex, |msg| match msg {
+    wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -1881,7 +1881,7 @@ async fn conversation_second_start_replaces_runtime() -> Result<()> {
     .await
     .expect("second conversation start failed");
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationAudio(ConversationAudioParams {
             frame: RealtimeAudioFrame {
                 data: "AQID".to_string(),
@@ -1892,7 +1892,7 @@ async fn conversation_second_start_replaces_runtime() -> Result<()> {
             },
         }))
         .await?;
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::AudioOut(frame),
         }) if frame.data == "AQID" => Some(()),
@@ -1952,7 +1952,7 @@ async fn conversation_uses_experimental_realtime_ws_base_url_override() -> Resul
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -1976,7 +1976,7 @@ async fn conversation_uses_experimental_realtime_ws_base_url_override() -> Resul
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -2028,7 +2028,7 @@ async fn conversation_uses_default_realtime_backend_prompt() -> Result<()> {
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2052,7 +2052,7 @@ async fn conversation_uses_default_realtime_backend_prompt() -> Result<()> {
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -2112,7 +2112,7 @@ async fn conversation_uses_empty_instructions_for_null_or_empty_prompt() -> Resu
         (Some(None), "sess_null"),
         (Some(Some(String::new())), "sess_empty"),
     ] {
-        test.codex
+        test.myra
             .submit(Op::RealtimeConversationStart(ConversationStartParams {
                 client_managed_handoffs: false,
                 delegation_ack_filler: None,
@@ -2136,7 +2136,7 @@ async fn conversation_uses_empty_instructions_for_null_or_empty_prompt() -> Resu
             }))
             .await?;
 
-        let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+        let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
                 payload:
                     RealtimeEvent::SessionUpdated {
@@ -2149,8 +2149,8 @@ async fn conversation_uses_empty_instructions_for_null_or_empty_prompt() -> Resu
         .await;
         assert_eq!(session_updated, expected_session_id);
 
-        test.codex.submit(Op::RealtimeConversationClose).await?;
-        let _closed = wait_for_event_match(&test.codex, |msg| match msg {
+        test.myra.submit(Op::RealtimeConversationClose).await?;
+        let _closed = wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
             _ => None,
         })
@@ -2189,7 +2189,7 @@ async fn conversation_uses_explicit_start_voice() -> Result<()> {
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2213,7 +2213,7 @@ async fn conversation_uses_explicit_start_voice() -> Result<()> {
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -2258,7 +2258,7 @@ async fn conversation_uses_configured_realtime_voice() -> Result<()> {
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2282,7 +2282,7 @@ async fn conversation_uses_configured_realtime_voice() -> Result<()> {
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -2315,7 +2315,7 @@ async fn conversation_rejects_voice_for_wrong_realtime_version() -> Result<()> {
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2339,7 +2339,7 @@ async fn conversation_rejects_voice_for_wrong_realtime_version() -> Result<()> {
         }))
         .await?;
 
-    let error = wait_for_event_match(&test.codex, |msg| match msg {
+    let error = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::Error(message),
         }) => Some(message.clone()),
@@ -2373,7 +2373,7 @@ async fn conversation_uses_experimental_realtime_ws_backend_prompt_override() ->
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2397,7 +2397,7 @@ async fn conversation_uses_experimental_realtime_ws_backend_prompt_override() ->
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -2457,7 +2457,7 @@ async fn conversation_uses_experimental_realtime_ws_startup_context_override() -
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2535,7 +2535,7 @@ async fn conversation_disables_realtime_startup_context_with_empty_override() ->
             .await
     );
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2606,7 +2606,7 @@ async fn conversation_start_injects_startup_context_from_thread_history() -> Res
     fs::create_dir_all(test.workspace_path("docs"))?;
     fs::write(test.workspace_path("README.md"), "workspace marker")?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2719,7 +2719,7 @@ async fn conversation_startup_context_current_thread_selects_many_turns_by_budge
             ]
         })
         .collect::<Vec<_>>();
-    test.codex.shutdown_and_wait().await?;
+    test.myra.shutdown_and_wait().await?;
     let resumed_thread = test
         .thread_manager
         .resume_thread_with_history(
@@ -2851,7 +2851,7 @@ async fn conversation_startup_context_falls_back_to_workspace_map() -> Result<()
     fs::create_dir_all(test.workspace_path("codex-rs/core"))?;
     fs::write(test.workspace_path("notes.txt"), "workspace marker")?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2922,7 +2922,7 @@ async fn conversation_startup_context_is_truncated_and_sent_once_per_start() -> 
     seed_recent_thread(&test, &oversized_summary, "summary", "oversized").await?;
     fs::write(test.workspace_path("marker.txt"), "marker")?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -2959,7 +2959,7 @@ async fn conversation_startup_context_is_truncated_and_sent_once_per_start() -> 
     assert!(startup_context.contains(STARTUP_CONTEXT_HEADER));
     assert!(startup_context.len() <= 20_500);
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationText(ConversationTextParams {
             text: "hello".to_string(),
             role: ConversationTextRole::User,
@@ -3014,7 +3014,7 @@ async fn conversation_user_text_turn_is_not_sent_to_realtime() -> Result<()> {
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3038,7 +3038,7 @@ async fn conversation_user_text_turn_is_not_sent_to_realtime() -> Result<()> {
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -3052,7 +3052,7 @@ async fn conversation_user_text_turn_is_not_sent_to_realtime() -> Result<()> {
     assert_eq!(session_updated, "sess_user_text");
 
     let user_text = "typed follow-up for realtime";
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: user_text.to_string(),
@@ -3065,7 +3065,7 @@ async fn conversation_user_text_turn_is_not_sent_to_realtime() -> Result<()> {
         })
         .await?;
 
-    let turn_complete = wait_for_event_match(&test.codex, |event| match event {
+    let turn_complete = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::TurnComplete(turn_complete) => Some(turn_complete.clone()),
         _ => None,
     })
@@ -3122,7 +3122,7 @@ async fn realtime_v2_noop_tool_call_returns_empty_function_output_without_respon
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3146,7 +3146,7 @@ async fn realtime_v2_noop_tool_call_returns_empty_function_output_without_respon
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::NoopRequested(RealtimeNoopRequested { call_id, .. }),
         }) if call_id == "call_silent" => Some(()),
@@ -3232,7 +3232,7 @@ async fn conversation_mirrors_assistant_message_text_to_realtime_handoff() -> Re
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3256,7 +3256,7 @@ async fn conversation_mirrors_assistant_message_text_to_realtime_handoff() -> Re
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -3269,7 +3269,7 @@ async fn conversation_mirrors_assistant_message_text_to_realtime_handoff() -> Re
     .await;
     assert_eq!(session_updated, "sess_1");
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.handoff_id == "handoff_1" => Some(()),
@@ -3277,7 +3277,7 @@ async fn conversation_mirrors_assistant_message_text_to_realtime_handoff() -> Re
     })
     .await;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3403,7 +3403,7 @@ async fn conversation_flushes_assistant_deltas_every_200ms_for_v3_handoff() -> R
     });
     let test = builder.build_with_streaming_server(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3433,7 +3433,7 @@ async fn conversation_flushes_assistant_deltas_every_200ms_for_v3_handoff() -> R
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -3444,7 +3444,7 @@ async fn conversation_flushes_assistant_deltas_every_200ms_for_v3_handoff() -> R
         _ => None,
     })
     .await;
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.handoff_id == "delegation_stream" => Some(()),
@@ -3452,7 +3452,7 @@ async fn conversation_flushes_assistant_deltas_every_200ms_for_v3_handoff() -> R
     })
     .await;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::AgentMessageContentDelta(event)
             if event.item_id == "msg_commentary" && event.delta == first_commentary_delta =>
         {
@@ -3503,7 +3503,7 @@ async fn conversation_flushes_assistant_deltas_every_200ms_for_v3_handoff() -> R
         .expect("missing delegated turn completion")
         .await
         .expect("delegated turn request did not complete");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3582,7 +3582,7 @@ async fn conversation_handoff_persists_across_item_done_until_turn_complete() ->
     });
     let test = builder.build_with_streaming_server(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3606,7 +3606,7 @@ async fn conversation_handoff_persists_across_item_done_until_turn_complete() ->
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -3618,7 +3618,7 @@ async fn conversation_handoff_persists_across_item_done_until_turn_complete() ->
     })
     .await;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.handoff_id == "handoff_item_done" => Some(()),
@@ -3642,7 +3642,7 @@ async fn conversation_handoff_persists_across_item_done_until_turn_complete() ->
         Some("assistant message 1")
     );
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::ConversationItemDone { item_id },
         }) if item_id == "item_item_done" => Some(()),
@@ -3675,7 +3675,7 @@ async fn conversation_handoff_persists_across_item_done_until_turn_complete() ->
     completion
         .await
         .expect("delegated turn request did not complete");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3745,7 +3745,7 @@ async fn inbound_handoff_request_starts_turn() -> Result<()> {
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3769,7 +3769,7 @@ async fn inbound_handoff_request_starts_turn() -> Result<()> {
         }))
         .await?;
 
-    let session_updated = wait_for_event_match(&test.codex, |msg| match msg {
+    let session_updated = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -3782,7 +3782,7 @@ async fn inbound_handoff_request_starts_turn() -> Result<()> {
     .await;
     assert_eq!(session_updated, "sess_inbound");
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.handoff_id == "handoff_inbound"
@@ -3795,14 +3795,14 @@ async fn inbound_handoff_request_starts_turn() -> Result<()> {
     .await;
 
     let turn_id = loop {
-        let event = test.codex.next_event().await?;
+        let event = test.myra.next_event().await?;
         if let EventMsg::TurnStarted(turn_started) = event.msg {
             break turn_started.turn_id;
         }
     };
     Uuid::parse_str(&turn_id).context("realtime-routed turn ID should be a UUID")?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3866,7 +3866,7 @@ async fn inbound_handoff_request_uses_active_transcript() -> Result<()> {
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -3890,7 +3890,7 @@ async fn inbound_handoff_request_uses_active_transcript() -> Result<()> {
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -3902,7 +3902,7 @@ async fn inbound_handoff_request_uses_active_transcript() -> Result<()> {
     })
     .await;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3980,7 +3980,7 @@ async fn inbound_handoff_request_sends_transcript_delta_after_each_handoff() -> 
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4004,7 +4004,7 @@ async fn inbound_handoff_request_sends_transcript_delta_after_each_handoff() -> 
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -4016,12 +4016,12 @@ async fn inbound_handoff_request_sends_transcript_delta_after_each_handoff() -> 
     })
     .await;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationAudio(ConversationAudioParams {
             frame: RealtimeAudioFrame {
                 data: "AQID".to_string(),
@@ -4033,7 +4033,7 @@ async fn inbound_handoff_request_sends_transcript_delta_after_each_handoff() -> 
         }))
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4113,7 +4113,7 @@ async fn conversation_close_routes_only_remaining_transcript_tail_once() -> Resu
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4137,13 +4137,13 @@ async fn conversation_close_routes_only_remaining_transcript_tail_once() -> Resu
         }))
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
-    test.codex.submit(Op::RealtimeConversationClose).await?;
+    test.myra.submit(Op::RealtimeConversationClose).await?;
 
-    let closed = wait_for_event_match(&test.codex, |msg| match msg {
+    let closed = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
         _ => None,
     })
@@ -4156,7 +4156,7 @@ async fn conversation_close_routes_only_remaining_transcript_tail_once() -> Resu
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
 
-    test.codex.submit(Op::RealtimeConversationClose).await?;
+    test.myra.submit(Op::RealtimeConversationClose).await?;
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     let requests = response_mock.requests();
@@ -4207,7 +4207,7 @@ async fn inbound_conversation_item_does_not_start_turn_and_still_forwards_audio(
     });
     let test = builder.build(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4231,7 +4231,7 @@ async fn inbound_conversation_item_does_not_start_turn_and_still_forwards_audio(
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -4245,7 +4245,7 @@ async fn inbound_conversation_item_does_not_start_turn_and_still_forwards_audio(
 
     let audio_out = tokio::time::timeout(
         Duration::from_millis(500),
-        wait_for_event_match(&test.codex, |msg| match msg {
+        wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
                 payload: RealtimeEvent::AudioOut(frame),
             }) => Some(frame.clone()),
@@ -4258,7 +4258,7 @@ async fn inbound_conversation_item_does_not_start_turn_and_still_forwards_audio(
 
     let unexpected_turn_started = tokio::time::timeout(
         Duration::from_millis(200),
-        wait_for_event_match(&test.codex, |msg| match msg {
+        wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::TurnStarted(_) => Some(()),
             _ => None,
         }),
@@ -4341,7 +4341,7 @@ async fn delegated_turn_user_role_echo_does_not_redelegate_and_still_forwards_au
     });
     let test = builder.build_with_streaming_server(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4365,7 +4365,7 @@ async fn delegated_turn_user_role_echo_does_not_redelegate_and_still_forwards_au
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -4377,7 +4377,7 @@ async fn delegated_turn_user_role_echo_does_not_redelegate_and_still_forwards_au
     })
     .await;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.input_transcript == "delegate now" => Some(()),
@@ -4414,7 +4414,7 @@ async fn delegated_turn_user_role_echo_does_not_redelegate_and_still_forwards_au
         Some("\"Agent Final Message\":\n\nassistant says hi")
     );
 
-    let audio_out = wait_for_event_match(&test.codex, |msg| match msg {
+    let audio_out = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::AudioOut(frame),
         }) => Some(frame.clone()),
@@ -4442,7 +4442,7 @@ async fn delegated_turn_user_role_echo_does_not_redelegate_and_still_forwards_au
         "[realtime test +{}ms] delegated completion resolved",
         start.elapsed().as_millis()
     );
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4505,7 +4505,7 @@ async fn inbound_handoff_request_does_not_block_realtime_event_forwarding() -> R
     });
     let test = builder.build_with_streaming_server(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4529,7 +4529,7 @@ async fn inbound_handoff_request_does_not_block_realtime_event_forwarding() -> R
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -4541,7 +4541,7 @@ async fn inbound_handoff_request_does_not_block_realtime_event_forwarding() -> R
     })
     .await;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.input_transcript == "delegate now" => Some(()),
@@ -4551,7 +4551,7 @@ async fn inbound_handoff_request_does_not_block_realtime_event_forwarding() -> R
 
     let audio_out = tokio::time::timeout(
         Duration::from_millis(500),
-        wait_for_event_match(&test.codex, |msg| match msg {
+        wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
                 payload: RealtimeEvent::AudioOut(frame),
             }) => Some(frame.clone()),
@@ -4570,7 +4570,7 @@ async fn inbound_handoff_request_does_not_block_realtime_event_forwarding() -> R
     completion
         .await
         .expect("delegated turn request did not complete");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4658,7 +4658,7 @@ async fn inbound_handoff_request_steers_active_turn() -> Result<()> {
     });
     let test = builder.build_with_streaming_server(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4681,7 +4681,7 @@ async fn inbound_handoff_request_steers_active_turn() -> Result<()> {
             voice: None,
         }))
         .await?;
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -4693,7 +4693,7 @@ async fn inbound_handoff_request_steers_active_turn() -> Result<()> {
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first prompt".to_string(),
@@ -4706,12 +4706,12 @@ async fn inbound_handoff_request_steers_active_turn() -> Result<()> {
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::AgentMessageContentDelta(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationAudio(ConversationAudioParams {
             frame: RealtimeAudioFrame {
                 data: "AQID".to_string(),
@@ -4723,7 +4723,7 @@ async fn inbound_handoff_request_steers_active_turn() -> Result<()> {
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) if handoff.input_transcript == "steer via realtime" => Some(()),
@@ -4742,7 +4742,7 @@ async fn inbound_handoff_request_steers_active_turn() -> Result<()> {
     second_completion
         .await
         .expect("second request did not complete");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4822,7 +4822,7 @@ async fn inbound_handoff_request_starts_turn_and_does_not_block_realtime_audio()
     });
     let test = builder.build_with_streaming_server(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
             delegation_ack_filler: None,
@@ -4846,7 +4846,7 @@ async fn inbound_handoff_request_starts_turn_and_does_not_block_realtime_audio()
         }))
         .await?;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload:
                 RealtimeEvent::SessionUpdated {
@@ -4858,7 +4858,7 @@ async fn inbound_handoff_request_starts_turn_and_does_not_block_realtime_audio()
     })
     .await;
 
-    let _ = wait_for_event_match(&test.codex, |msg| match msg {
+    let _ = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::HandoffRequested(handoff),
         }) => (handoff.handoff_id == "handoff_audio" && handoff.input_transcript == delegated_text)
@@ -4869,7 +4869,7 @@ async fn inbound_handoff_request_starts_turn_and_does_not_block_realtime_audio()
 
     let audio_out = tokio::time::timeout(
         Duration::from_millis(500),
-        wait_for_event_match(&test.codex, |msg| match msg {
+        wait_for_event_match(&test.myra, |msg| match msg {
             EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
                 payload: RealtimeEvent::AudioOut(frame),
             }) => Some(frame.clone()),
@@ -4888,7 +4888,7 @@ async fn inbound_handoff_request_starts_turn_and_does_not_block_realtime_audio()
     completion
         .await
         .expect("delegated turn request did not complete");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

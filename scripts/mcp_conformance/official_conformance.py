@@ -382,7 +382,7 @@ def _run_scenario(
     scenario_dir = output_dir / _safe_scenario_name(scenario)
     scenario_dir.mkdir(parents=True, exist_ok=True)
     adapter_report = scenario_dir / "codex-adapter.json"
-    adapter_home = scenario_dir / "codex-home"
+    adapter_home = scenario_dir / "myra-home"
     adapter_home.mkdir()
 
     env = dict(base_env)

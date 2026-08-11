@@ -171,7 +171,7 @@ async fn wait_for_raw_unified_exec_output(
     test: &TestCodex,
     call_id: &str,
 ) -> Result<ParsedUnifiedExecOutput> {
-    let content = wait_for_event_match(&test.codex, |event| match event {
+    let content = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::RawResponseItem(raw) => match &raw.item {
             ResponseItem::FunctionCallOutput {
                 call_id: output_call_id,
@@ -197,7 +197,7 @@ async fn submit_unified_exec_turn(
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -335,7 +335,7 @@ async fn unified_exec_intercepts_apply_patch_exec_command() -> Result<()> {
     mount_sse_sequence(harness.server(), responses).await;
 
     let test = harness.test();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let cwd = test.config.cwd.clone();
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
@@ -481,7 +481,7 @@ async fn unified_exec_rejects_justification_without_sandbox_permissions() -> Res
     .await?;
 
     let mut saw_exec_begin = false;
-    wait_for_event(&test.codex, |event| match event {
+    wait_for_event(&test.myra, |event| match event {
         EventMsg::ExecCommandBegin(event) if event.call_id == call_id => {
             saw_exec_begin = true;
             false
@@ -554,7 +554,7 @@ async fn unified_exec_emits_exec_command_begin_event() -> Result<()> {
 
     submit_unified_exec_turn(&test, "emit begin event", PermissionProfile::Disabled).await?;
 
-    let begin_event = wait_for_event_match(&test.codex, |msg| match msg {
+    let begin_event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandBegin(event) if event.call_id == call_id => Some(event.clone()),
         _ => None,
     })
@@ -564,7 +564,7 @@ async fn unified_exec_emits_exec_command_begin_event() -> Result<()> {
 
     assert_eq!(begin_event.cwd, PathUri::from_host_native_path(&cwd)?);
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -624,7 +624,7 @@ async fn unified_exec_resolves_relative_workdir() -> Result<()> {
     )
     .await?;
 
-    let begin_event = wait_for_event_match(&test.codex, |msg| match msg {
+    let begin_event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandBegin(event) if event.call_id == call_id => Some(event.clone()),
         _ => None,
     })
@@ -636,7 +636,7 @@ async fn unified_exec_resolves_relative_workdir() -> Result<()> {
         "exec_command cwd should resolve relative workdir against turn cwd",
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -688,7 +688,7 @@ async fn unified_exec_respects_workdir_override() -> Result<()> {
 
     submit_unified_exec_turn(&test, "run workdir test", PermissionProfile::Disabled).await?;
 
-    let begin_event = wait_for_event_match(&test.codex, |msg| match msg {
+    let begin_event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandBegin(event) if event.call_id == call_id => Some(event.clone()),
         _ => None,
     })
@@ -700,7 +700,7 @@ async fn unified_exec_respects_workdir_override() -> Result<()> {
         "exec_command cwd should reflect the requested workdir override"
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -766,7 +766,7 @@ async fn unified_exec_emits_exec_command_end_event() -> Result<()> {
 
     submit_unified_exec_turn(&test, "emit end event", PermissionProfile::Disabled).await?;
 
-    let end_event = wait_for_event_match(&test.codex, |msg| match msg {
+    let end_event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandEnd(ev) if ev.call_id == call_id => Some(ev.clone()),
         _ => None,
     })
@@ -778,7 +778,7 @@ async fn unified_exec_emits_exec_command_end_event() -> Result<()> {
         "expected aggregated output to contain marker"
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -825,7 +825,7 @@ async fn unified_exec_emits_output_delta_for_exec_command() -> Result<()> {
 
     submit_unified_exec_turn(&test, "emit delta", PermissionProfile::Disabled).await?;
 
-    let event = wait_for_event_match(&test.codex, |msg| match msg {
+    let event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandEnd(ev) if ev.call_id == call_id => Some(ev.clone()),
         _ => None,
     })
@@ -837,7 +837,7 @@ async fn unified_exec_emits_output_delta_for_exec_command() -> Result<()> {
         "delta chunk missing expected text: {text:?}",
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -895,7 +895,7 @@ async fn unified_exec_full_lifecycle_with_background_end_event() -> Result<()> {
     let mut task_completed = false;
 
     loop {
-        let msg = wait_for_event(&test.codex, |_| true).await;
+        let msg = wait_for_event(&test.myra, |_| true).await;
         match msg {
             EventMsg::ExecCommandBegin(ev) if ev.call_id == call_id => begin_event = Some(ev),
             EventMsg::ExecCommandEnd(ev) if ev.call_id == call_id => {
@@ -976,7 +976,7 @@ async fn unified_exec_network_denial_emits_failed_background_end_event() -> Resu
     );
 
     if !turn_completed {
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.myra, |event| {
             matches!(event, EventMsg::TurnComplete(_))
         })
         .await;
@@ -1020,7 +1020,7 @@ async fn unified_exec_short_lived_network_denial_emits_failed_end_event() -> Res
     );
 
     if !turn_completed {
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.myra, |event| {
             matches!(event, EventMsg::TurnComplete(_))
         })
         .await;
@@ -1122,7 +1122,7 @@ async fn wait_for_unified_exec_end(
             "timed out waiting for network denial end event; observed {observed_events:?}; response requests: {}",
             response_mock.requests().len()
         );
-        let event = tokio::time::timeout(remaining, test.codex.next_event())
+        let event = tokio::time::timeout(remaining, test.myra.next_event())
             .await
             .expect(&timeout_message)
             .expect("event stream ended unexpectedly")
@@ -1202,7 +1202,7 @@ async fn unified_exec_emits_terminal_interaction_for_write_stdin() -> Result<()>
     let mut terminal_interaction = None;
 
     loop {
-        let msg = wait_for_event(&test.codex, |_| true).await;
+        let msg = wait_for_event(&test.myra, |_| true).await;
         match msg {
             EventMsg::TerminalInteraction(ev) if ev.call_id == open_call_id => {
                 terminal_interaction = Some(ev);
@@ -1330,7 +1330,7 @@ async fn unified_exec_terminal_interaction_captures_delayed_output() -> Result<(
 
     // Consume all events for this turn so we can assert on each stage.
     loop {
-        let msg = wait_for_event(&test.codex, |_| true).await;
+        let msg = wait_for_event(&test.myra, |_| true).await;
         match msg {
             EventMsg::ExecCommandBegin(ev) if ev.call_id == open_call_id => {
                 begin_event = Some(ev);
@@ -1474,7 +1474,7 @@ async fn unified_exec_emits_one_begin_and_one_end_event() -> Result<()> {
     let mut terminal_interactions = Vec::new();
     let mut task_completed = false;
     loop {
-        let event_msg = wait_for_event(&test.codex, |_| true).await;
+        let event_msg = wait_for_event(&test.myra, |_| true).await;
         match event_msg {
             EventMsg::ExecCommandBegin(event) if event.call_id == open_call_id => {
                 begin_events.push(event);
@@ -1566,7 +1566,7 @@ async fn exec_command_reports_chunk_and_exit_metadata() -> Result<()> {
 
     submit_unified_exec_turn(&test, "run metadata test", PermissionProfile::Disabled).await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1676,7 +1676,7 @@ async fn exec_command_clamps_model_requested_max_output_tokens_to_policy() -> Re
         &output_text,
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1766,7 +1766,7 @@ async fn write_stdin_clamps_model_requested_max_output_tokens_to_policy() -> Res
         &stdin_output_text,
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1818,7 +1818,7 @@ async fn unified_exec_defaults_to_pipe() -> Result<()> {
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1884,7 +1884,7 @@ async fn unified_exec_can_enable_tty() -> Result<()> {
 
     submit_unified_exec_turn(&test, "check tty enabled", PermissionProfile::Disabled).await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1954,7 +1954,7 @@ async fn unified_exec_respects_early_exit_notifications() -> Result<()> {
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2077,7 +2077,7 @@ async fn write_stdin_returns_exit_metadata_and_clears_session() -> Result<()> {
     let mut exit_lifecycle_order = Vec::new();
     let mut turn_completed = false;
     loop {
-        let event = wait_for_event(&test.codex, |_| true).await;
+        let event = wait_for_event(&test.myra, |_| true).await;
         match event {
             EventMsg::TerminalInteraction(event)
                 if event.call_id == start_call_id
@@ -2267,7 +2267,7 @@ async fn assert_write_stdin_ctrl_c_interrupts_non_tty_session(
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2392,7 +2392,7 @@ async fn write_stdin_ctrl_c_terminates_non_tty_session_on_windows() -> Result<()
     .await?;
 
     wait_for_event_with_timeout(
-        &test.codex,
+        &test.myra,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         Duration::from_secs(20),
     )
@@ -2498,7 +2498,7 @@ async fn unified_exec_emits_end_event_when_session_dies_via_stdin() -> Result<()
     submit_unified_exec_turn(&test, "end on exit", PermissionProfile::Disabled).await?;
 
     // We expect the ExecCommandEnd event to match the initial exec_command call_id.
-    let end_event = wait_for_event_match(&test.codex, |msg| match msg {
+    let end_event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandEnd(ev) if ev.call_id == start_call_id => Some(ev.clone()),
         _ => None,
     })
@@ -2506,7 +2506,7 @@ async fn unified_exec_emits_end_event_when_session_dies_via_stdin() -> Result<()
 
     assert_eq!(end_event.exit_code, 0);
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2780,7 +2780,7 @@ async fn unified_exec_reuses_session_via_stdin() -> Result<()> {
 
     submit_unified_exec_turn(&test, "run unified exec", PermissionProfile::Disabled).await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2901,7 +2901,7 @@ PY
     // This is a worst case scenario for the truncate logic, and CI can spend a
     // while draining the lagged tail before the follow-up tool call completes.
     wait_for_event_with_timeout(
-        &test.codex,
+        &test.myra,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         UNIFIED_EXEC_LAGGED_OUTPUT_TIMEOUT,
     )
@@ -2996,7 +2996,7 @@ async fn unified_exec_timeout_and_followup_poll() -> Result<()> {
     submit_unified_exec_turn(&test, "check timeout", PermissionProfile::Disabled).await?;
 
     loop {
-        let event = test.codex.next_event().await.expect("event");
+        let event = test.myra.next_event().await.expect("event");
         if matches!(event.msg, EventMsg::TurnComplete(_)) {
             break;
         }
@@ -3085,7 +3085,7 @@ PY
 
     submit_unified_exec_turn(&test, "summarize large output", PermissionProfile::Disabled).await?;
 
-    let end_event = wait_for_event_match(&test.codex, |event| match event {
+    let end_event = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::ExecCommandEnd(event) if event.call_id == call_id => Some(event.clone()),
         _ => None,
     })
@@ -3097,7 +3097,7 @@ PY
         &end_event.aggregated_output,
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3540,7 +3540,7 @@ async fn unified_exec_runs_on_all_platforms() -> Result<()> {
 
     submit_unified_exec_turn(&test, "summarize large output", PermissionProfile::Disabled).await?;
 
-    let end_event = wait_for_event_match(&test.codex, |msg| match msg {
+    let end_event = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::ExecCommandEnd(event) if event.call_id == call_id => Some(event.clone()),
         _ => None,
     })
@@ -3548,7 +3548,7 @@ async fn unified_exec_runs_on_all_platforms() -> Result<()> {
     assert_eq!(end_event.exit_code, 0);
     assert_regex_match(".*hello crossplat.*", &end_event.aggregated_output);
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3623,7 +3623,7 @@ async fn write_stdin_calls_run_in_parallel_across_sessions() -> Result<()> {
     .await;
 
     submit_unified_exec_turn(&test, "start terminals", PermissionProfile::Disabled).await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

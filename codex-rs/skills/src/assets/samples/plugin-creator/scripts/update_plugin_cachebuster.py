@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     plugin_root = Path(args.plugin_path).expanduser().resolve()
-    manifest_path = plugin_root / ".codex-plugin" / "plugin.json"
+    manifest_path = plugin_root / ".myra-plugin" / "plugin.json"
     manifest = load_manifest(manifest_path)
 
     version = manifest.get("version")

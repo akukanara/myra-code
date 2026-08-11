@@ -757,12 +757,12 @@ interrupt_message = false
         let system_file = if cfg!(windows) {
             absolute_path("C:\\etc\\codex\\config.toml")
         } else {
-            absolute_path("/etc/codex/config.toml")
+            absolute_path("/etc/myra/config.toml")
         };
         let project_folder = if cfg!(windows) {
-            absolute_path("C:\\repo\\.codex")
+            absolute_path("C:\\repo\\.myra")
         } else {
-            absolute_path("/repo/.codex")
+            absolute_path("/repo/.myra")
         };
 
         let layers = vec![
@@ -798,7 +798,7 @@ interrupt_message = false
         let requirements_file = if cfg!(windows) {
             absolute_path("C:\\ProgramData\\OpenAI\\Codex\\requirements.toml")
         } else {
-            absolute_path("/etc/codex/requirements.toml")
+            absolute_path("/etc/myra/requirements.toml")
         };
         let denied_path = if cfg!(windows) {
             absolute_path("C:\\Users\\alice\\.gitconfig")
@@ -806,19 +806,19 @@ interrupt_message = false
             absolute_path("/home/alice/.gitconfig")
         };
         let sqlite_home = if cfg!(windows) {
-            absolute_path("C:\\Users\\alice\\.codex\\state")
+            absolute_path("C:\\Users\\alice\\.myra\\state")
         } else {
-            absolute_path("/home/alice/.codex/state")
+            absolute_path("/home/alice/.myra/state")
         };
         let log_dir = if cfg!(windows) {
-            absolute_path("C:\\Users\\alice\\.codex\\logs")
+            absolute_path("C:\\Users\\alice\\.myra\\logs")
         } else {
-            absolute_path("/home/alice/.codex/logs")
+            absolute_path("/home/alice/.myra/logs")
         };
         let model_catalog_json = if cfg!(windows) {
-            absolute_path("C:\\Users\\alice\\.codex\\models.json")
+            absolute_path("C:\\Users\\alice\\.myra\\models.json")
         } else {
-            absolute_path("/home/alice/.codex/models.json")
+            absolute_path("/home/alice/.myra/models.json")
         };
 
         let requirements = ConfigRequirements {
@@ -979,9 +979,9 @@ interrupt_message = false
         };
 
         let user_file = if cfg!(windows) {
-            absolute_path("C:\\users\\alice\\.codex\\config.toml")
+            absolute_path("C:\\users\\alice\\.myra\\config.toml")
         } else {
-            absolute_path("/home/alice/.codex/config.toml")
+            absolute_path("/home/alice/.myra/config.toml")
         };
         let stack = ConfigLayerStack::new(
             vec![ConfigLayerEntry::new(
@@ -1058,7 +1058,7 @@ interrupt_message = false
         let requirements_file = if cfg!(windows) {
             absolute_path("C:\\ProgramData\\OpenAI\\Codex\\requirements.toml")
         } else {
-            absolute_path("/etc/codex/requirements.toml")
+            absolute_path("/etc/myra/requirements.toml")
         };
         let denied_path = if cfg!(windows) {
             absolute_path("C:\\Users\\alice\\.gitconfig")

@@ -21,7 +21,7 @@ async fn thread_settings_update_does_not_persist_when_config_exists() {
             config.model = Some("gpt-4o".to_string());
         });
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let config_path = test.home.path().join(CONFIG_TOML);
 
     core_test_support::submit_thread_settings(
@@ -49,7 +49,7 @@ async fn thread_settings_update_does_not_create_config_file() {
     let server = start_mock_server().await;
     let mut builder = test_codex();
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let config_path = test.home.path().join(CONFIG_TOML);
     assert!(
         !config_path.exists(),

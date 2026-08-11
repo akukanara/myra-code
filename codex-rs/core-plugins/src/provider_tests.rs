@@ -205,7 +205,7 @@ async fn plugin_root_resolution_uses_supplied_executor_file_system() {
     assert!(!plugin_root.exists());
     let plugin_root = PathUri::from_host_native_path(&plugin_root).expect("plugin root URI");
     let manifest_path = plugin_root
-        .join(".codex-plugin/plugin.json")
+        .join(".myra-plugin/plugin.json")
         .expect("manifest URI");
     let parsed_manifest =
         parse_plugin_manifest_uri(&plugin_root, &manifest_path, MANIFEST_CONTENTS)
@@ -253,7 +253,7 @@ async fn plugin_root_resolution_uses_supplied_executor_file_system() {
 async fn plugin_root_resolution_accepts_foreign_executor_file_uri() {
     let plugin_root = PathUri::parse("file:///C:/plugins/foo").expect("Windows plugin root URI");
     let manifest_path = plugin_root
-        .join(".codex-plugin/plugin.json")
+        .join(".myra-plugin/plugin.json")
         .expect("manifest URI");
     let parsed_manifest =
         parse_plugin_manifest_uri(&plugin_root, &manifest_path, MANIFEST_CONTENTS)
@@ -344,7 +344,7 @@ async fn root_agent_plugin_manifest_is_not_an_executor_plugin() {
 async fn unavailable_environment_does_not_fall_back_to_host_filesystem() {
     let temp_dir = tempdir().expect("tempdir");
     let plugin_root = temp_dir.path().join("host-plugin");
-    write_manifest(&plugin_root, ".codex-plugin/plugin.json", MANIFEST_CONTENTS);
+    write_manifest(&plugin_root, ".myra-plugin/plugin.json", MANIFEST_CONTENTS);
     let provider =
         ExecutorPluginProvider::new(Arc::new(environment_manager_without_environments()));
 
@@ -363,14 +363,14 @@ async fn unavailable_environment_does_not_fall_back_to_host_filesystem() {
 async fn malformed_preferred_manifest_does_not_fall_through_to_alternate() {
     let temp_dir = tempdir().expect("tempdir");
     let plugin_root = temp_dir.path().join("demo-plugin");
-    write_manifest(&plugin_root, ".codex-plugin/plugin.json", "{not-json");
+    write_manifest(&plugin_root, ".myra-plugin/plugin.json", "{not-json");
     write_manifest(
         &plugin_root,
         ".claude-plugin/plugin.json",
         MANIFEST_CONTENTS,
     );
     let expected_path =
-        PathUri::from_host_native_path(plugin_root.join(".codex-plugin/plugin.json"))
+        PathUri::from_host_native_path(plugin_root.join(".myra-plugin/plugin.json"))
             .expect("manifest URI");
     let provider = ExecutorPluginProvider::new(Arc::new(EnvironmentManager::default_for_tests()));
 

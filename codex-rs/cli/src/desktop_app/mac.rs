@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use tempfile::Builder;
 use tokio::process::Command;
 
-const CODEX_BUNDLE_IDENTIFIER: &str = "com.openai.codex";
+const CODEX_BUNDLE_IDENTIFIER: &str = "com.openai.myra";
 const CODEX_DMG_URL_ARM64: &str = "https://persistent.oaistatic.com/codex-app-prod/Codex.dmg";
 const CODEX_DMG_URL_X64: &str =
     "https://persistent.oaistatic.com/codex-app-prod/Codex-latest-x64.dmg";
@@ -346,7 +346,7 @@ mod tests {
     fn finds_chatgpt_app_with_codex_bundle_identifier() {
         let temp_dir = tempfile::tempdir().expect("create temp dir");
         let app_path = temp_dir.path().join("ChatGPT.app");
-        write_app_bundle(&app_path, "com.openai.codex");
+        write_app_bundle(&app_path, "com.openai.myra");
 
         assert_eq!(
             find_existing_codex_app_path(&[temp_dir.path().to_path_buf()]),
@@ -359,7 +359,7 @@ mod tests {
         let temp_dir = tempfile::tempdir().expect("create temp dir");
         write_app_bundle(&temp_dir.path().join("ChatGPT.app"), "com.openai.chat");
         let codex_app_path = temp_dir.path().join("Codex.app");
-        write_app_bundle(&codex_app_path, "com.openai.codex");
+        write_app_bundle(&codex_app_path, "com.openai.myra");
 
         assert_eq!(
             find_existing_codex_app_path(&[temp_dir.path().to_path_buf()]),

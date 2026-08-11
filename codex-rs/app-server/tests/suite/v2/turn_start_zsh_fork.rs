@@ -745,7 +745,7 @@ fn create_test_package_app_server(codex_home: &Path, zsh_path: &Path) -> Result<
     };
     std::fs::create_dir_all(&bin_dir)?;
     std::fs::create_dir_all(zsh_bin_dir)?;
-    std::fs::write(package_dir.join("codex-package.json"), "{}")?;
+    std::fs::write(package_dir.join("myra-package.json"), "{}")?;
 
     let app_server = bin_dir.join("codex-app-server");
     copy_with_permissions(
@@ -759,7 +759,7 @@ fn create_test_package_app_server(codex_home: &Path, zsh_path: &Path) -> Result<
 fn packaged_zsh_path(codex_home: &Path) -> PathBuf {
     codex_home
         .join("test-package")
-        .join("codex-resources")
+        .join("myra-resources")
         .join("zsh")
         .join("bin")
         .join("zsh")

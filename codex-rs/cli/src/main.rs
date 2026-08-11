@@ -75,7 +75,7 @@ use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::ConfigOverrides;
 use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core::config::resolve_profile_v2_config_path;
 use codex_features::FEATURES;
 use codex_features::Stage;
@@ -130,7 +130,7 @@ struct MultitoolCli {
 
 #[derive(Debug, clap::Subcommand)]
 enum Subcommand {
-    /// Run MyraCode non-interactively.
+    /// Run Myra non-interactively.
     #[clap(visible_alias = "e")]
     Exec(ExecCli),
 
@@ -143,16 +143,16 @@ enum Subcommand {
     /// Remove stored authentication credentials.
     Logout(LogoutCommand),
 
-    /// Manage external MCP servers for MyraCode.
+    /// Manage external MCP servers for Myra.
     Mcp(McpCli),
 
-    /// Manage MyraCode plugins.
+    /// Manage Myra plugins.
     Plugin(PluginCli),
 
     /// Install and manage agent skills published by the gateway.
     Skills(SkillsCli),
 
-    /// Start MyraCode as an MCP server (stdio).
+    /// Start Myra as an MCP server (stdio).
     McpServer(McpServerCommand),
 
     /// [experimental] Run the app server or related tooling.
@@ -168,13 +168,13 @@ enum Subcommand {
     /// Generate shell completion scripts.
     Completion(CompletionCommand),
 
-    /// Update MyraCode to the latest version.
+    /// Update Myra to the latest version.
     Update,
 
-    /// Diagnose local MyraCode installation, config, auth, and runtime health.
+    /// Diagnose local Myra installation, config, auth, and runtime health.
     Doctor(DoctorCommand),
 
-    /// Run commands within a MyraCode-provided sandbox.
+    /// Run commands within a Myra-provided sandbox.
     Sandbox(HostSandboxArgs),
 
     /// Debugging tools.
@@ -184,7 +184,7 @@ enum Subcommand {
     #[clap(hide = true)]
     Execpolicy(ExecpolicyCommand),
 
-    /// Apply the latest diff produced by MyraCode agent as a `git apply` to your local working tree.
+    /// Apply the latest diff produced by Myra agent as a `git apply` to your local working tree.
     #[clap(visible_alias = "a")]
     Apply(ApplyCommand),
 
@@ -293,7 +293,7 @@ struct DebugModelsCommand {
 
 #[derive(Debug, Parser)]
 struct ReviewCommand {
-    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
+    /// Error out when config.toml contains fields that are not recognized by this version of Myra.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -303,7 +303,7 @@ struct ReviewCommand {
 
 #[derive(Debug, Parser)]
 struct McpServerCommand {
-    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
+    /// Error out when config.toml contains fields that are not recognized by this version of Myra.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 }
@@ -363,7 +363,7 @@ struct SessionArchiveConfigOverrides {
     #[clap(flatten)]
     shared: SharedCliOptions,
 
-    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
+    /// Error out when config.toml contains fields that are not recognized by this version of Myra.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -442,7 +442,7 @@ type HostSandboxArgs = UnsupportedSandboxArgs;
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 #[derive(Debug, Parser)]
 struct UnsupportedSandboxArgs {
-    /// Layer $CODEX_HOME/<name>.config.toml on top of the base user config.
+    /// Layer $MYRA_HOME/<name>.config.toml on top of the base user config.
     #[arg(long = "profile", short = 'p')]
     pub config_profile: Option<ProfileV2Name>,
 
@@ -531,7 +531,7 @@ struct AppServerCommand {
     #[command(flatten)]
     code_mode_host: codex_app_server::AppServerCodeModeHostArgs,
 
-    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
+    /// Error out when config.toml contains fields that are not recognized by this version of Myra.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -576,7 +576,7 @@ struct AppServerCommand {
 
 #[derive(Debug, Parser)]
 struct ExecServerCommand {
-    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
+    /// Error out when config.toml contains fields that are not recognized by this version of Myra.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -632,7 +632,7 @@ enum AppServerSubcommand {
     /// [experimental] Generate JSON Schema for the app server protocol.
     GenerateJsonSchema(GenerateJsonSchemaCommand),
 
-    /// [internal] Generate internal JSON Schema artifacts for MyraCode tooling.
+    /// [internal] Generate internal JSON Schema artifacts for Myra tooling.
     #[clap(hide = true)]
     GenerateInternalJsonSchema(GenerateInternalJsonSchemaCommand),
 }
@@ -787,7 +787,7 @@ fn handle_app_exit(exit_info: AppExitInfo) -> anyhow::Result<()> {
 fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     println!();
     let cmd_str = action.command_str();
-    println!("Updating MyraCode via `{cmd_str}`...");
+    println!("Updating Myra via `{cmd_str}`...");
 
     let status = {
         #[cfg(windows)]
@@ -822,7 +822,7 @@ fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     if !status.success() {
         anyhow::bail!("`{cmd_str}` failed with status {status}");
     }
-    println!("\n🎉 Update ran successfully! Please restart MyraCode.");
+    println!("\n🎉 Update ran successfully! Please restart Myra.");
     Ok(())
 }
 
@@ -830,7 +830,7 @@ fn run_update_command() -> anyhow::Result<()> {
     #[cfg(debug_assertions)]
     {
         anyhow::bail!(
-            "`myra update` is not available in debug builds. Install a release build of MyraCode to use this command."
+            "`myra update` is not available in debug builds. Install a release build of Myra to use this command."
         );
     }
 
@@ -838,7 +838,7 @@ fn run_update_command() -> anyhow::Result<()> {
     {
         let Some(action) = codex_tui::get_update_action() else {
             anyhow::bail!(
-                "Could not detect the MyraCode installation method. Please update manually: https://developers.openai.com/codex/cli/"
+                "Could not detect the Myra installation method. Please update manually: https://developers.openai.com/codex/cli/"
             );
         };
         run_update_action(action)
@@ -1275,7 +1275,7 @@ async fn cli_main(
                     let socket_path = match proxy_cli.socket_path {
                         Some(socket_path) => socket_path,
                         None => {
-                            let codex_home = find_codex_home()?;
+                            let codex_home = find_myra_home()?;
                             codex_app_server::app_server_control_socket_path(&codex_home)?
                         }
                     };
@@ -1774,7 +1774,7 @@ async fn run_exec_server_command(
     let codex_self_exe = arg0_paths
         .codex_self_exe
         .clone()
-        .ok_or_else(|| anyhow::anyhow!("MyraCode executable path is not configured"))?;
+        .ok_or_else(|| anyhow::anyhow!("Myra executable path is not configured"))?;
     let runtime_paths = codex_exec_server::ExecServerRuntimePaths::new(
         codex_self_exe,
         arg0_paths.codex_linux_sandbox_exe.clone(),
@@ -1975,7 +1975,7 @@ async fn load_exec_server_remote_auth(
 
 async fn enable_feature_in_config(feature: &str) -> anyhow::Result<()> {
     FeatureToggles::validate_feature(feature)?;
-    let codex_home = find_codex_home()?;
+    let codex_home = find_myra_home()?;
     ConfigEditsBuilder::new(&codex_home)
         .set_feature_enabled(feature, /*enabled*/ true)
         .apply()
@@ -1987,7 +1987,7 @@ async fn enable_feature_in_config(feature: &str) -> anyhow::Result<()> {
 
 async fn disable_feature_in_config(feature: &str) -> anyhow::Result<()> {
     FeatureToggles::validate_feature(feature)?;
-    let codex_home = find_codex_home()?;
+    let codex_home = find_myra_home()?;
     ConfigEditsBuilder::new(&codex_home)
         .set_feature_enabled(feature, /*enabled*/ false)
         .apply()
@@ -2001,7 +2001,7 @@ fn loader_overrides_for_profile(
 ) -> anyhow::Result<LoaderOverrides> {
     match profile_v2 {
         Some(profile_v2) => {
-            let codex_home = find_codex_home()?;
+            let codex_home = find_myra_home()?;
             Ok(loader_overrides_for_profile_at_codex_home(
                 Some(profile_v2),
                 &codex_home,
@@ -2433,7 +2433,7 @@ async fn run_interactive_tui(
         }
 
         eprintln!(
-            "WARNING: TERM is set to \"dumb\". MyraCode's interactive TUI may not work in this terminal."
+            "WARNING: TERM is set to \"dumb\". Myra's interactive TUI may not work in this terminal."
         );
         if !confirm("Continue anyway? [y/N]: ")? {
             return Ok(AppExitInfo::fatal(
@@ -2485,7 +2485,7 @@ async fn run_interactive_tui(
             Err(backup_err) => {
                 local_state_db::print_diagnostic_guidance(startup_error);
                 return Ok(AppExitInfo::fatal(format!(
-                    "failed to move damaged MyraCode local database files into a backup folder automatically: {backup_err}"
+                    "failed to move damaged Myra local database files into a backup folder automatically: {backup_err}"
                 )));
             }
         }
@@ -2689,7 +2689,7 @@ mod tests {
 
     #[tokio::test]
     async fn updater_http_client_factory_honors_respect_system_proxy() {
-        let codex_home = tempfile::tempdir().expect("temporary MyraCode home");
+        let codex_home = tempfile::tempdir().expect("temporary Myra home");
         let config = ConfigBuilder::default()
             .codex_home(codex_home.path().to_path_buf())
             .cli_overrides(vec![(
@@ -3183,7 +3183,7 @@ mod tests {
     }
 
     fn default_app_server_socket_path() -> AbsolutePathBuf {
-        let codex_home = find_codex_home().expect("codex home");
+        let codex_home = find_myra_home().expect("codex home");
         codex_app_server::app_server_control_socket_path(&codex_home)
             .expect("default app-server socket path")
     }

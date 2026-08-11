@@ -15,7 +15,7 @@ use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::LoaderOverrides;
 use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core::config::load_global_mcp_servers;
 use codex_core_plugins::PluginsManager;
 use codex_exec_server::EnvironmentManager;
@@ -311,7 +311,7 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
     let mut servers = load_global_mcp_servers(&codex_home)
         .await
         .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
@@ -453,7 +453,7 @@ async fn run_remove(config_overrides: &CliConfigOverrides, remove_args: RemoveAr
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
     let mut servers = load_global_mcp_servers(&codex_home)
         .await
         .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;

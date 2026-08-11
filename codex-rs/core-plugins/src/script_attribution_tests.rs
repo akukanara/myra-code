@@ -253,7 +253,7 @@ fn only_emits_safe_normalized_relative_script_paths() {
     );
     assert_eq!(
         normalized_relative_script_path(Path::new(
-            "/home/user/.codex/plugins/cache/openai-curated/sample/scripts/run.py"
+            "/home/user/.myra/plugins/cache/openai-curated/sample/scripts/run.py"
         )),
         None
     );

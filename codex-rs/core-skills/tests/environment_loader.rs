@@ -180,7 +180,7 @@ async fn host_loading_reuses_walk_inventory_for_symlinked_skill_pack() {
 
     let root = tempdir().expect("tempdir");
     let shared_plugin_root = tempdir().expect("tempdir");
-    let manifest_path = shared_plugin_root.path().join(".codex-plugin/plugin.json");
+    let manifest_path = shared_plugin_root.path().join(".myra-plugin/plugin.json");
     fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("manifest dir");
     fs::write(&manifest_path, r#"{"name":"linked"}"#).expect("manifest");
 

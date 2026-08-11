@@ -40,8 +40,8 @@ use super::assert_relay_data_is_encrypted;
 use super::proxy_relay_frames;
 use super::registered_executor_public_key;
 
-const RELEASED_CODEX_ENV_VAR: &str = "CODEX_TEST_RELEASED_CODEX";
-const CURRENT_CODEX_ENV_VAR: &str = "CODEX_TEST_CURRENT_CODEX";
+const RELEASED_MYRA_ENV_VAR: &str = "MYRA_TEST_RELEASED_MYRA";
+const CURRENT_MYRA_ENV_VAR: &str = "MYRA_TEST_CURRENT_MYRA";
 const EXECUTOR_MARKER_ENV_VAR: &str = "CODEX_EXECUTOR_VERSION_SKEW_MARKER";
 const VERSION_SKEW_TIMEOUT: Duration = Duration::from_secs(30);
 const EXPECTED_OUTPUT: &str = "executor-version-skew-ok";
@@ -63,21 +63,21 @@ async fn released_app_server_runs_commands_on_current_exec_server_over_noise() -
 }
 
 fn version_skew_binaries() -> Result<Option<(PathBuf, PathBuf)>> {
-    let Some(released) = std::env::var_os(RELEASED_CODEX_ENV_VAR) else {
+    let Some(released) = std::env::var_os(RELEASED_MYRA_ENV_VAR) else {
         return Ok(None);
     };
-    let current = std::env::var_os(CURRENT_CODEX_ENV_VAR)
-        .with_context(|| format!("{CURRENT_CODEX_ENV_VAR} must name the current Codex binary"))?;
+    let current = std::env::var_os(CURRENT_MYRA_ENV_VAR)
+        .with_context(|| format!("{CURRENT_MYRA_ENV_VAR} must name the current Myra binary"))?;
     let current = PathBuf::from(current);
     let released = PathBuf::from(released);
     anyhow::ensure!(
         current.is_file(),
-        "current Codex does not exist: {}",
+        "current Myra does not exist: {}",
         current.display()
     );
     anyhow::ensure!(
         released.is_file(),
-        "released Codex does not exist: {}",
+        "released Myra does not exist: {}",
         released.display()
     );
     Ok(Some((current, released)))
@@ -143,7 +143,7 @@ stream_max_retries = 0
             ENVIRONMENT_ID,
         ])
         .current_dir(codex_home.path())
-        .env("CODEX_HOME", codex_home.path())
+        .env("MYRA_HOME", codex_home.path())
         .env("CODEX_API_KEY", REGISTRY_TOKEN)
         .env(EXECUTOR_MARKER_ENV_VAR, EXPECTED_OUTPUT)
         .stdin(Stdio::null())
@@ -185,7 +185,7 @@ stream_max_retries = 0
     let mut app_server = Command::new(app_binary)
         .arg("app-server")
         .current_dir(codex_home.path())
-        .env("CODEX_HOME", codex_home.path())
+        .env("MYRA_HOME", codex_home.path())
         .env("CODEX_API_KEY", REGISTRY_TOKEN)
         .env(
             "CODEX_APP_SERVER_MANAGED_CONFIG_PATH",

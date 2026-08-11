@@ -683,7 +683,7 @@ async fn plugin_share_checkout_adds_personal_marketplace_entry() -> Result<()> {
     assert!(
         plugin_path
             .as_path()
-            .join(".codex-plugin/plugin.json")
+            .join(".myra-plugin/plugin.json")
             .is_file()
     );
 
@@ -1474,7 +1474,7 @@ fn expected_share_context(plugin_id: &str) -> PluginShareContext {
 fn write_test_plugin(root: &Path, plugin_name: &str) -> std::io::Result<PathBuf> {
     let plugin_path = root.join(plugin_name);
     write_file(
-        &plugin_path.join(".codex-plugin/plugin.json"),
+        &plugin_path.join(".myra-plugin/plugin.json"),
         &format!(r#"{{"name":"{plugin_name}"}}"#),
     )?;
     write_file(
@@ -1491,7 +1491,7 @@ fn remote_plugin_bundle_tar_gz_bytes(plugin_name: &str) -> Result<Vec<u8>> {
     let mut tar = tar::Builder::new(encoder);
     for (path, contents, mode) in [
         (
-            ".codex-plugin/plugin.json",
+            ".myra-plugin/plugin.json",
             manifest.as_bytes(),
             /*mode*/ 0o644,
         ),

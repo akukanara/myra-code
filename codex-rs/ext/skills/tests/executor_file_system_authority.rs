@@ -359,7 +359,7 @@ async fn executor_discovery_routes_produce_equivalent_catalog_metadata() {
         "codex-executor-skill-parity-{}-{id}",
         std::process::id()
     ));
-    let plugin_manifest = test_root.join(".codex-plugin/plugin.json");
+    let plugin_manifest = test_root.join(".myra-plugin/plugin.json");
     let deploy_skill = test_root.join("skills/deploy/SKILL.md");
     let deploy_metadata = test_root.join("skills/deploy/agents/openai.yaml");
     let excluded_skill = test_root.join("skills/excluded/SKILL.md");
@@ -548,7 +548,7 @@ async fn executor_discovery_routes_produce_equivalent_catalog_metadata() {
 #[tokio::test]
 async fn pre_discovered_executor_catalog_snapshot() {
     let test_root = create_local_skill_root("snapshot").expect("create local skill root");
-    let manifest_dir = test_root.join(".codex-plugin");
+    let manifest_dir = test_root.join(".myra-plugin");
     let metadata_dir = test_root.join("skill/agents");
     std::fs::create_dir_all(&manifest_dir).expect("create plugin manifest directory");
     std::fs::create_dir_all(&metadata_dir).expect("create skill metadata directory");
@@ -648,10 +648,10 @@ async fn direct_executor_discovery_preserves_hidden_nested_and_probed_metadata()
         "codex-executor-skill-discovery-{}-{id}",
         std::process::id()
     ));
-    let outer_manifest = test_root.join(".codex-plugin/plugin.json");
+    let outer_manifest = test_root.join(".myra-plugin/plugin.json");
     let hidden_skill = test_root.join(".hidden/deploy/SKILL.md");
     let hidden_metadata = test_root.join(".hidden/deploy/agents/openai.yaml");
-    let inner_manifest = test_root.join("nested/.codex-plugin/plugin.json");
+    let inner_manifest = test_root.join("nested/.myra-plugin/plugin.json");
     let inner_skill = test_root.join("nested/skills/audit/SKILL.md");
     for (path, contents) in [
         (&outer_manifest, r#"{"name":"outer"}"#),

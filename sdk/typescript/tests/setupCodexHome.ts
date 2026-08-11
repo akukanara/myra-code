@@ -4,25 +4,25 @@ import path from "node:path";
 
 import { afterEach, beforeEach } from "@jest/globals";
 
-const originalCodexHome = process.env.CODEX_HOME;
-let currentCodexHome: string | undefined;
+const originalMyraHome = process.env.MYRA_HOME;
+let currentMyraHome: string | undefined;
 
 beforeEach(async () => {
-  currentCodexHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-sdk-test-"));
-  process.env.CODEX_HOME = currentCodexHome;
+  currentMyraHome = await fs.mkdtemp(path.join(os.tmpdir(), "myra-sdk-test-"));
+  process.env.MYRA_HOME = currentMyraHome;
 });
 
 afterEach(async () => {
-  const codexHomeToDelete = currentCodexHome;
-  currentCodexHome = undefined;
+  const myraHomeToDelete = currentMyraHome;
+  currentMyraHome = undefined;
 
-  if (originalCodexHome === undefined) {
-    delete process.env.CODEX_HOME;
+  if (originalMyraHome === undefined) {
+    delete process.env.MYRA_HOME;
   } else {
-    process.env.CODEX_HOME = originalCodexHome;
+    process.env.MYRA_HOME = originalMyraHome;
   }
 
-  if (codexHomeToDelete) {
-    await fs.rm(codexHomeToDelete, { recursive: true, force: true });
+  if (myraHomeToDelete) {
+    await fs.rm(myraHomeToDelete, { recursive: true, force: true });
   }
 });

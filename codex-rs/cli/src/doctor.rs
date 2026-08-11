@@ -1,4 +1,4 @@
-//! Implements the `codex doctor` diagnostic report.
+//! Implements the `myra doctor` diagnostic report.
 //!
 //! Doctor is intentionally read-mostly: checks inspect the current installation,
 //! configuration, authentication, terminal, state paths, and bounded reachability
@@ -37,7 +37,7 @@ use codex_config::types::McpServerTransportConfig;
 use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::ConfigOverrides;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_features::FEATURES;
 use codex_install_context::CodexPackageLayout;
 use codex_install_context::InstallContext;
@@ -517,7 +517,7 @@ async fn load_config(
         .harness_overrides(overrides)
         .build()
         .await
-        .context("failed to load MyraCode config")
+        .context("failed to load Myra config")
 }
 
 fn config_overrides_from_interactive(
@@ -795,32 +795,32 @@ fn installation_check(show_details: bool) -> DoctorCheck {
     ));
     details.push(format!(
         "managed by bun: {}",
-        env::var_os("CODEX_MANAGED_BY_BUN").is_some()
+        env::var_os("MYRA_MANAGED_BY_BUN").is_some()
     ));
     details.push(format!(
         "managed by pnpm: {}",
-        env::var_os("CODEX_MANAGED_BY_PNPM").is_some()
+        env::var_os("MYRA_MANAGED_BY_PNPM").is_some()
     ));
     push_env_path_detail(
         &mut details,
         "managed package root",
-        "CODEX_MANAGED_PACKAGE_ROOT",
+        "MYRA_MANAGED_PACKAGE_ROOT",
     );
 
-    let path_entries = codex_path_entries();
+    let path_entries = myra_path_entries();
     let mut status = CheckStatus::Ok;
     let mut summary = "installation looks consistent".to_string();
     let mut remediation = None;
 
     if path_entries.len() > 1 {
-        details.push(format!("PATH codex entries: {}", path_entries.len()));
+        details.push(format!("PATH myra entries: {}", path_entries.len()));
     }
     if show_details || path_entries.len() > 1 {
         details.extend(
             path_entries
                 .iter()
                 .enumerate()
-                .map(|(index, path)| format!("PATH codex #{}: {path}", index + 1)),
+                .map(|(index, path)| format!("PATH myra #{}: {path}", index + 1)),
         );
     }
 
@@ -835,7 +835,7 @@ fn installation_check(show_details: bool) -> DoctorCheck {
             } => {
                 status = CheckStatus::Fail;
                 summary =
-                    "npm install -g @openai/codex would update a different install".to_string();
+                    "npm install -g @myralith/myra would update a different install".to_string();
                 remediation = Some(format!(
                     "Fix PATH or npm prefix so the running package root ({}) matches the npm global package root ({}).",
                     running_package_root.display(),
@@ -851,7 +851,7 @@ fn installation_check(show_details: bool) -> DoctorCheck {
                 status = status.max(CheckStatus::Warning);
                 summary = "npm-managed launch is missing package-root provenance".to_string();
                 remediation = Some(
-                    "Reinstall or update MyraCode so the JS shim provides CODEX_MANAGED_PACKAGE_ROOT."
+                    "Reinstall or update Myra so the JS shim provides MYRA_MANAGED_PACKAGE_ROOT."
                         .to_string(),
                 );
             }
@@ -882,14 +882,14 @@ fn doctor_install_context(current_exe: Option<&Path>) -> InstallContext {
 }
 
 fn doctor_managed_by_npm(current_exe: Option<&Path>) -> bool {
-    env::var_os("CODEX_MANAGED_BY_NPM").is_some()
+    env::var_os("MYRA_MANAGED_BY_NPM").is_some()
         && !inherited_managed_env_for_cargo_binary(current_exe)
 }
 
 fn inherited_managed_env_for_cargo_binary(current_exe: Option<&Path>) -> bool {
-    if env::var_os("CODEX_MANAGED_BY_NPM").is_none()
-        && env::var_os("CODEX_MANAGED_BY_BUN").is_none()
-        && env::var_os("CODEX_MANAGED_BY_PNPM").is_none()
+    if env::var_os("MYRA_MANAGED_BY_NPM").is_none()
+        && env::var_os("MYRA_MANAGED_BY_BUN").is_none()
+        && env::var_os("MYRA_MANAGED_BY_PNPM").is_none()
     {
         return false;
     }
@@ -991,7 +991,7 @@ enum NpmRootCheck {
 }
 
 fn npm_global_root_check() -> NpmRootCheck {
-    let Some(running_package_root) = env::var_os("CODEX_MANAGED_PACKAGE_ROOT").map(PathBuf::from)
+    let Some(running_package_root) = env::var_os("MYRA_MANAGED_PACKAGE_ROOT").map(PathBuf::from)
     else {
         return NpmRootCheck::MissingPackageRoot;
     };
@@ -1008,7 +1008,7 @@ fn npm_global_root_check() -> NpmRootCheck {
 }
 
 fn compare_npm_package_roots(running_package_root: &Path, npm_root: &Path) -> NpmRootCheck {
-    let npm_package_root = npm_root.join("@openai").join("codex");
+    let npm_package_root = npm_root.join("@myralith").join("myra");
     let running = normalize_path_for_compare(running_package_root);
     let target = normalize_path_for_compare(&npm_package_root);
     if running == target {
@@ -1045,11 +1045,11 @@ fn display_list<T: AsRef<str>>(items: &[T]) -> String {
     }
 }
 
-fn codex_path_entries() -> Vec<String> {
+fn myra_path_entries() -> Vec<String> {
     #[cfg(windows)]
-    let result = run_command("where", ["codex"]);
+    let result = run_command("where", ["myra"]);
     #[cfg(not(windows))]
-    let result = run_command("which", ["-a", "codex"]);
+    let result = run_command("which", ["-a", "myra"]);
 
     result
         .unwrap_or_default()
@@ -1081,7 +1081,7 @@ where
 
 fn config_check(config: &Config) -> DoctorCheck {
     let mut details = Vec::new();
-    details.push(format!("CODEX_HOME: {}", config.codex_home.display()));
+    details.push(format!("MYRA_HOME: {}", config.codex_home.display()));
     details.push(format!("cwd: {}", config.cwd.display()));
     details.push(format!(
         "model: {}",
@@ -1263,7 +1263,7 @@ fn auth_check(config: &Config) -> DoctorCheck {
             "auth.credentials",
             "auth",
             CheckStatus::Fail,
-            "no MyraCode credentials were found",
+            "no Myra credentials were found",
         )
         .details(details)
         .remediation("Run myra login or provide an API key through a supported auth env var."),
@@ -2164,7 +2164,7 @@ fn non_empty_trimmed(value: String) -> Option<String> {
 
 async fn state_check(config: &Config) -> DoctorCheck {
     let mut details = Vec::new();
-    path_readiness(&mut details, "CODEX_HOME", &config.codex_home);
+    path_readiness(&mut details, "MYRA_HOME", &config.codex_home);
     path_readiness(&mut details, "log dir", &config.log_dir);
     path_readiness(&mut details, "sqlite home", config.sqlite_config().home());
     let mut integrity_failures = Vec::new();
@@ -2526,20 +2526,20 @@ async fn dns_address_family_details(host: &str, port: u16) -> Vec<String> {
 }
 
 fn fallback_state_check() -> DoctorCheck {
-    let codex_home = find_codex_home();
+    let codex_home = find_myra_home();
     match codex_home {
         Ok(path) => DoctorCheck::new(
             "state.paths",
             "state",
             CheckStatus::Ok,
-            "CODEX_HOME was resolved without config",
+            "MYRA_HOME was resolved without config",
         )
-        .detail(format!("CODEX_HOME: {}", path.display())),
+        .detail(format!("MYRA_HOME: {}", path.display())),
         Err(err) => DoctorCheck::new(
             "state.paths",
             "state",
             CheckStatus::Warning,
-            "CODEX_HOME could not be resolved",
+            "MYRA_HOME could not be resolved",
         )
         .detail(err.to_string()),
     }
@@ -3201,25 +3201,25 @@ mod tests {
 
     #[test]
     fn compare_npm_package_roots_detects_match() {
-        let running = PathBuf::from("/prefix/lib/node_modules/@openai/codex");
+        let running = PathBuf::from("/prefix/lib/node_modules/@myralith/myra");
         let npm_root = PathBuf::from("/prefix/lib/node_modules");
         assert_eq!(
             compare_npm_package_roots(&running, &npm_root),
             NpmRootCheck::Match {
-                package_root: npm_root.join("@openai").join("codex")
+                package_root: npm_root.join("@myralith").join("myra")
             }
         );
     }
 
     #[test]
     fn compare_npm_package_roots_detects_mismatch() {
-        let running = PathBuf::from("/old/lib/node_modules/@openai/codex");
+        let running = PathBuf::from("/old/lib/node_modules/@myralith/myra");
         let npm_root = PathBuf::from("/new/lib/node_modules");
         assert_eq!(
             compare_npm_package_roots(&running, &npm_root),
             NpmRootCheck::Mismatch {
                 running_package_root: running,
-                npm_package_root: npm_root.join("@openai").join("codex"),
+                npm_package_root: npm_root.join("@myralith").join("myra"),
             }
         );
     }
@@ -3527,7 +3527,7 @@ mod tests {
         let check = provider_specific_auth_check(
             /*requires_openai_auth*/ false,
             Some("PROVIDER_API_KEY"),
-            Some("Set PROVIDER_API_KEY before running MyraCode."),
+            Some("Set PROVIDER_API_KEY before running Myra."),
             Vec::new(),
             |_| false,
         )
@@ -3540,7 +3540,7 @@ mod tests {
         );
         assert_eq!(
             check.remediation,
-            Some("Set PROVIDER_API_KEY before running MyraCode.".to_string())
+            Some("Set PROVIDER_API_KEY before running Myra.".to_string())
         );
     }
 

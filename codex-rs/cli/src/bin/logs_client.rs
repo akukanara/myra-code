@@ -15,13 +15,13 @@ use owo_colors::OwoColorize;
 
 #[derive(Debug, Parser)]
 #[command(name = "codex-state-logs")]
-#[command(about = "Tail MyraCode logs from the dedicated logs SQLite DB with simple filters")]
+#[command(about = "Tail Myra logs from the dedicated logs SQLite DB with simple filters")]
 struct Args {
-    /// Path to CODEX_HOME. Defaults to $CODEX_HOME or ~/.codex.
-    #[arg(long, env = "CODEX_HOME")]
+    /// Path to MYRA_HOME. Defaults to $MYRA_HOME or ~/.myra.
+    #[arg(long, env = "MYRA_HOME")]
     codex_home: Option<PathBuf>,
 
-    /// Direct path to the logs SQLite database. Overrides --codex-home.
+    /// Direct path to the logs SQLite database. Overrides --myra-home.
     #[arg(long)]
     db: Option<PathBuf>,
 
@@ -419,14 +419,14 @@ mod tests {
     /// Explicit database selection must not parse an overridden Codex home.
     #[tokio::test]
     async fn direct_db_skips_codex_home_config() {
-        let codex_home = tempfile::tempdir().expect("create MyraCode home");
+        let codex_home = tempfile::tempdir().expect("create Myra home");
         std::fs::write(codex_home.path().join("config.toml"), "model = [")
             .expect("write invalid config");
         let sqlite_home = tempfile::tempdir().expect("create SQLite home");
         let db_path = sqlite_home.path().join("logs_2.sqlite");
         let args = Args::try_parse_from([
             OsString::from("codex-state-logs"),
-            OsString::from("--codex-home"),
+            OsString::from("--myra-home"),
             codex_home.path().as_os_str().to_owned(),
             OsString::from("--db"),
             db_path.as_os_str().to_owned(),

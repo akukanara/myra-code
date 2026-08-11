@@ -5,7 +5,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 const FRAGMENT_PLACEHOLDER: &str = "<!--__INLINE_VISUALIZATION_FRAGMENT__-->";
-const VIEWER_DIRECTORY_NAME: &str = ".codex-viewers";
+const VIEWER_DIRECTORY_NAME: &str = ".myra-viewers";
 
 // Keep these assets in sync with the bundled visualize skill's browser renderer.
 const VIEWER_STYLESHEET: &str = include_str!("assets/visualize.css");

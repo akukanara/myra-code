@@ -16,7 +16,7 @@ from codex_package.targets import TARGET_SPECS
 
 class PackageLayoutTest(unittest.TestCase):
     def test_macos_package_preserves_prebuilt_resource_binaries(self) -> None:
-        for variant_name in ("codex", "codex-app-server"):
+        for variant_name in ("myra", "myra-app-server"):
             for target in ("aarch64-apple-darwin", "x86_64-apple-darwin"):
                 with self.subTest(variant=variant_name, target=target):
                     with tempfile.TemporaryDirectory() as temp_dir:
@@ -39,8 +39,8 @@ class PackageLayoutTest(unittest.TestCase):
                             rg_bin=rg_bin,
                             zsh_bin=zsh_bin,
                             bwrap_bin=None,
-                            codex_command_runner_bin=None,
-                            codex_windows_sandbox_setup_bin=None,
+                            myra_command_runner_bin=None,
+                            myra_windows_sandbox_setup_bin=None,
                         )
 
                         build_package_dir(package_dir, "1.2.3", variant, spec, inputs)
@@ -50,10 +50,10 @@ class PackageLayoutTest(unittest.TestCase):
 
                         self.assertEqual(
                             {
-                                "rg": (package_dir / "codex-path" / "rg").read_bytes(),
+                                "rg": (package_dir / "myra-path" / "rg").read_bytes(),
                                 "zsh": (
                                     package_dir
-                                    / "codex-resources"
+                                    / "myra-resources"
                                     / "zsh"
                                     / "bin"
                                     / "zsh"
@@ -76,25 +76,25 @@ class PackageLayoutTest(unittest.TestCase):
                 rg_bin=touch_executable(root / "rg"),
                 zsh_bin=None,
                 bwrap_bin=touch_executable(root / "bwrap"),
-                codex_command_runner_bin=None,
-                codex_windows_sandbox_setup_bin=None,
+                myra_command_runner_bin=None,
+                myra_windows_sandbox_setup_bin=None,
             )
 
             build_package_dir(
                 package_dir,
                 "1.2.3",
-                PACKAGE_VARIANTS["codex-app-server"],
+                PACKAGE_VARIANTS["myra-app-server"],
                 TARGET_SPECS["x86_64-unknown-linux-musl"],
                 inputs,
             )
             validate_package_dir(
                 package_dir,
-                PACKAGE_VARIANTS["codex-app-server"],
+                PACKAGE_VARIANTS["myra-app-server"],
                 TARGET_SPECS["x86_64-unknown-linux-musl"],
                 include_zsh=False,
             )
 
-            self.assertTrue((package_dir / "bin" / "codex-code-mode-host").is_file())
+            self.assertTrue((package_dir / "bin" / "myra-code-mode-host").is_file())
 
 
 def touch_executable(path: Path) -> Path:

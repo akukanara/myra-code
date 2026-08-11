@@ -152,13 +152,13 @@ async fn mcp_calls_stay_bound_to_each_thread() -> anyhow::Result<()> {
         .start_thread(StartThreadOptions::new(second_config))
         .await?;
 
-    wait_for_mcp_server(&fixture.codex, SERVER_NAME).await?;
+    wait_for_mcp_server(&fixture.myra, SERVER_NAME).await?;
     wait_for_mcp_server(&second_thread, SERVER_NAME).await?;
 
     let calls = [
-        (&fixture.codex, "first-call", "first-runtime"),
+        (&fixture.myra, "first-call", "first-runtime"),
         (&second_thread, "second-call", "second-runtime"),
-        (&fixture.codex, "first-again", "first-runtime"),
+        (&fixture.myra, "first-again", "first-runtime"),
     ];
     let mut processes = Vec::new();
     for (thread, call_id, marker) in calls {
@@ -231,7 +231,7 @@ async fn mcp_calls_stay_bound_to_each_thread() -> anyhow::Result<()> {
     assert_ne!(processes[0], processes[1]);
     assert_eq!(processes[0], processes[2]);
 
-    fixture.codex.shutdown_and_wait().await?;
+    fixture.myra.shutdown_and_wait().await?;
     second_thread.shutdown_and_wait().await?;
     responses_server.verify().await;
     Ok(())
@@ -298,11 +298,11 @@ async fn regular_mcp_definition_cache_preserves_live_session_state() -> anyhow::
         ]),
     )
     .await;
-    fixture.codex.submit(user_turn("use the echo tool")).await?;
+    fixture.myra.submit(user_turn("use the echo tool")).await?;
     let first_pid = wait_for_new_pid(fs.as_ref(), &pid_file, /*previous_pid*/ None).await?;
     fs.write_file(&barrier_file, b"ready".to_vec(), /*sandbox*/ None)
         .await?;
-    wait_for_event(&fixture.codex, |event| {
+    wait_for_event(&fixture.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -421,7 +421,7 @@ async fn regular_mcp_definition_cache_preserves_live_session_state() -> anyhow::
         .context("an unrelated tool should complete while cached MCP startup is pending")?
         .context("the unrelated tool should emit its plan update")?;
 
-    fixture.codex.shutdown_and_wait().await?;
+    fixture.myra.shutdown_and_wait().await?;
     fs.write_file(&barrier_file, b"ready".to_vec(), /*sandbox*/ None)
         .await?;
     let expected_error = format!("MCP tool `{SERVER_NAME}/cwd` is not available to the model");

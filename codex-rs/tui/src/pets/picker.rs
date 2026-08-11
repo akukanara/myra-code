@@ -253,7 +253,7 @@ mod tests {
                 "Disable terminal pets",
                 "BSOD",
                 "Chefito",
-                "MyraCode",
+                "Myra",
                 "Dewey",
                 "Fireball",
                 "Null Signal",
@@ -279,7 +279,7 @@ mod tests {
         );
 
         assert_eq!(params.initial_selected_idx, Some(2));
-        assert_eq!(params.items[2].name, "MyraCode");
+        assert_eq!(params.items[2].name, "Myra");
         assert!(!params.items[2].is_current);
     }
 

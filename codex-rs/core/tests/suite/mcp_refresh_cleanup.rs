@@ -66,7 +66,7 @@ async fn refresh_keeps_superseded_mcp_server_alive_for_in_flight_calls() -> anyh
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&fixture.codex, "refresh_cleanup").await?;
+    wait_for_mcp_server(&fixture.myra, "refresh_cleanup").await?;
 
     let superseded_pid = wait_for_pid_file(&pid_file).await?;
     assert!(process_is_alive(&superseded_pid)?);
@@ -77,7 +77,7 @@ async fn refresh_keeps_superseded_mcp_server_alive_for_in_flight_calls() -> anyh
         "timeout_ms": 1_000
     });
     let long_call = tokio::spawn({
-        let codex = Arc::clone(&fixture.codex);
+        let codex = Arc::clone(&fixture.myra);
         let barrier = barrier.clone();
         async move {
             codex
@@ -94,7 +94,7 @@ async fn refresh_keeps_superseded_mcp_server_alive_for_in_flight_calls() -> anyh
         }
     });
     fixture
-        .codex
+        .myra
         .call_mcp_tool(
             "refresh_cleanup",
             "sync",
@@ -113,7 +113,7 @@ async fn refresh_keeps_superseded_mcp_server_alive_for_in_flight_calls() -> anyh
         ]),
     )
     .await;
-    fixture.codex.submit(Op::RefreshMcpServers).await?;
+    fixture.myra.submit(Op::RefreshMcpServers).await?;
     fixture.submit_turn("refresh MCP servers").await?;
 
     let replacement_pid = wait_for_pid_file(&pid_file).await?;
@@ -129,6 +129,6 @@ async fn refresh_keeps_superseded_mcp_server_alive_for_in_flight_calls() -> anyh
     wait_for_process_exit(&superseded_pid).await?;
     assert!(process_is_alive(&replacement_pid)?);
 
-    fixture.codex.shutdown_and_wait().await?;
+    fixture.myra.shutdown_and_wait().await?;
     wait_for_process_exit(&replacement_pid).await
 }

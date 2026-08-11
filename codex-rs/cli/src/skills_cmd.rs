@@ -2,7 +2,7 @@ use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
 use codex_core::config::Config;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core::skills::remote::RegistrySkill;
 use codex_core::skills::remote::install_registry_skill;
 use codex_core::skills::remote::list_registry_skills;
@@ -17,7 +17,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
 
-/// User-scope skills live directly under CODEX_HOME/skills. The bundled ones
+/// User-scope skills live directly under MYRA_HOME/skills. The bundled ones
 /// live in a dotted sibling (`.system`) that discovery treats as a separate
 /// scope, so it is never a candidate for install or remove.
 const SKILLS_DIR: &str = "skills";
@@ -119,7 +119,7 @@ struct SkillsContext {
 
 impl SkillsContext {
     async fn load(overrides: Vec<(String, toml::Value)>) -> Result<Self> {
-        let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+        let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
         let config = Config::load_with_cli_overrides(overrides)
             .await
             .context("failed to load configuration")?;

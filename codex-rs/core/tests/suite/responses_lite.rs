@@ -184,7 +184,7 @@ async fn responses_lite_prepares_images() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Image {
@@ -202,7 +202,7 @@ async fn responses_lite_prepares_images() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -482,8 +482,8 @@ async fn responses_lite_compact_request_uses_lite_transport_contract() -> Result
     let test = builder.build(&server).await?;
 
     test.submit_turn("Compact this conversation").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

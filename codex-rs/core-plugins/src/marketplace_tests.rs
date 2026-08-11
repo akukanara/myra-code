@@ -373,7 +373,7 @@ fn find_marketplace_plugin_skips_unsafe_npm_sources() {
       "name": "dot-package",
       "source": {
         "source": "npm",
-        "package": ".codex-plugin",
+        "package": ".myra-plugin",
         "registry": "https://npm.example.com"
       }
     },
@@ -985,7 +985,7 @@ fn list_marketplaces_supports_repo_root_local_plugin_sources() {
 
         fs::create_dir_all(repo_root.join(".git")).unwrap();
         fs::create_dir_all(repo_root.join(".agents/plugins")).unwrap();
-        fs::create_dir_all(repo_root.join(".codex-plugin")).unwrap();
+        fs::create_dir_all(repo_root.join(".myra-plugin")).unwrap();
         fs::write(
             repo_root.join(".agents/plugins/marketplace.json"),
             format!(
@@ -1005,7 +1005,7 @@ fn list_marketplaces_supports_repo_root_local_plugin_sources() {
         )
         .unwrap();
         fs::write(
-            repo_root.join(".codex-plugin/plugin.json"),
+            repo_root.join(".myra-plugin/plugin.json"),
             r#"{
   "name":"repo-root-plugin",
   "interface": {
@@ -1884,7 +1884,7 @@ fn list_marketplaces_resolves_plugin_interface_paths_to_absolute() {
     let plugin_root = repo_root.join("plugins/demo-plugin");
     fs::create_dir_all(repo_root.join(".git")).unwrap();
     fs::create_dir_all(repo_root.join(".agents/plugins")).unwrap();
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::write(
         repo_root.join(".agents/plugins/marketplace.json"),
         r#"{
@@ -1908,7 +1908,7 @@ fn list_marketplaces_resolves_plugin_interface_paths_to_absolute() {
     )
     .unwrap();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{
   "name": "demo-plugin",
   "interface": {
@@ -2020,7 +2020,7 @@ fn list_marketplaces_ignores_plugin_interface_assets_without_dot_slash() {
 
     fs::create_dir_all(repo_root.join(".git")).unwrap();
     fs::create_dir_all(repo_root.join(".agents/plugins")).unwrap();
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::write(
         repo_root.join(".agents/plugins/marketplace.json"),
         r#"{
@@ -2038,7 +2038,7 @@ fn list_marketplaces_ignores_plugin_interface_assets_without_dot_slash() {
     )
     .unwrap();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{
   "name": "demo-plugin",
   "interface": {

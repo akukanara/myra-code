@@ -200,9 +200,9 @@ fn legacy_codex_overlay_keeps_portable_components_fixed() {
   "version": "portable-version",
   "description": "Portable description""#,
     );
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create overlay dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create overlay dir");
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{
   "name": "different-name",
   "version": "9.9.9",
@@ -257,9 +257,9 @@ fn inline_openai_extension_precedes_legacy_overlay() {
     }
   }"#,
     );
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create overlay dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create overlay dir");
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"interface":{"displayName":"Legacy Codex"}}"#,
     )
     .expect("write overlay");

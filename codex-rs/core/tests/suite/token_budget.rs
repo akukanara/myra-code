@@ -527,14 +527,14 @@ async fn token_budget_defaults_follow_the_active_model() -> Result<()> {
 
     test.submit_turn("inspect first-model guidance").await?;
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         ThreadSettingsOverrides {
             model: Some("gpt-5.4".to_string()),
             ..Default::default()
         },
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "inspect second-model guidance".to_string(),
@@ -546,7 +546,7 @@ async fn token_budget_defaults_follow_the_active_model() -> Result<()> {
             thread_settings: ThreadSettingsOverrides::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -725,7 +725,7 @@ async fn token_budget_context_injects_plain_thread_hint_text() -> Result<()> {
         })
         .build(&server)
         .await?;
-    wait_for_mcp_server(&test.codex, "notes").await?;
+    wait_for_mcp_server(&test.myra, "notes").await?;
     let responses = mount_sse_sequence(
         &server,
         vec![sse(vec![
@@ -1099,8 +1099,8 @@ async fn token_budget_context_uses_new_window_after_compaction() -> Result<()> {
         .await?;
 
     test.submit_turn("before compact").await?;
-    test.codex.submit(Op::Compact).await?;
-    assert_context_compaction_item_lifecycle(&test.codex).await;
+    test.myra.submit(Op::Compact).await?;
+    assert_context_compaction_item_lifecycle(&test.myra).await;
     test.submit_turn("after compact").await?;
 
     let requests = responses.requests();
@@ -1163,9 +1163,9 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
         .build(&server)
         .await?;
 
-    test.codex.submit(Op::Compact).await?;
+    test.myra.submit(Op::Compact).await?;
 
-    let pre_compact = wait_for_event_match(&test.codex, |event| match event {
+    let pre_compact = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::HookCompleted(completed)
             if completed.run.event_name == HookEventName::PreCompact =>
         {
@@ -1176,7 +1176,7 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
     .await;
     assert_eq!(pre_compact.run.status, HookRunStatus::Completed);
 
-    let post_compact = wait_for_event_match(&test.codex, |event| match event {
+    let post_compact = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::HookCompleted(completed)
             if completed.run.event_name == HookEventName::PostCompact =>
         {
@@ -1186,7 +1186,7 @@ async fn token_budget_compaction_runs_compact_hooks() -> Result<()> {
     })
     .await;
     assert_eq!(post_compact.run.status, HookRunStatus::Completed);
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

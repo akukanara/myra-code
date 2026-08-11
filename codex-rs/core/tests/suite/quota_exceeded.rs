@@ -39,7 +39,7 @@ async fn quota_exceeded_emits_single_error_event() -> Result<()> {
 
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "quota?".into(),
@@ -56,7 +56,7 @@ async fn quota_exceeded_emits_single_error_event() -> Result<()> {
     let mut error_events = 0;
 
     loop {
-        let event = wait_for_event(&test.codex, |_| true).await;
+        let event = wait_for_event(&test.myra, |_| true).await;
 
         match event {
             EventMsg::Error(err) => {

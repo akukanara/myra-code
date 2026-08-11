@@ -165,7 +165,7 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/permissions".into(),
-                " - choose what MyraCode is allowed to do".dim(),
+                " - choose what Myra is allowed to do".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),

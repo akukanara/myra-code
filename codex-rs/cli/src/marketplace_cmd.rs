@@ -3,7 +3,7 @@ use anyhow::Result;
 use anyhow::bail;
 use clap::Parser;
 use codex_core::config::Config;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core_plugins::PluginMarketplaceUpgradeOutcome;
 use codex_core_plugins::PluginsConfigInput;
 use codex_core_plugins::PluginsManager;
@@ -43,7 +43,7 @@ enum MarketplaceSubcommand {
     /// Add a local or Git marketplace to the configured marketplace sources.
     Add(AddMarketplaceArgs),
 
-    /// List plugin marketplaces MyraCode is currently considering and their roots.
+    /// List plugin marketplaces Myra is currently considering and their roots.
     List(ListMarketplaceArgs),
 
     /// Refresh configured Git marketplace snapshots.
@@ -378,7 +378,7 @@ async fn run_upgrade(
     let config = Config::load_with_cli_overrides(overrides)
         .await
         .context("failed to load configuration")?;
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
     let manager = PluginsManager::new(codex_home.to_path_buf());
     let plugins_input = config.plugins_config_input();
     let outcome = manager
@@ -396,7 +396,7 @@ async fn run_remove(args: RemoveMarketplaceArgs) -> Result<()> {
         marketplace_name,
         json,
     } = args;
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
     let outcome = remove_marketplace(
         codex_home.to_path_buf(),
         MarketplaceRemoveRequest { marketplace_name },

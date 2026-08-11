@@ -87,7 +87,7 @@ async fn user_turn_includes_skill_instructions() -> Result<()> {
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Text {
@@ -120,7 +120,7 @@ async fn user_turn_includes_skill_instructions() -> Result<()> {
         })
         .await?;
 
-    core_test_support::wait_for_event(test.codex.as_ref(), |event| {
+    core_test_support::wait_for_event(test.myra.as_ref(), |event| {
         matches!(event, codex_protocol::protocol::EventMsg::TurnComplete(_))
     })
     .await;
@@ -193,7 +193,7 @@ async fn user_turn_selects_symlinked_skill_by_advertised_discovery_path() -> Res
     )
     .await;
 
-    test.codex
+    test.myra
         .try_start_turn_if_idle(vec![TurnInput::UserInput {
             content: vec![
                 UserInput::Text {
@@ -212,7 +212,7 @@ async fn user_turn_selects_symlinked_skill_by_advertised_discovery_path() -> Res
             anyhow::anyhow!("linked skill input was rejected: {:?}", error.reason())
         })?;
 
-    core_test_support::wait_for_event(test.codex.as_ref(), |event| {
+    core_test_support::wait_for_event(test.myra.as_ref(), |event| {
         matches!(event, codex_protocol::protocol::EventMsg::TurnComplete(_))
     })
     .await;
@@ -269,7 +269,7 @@ async fn idle_user_turn_includes_skill_instructions_in_the_first_request() -> Re
     )
     .await;
 
-    test.codex
+    test.myra
         .try_start_turn_if_idle(vec![TurnInput::UserInput {
             content: vec![
                 UserInput::Text {
@@ -286,7 +286,7 @@ async fn idle_user_turn_includes_skill_instructions_in_the_first_request() -> Re
         .await
         .map_err(|error| anyhow::anyhow!("idle skill input was rejected: {:?}", error.reason()))?;
 
-    core_test_support::wait_for_event(test.codex.as_ref(), |event| {
+    core_test_support::wait_for_event(test.myra.as_ref(), |event| {
         matches!(event, codex_protocol::protocol::EventMsg::TurnComplete(_))
     })
     .await;

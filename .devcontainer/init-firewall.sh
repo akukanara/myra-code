@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-allowed_domains_file="/etc/codex/allowed_domains.txt"
+allowed_domains_file="/etc/myra/allowed_domains.txt"
 include_github_meta_ranges="${CODEX_INCLUDE_GITHUB_META_RANGES:-1}"
 
 if [ -f "$allowed_domains_file" ]; then

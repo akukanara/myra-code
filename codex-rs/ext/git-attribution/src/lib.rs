@@ -111,7 +111,7 @@ pub fn install<C: Sync>(
     _base_url: String,
     _http_client_factory: HttpClientFactory,
 ) {
-    // MyraCode does not use the hosted Codex commit-attribution policy. Registering
+    // Myra does not use the hosted Codex commit-attribution policy. Registering
     // this contributor would probe the ChatGPT backend before every first turn;
     // Myra device credentials are (correctly) rejected there, and the auth recovery
     // path can delay or block the actual model request. Keep attribution disabled;

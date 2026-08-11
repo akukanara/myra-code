@@ -55,7 +55,7 @@ impl ExecServerProcess {
         let codex_home = TempDir::new()?;
         let mut child = Command::new(codex_utils_cargo_bin::cargo_bin("codex")?)
             .args(["exec-server", "--listen", "ws://127.0.0.1:0"])
-            .env("CODEX_HOME", codex_home.path())
+            .env("MYRA_HOME", codex_home.path())
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -205,7 +205,7 @@ async fn two_exec_servers_isolate_workspace_write_roots() -> Result<()> {
     );
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "write one file in each environment".into(),
@@ -227,7 +227,7 @@ async fn two_exec_servers_isolate_workspace_write_roots() -> Result<()> {
         })
         .await?;
     wait_for_event_with_timeout(
-        &test.codex,
+        &test.myra,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         TURN_COMPLETE_TIMEOUT,
     )

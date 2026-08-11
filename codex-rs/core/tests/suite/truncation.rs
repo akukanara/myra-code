@@ -415,7 +415,7 @@ async fn mcp_tool_call_output_exceeds_limit_truncated_for_model() -> Result<()> 
         config.tool_output_token_limit = Some(500);
     });
     let fixture = builder.build(&server).await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.myra, server_name).await?;
 
     fixture
         .submit_turn_with_permission_profile(
@@ -517,13 +517,13 @@ async fn mcp_image_output_preserves_image_and_no_text_summary() -> Result<()> {
             .expect("test mcp servers should accept any configuration");
     });
     let fixture = builder.build(&server).await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.myra, server_name).await?;
     let session_model = fixture.session_configured.model.clone();
     let permission_profile = PermissionProfile::read_only();
     let sandbox_policy = permission_profile.to_legacy_sandbox_policy(fixture.cwd.path())?;
 
     fixture
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "call the rmcp image tool".into(),
@@ -551,7 +551,7 @@ async fn mcp_image_output_preserves_image_and_no_text_summary() -> Result<()> {
         .await?;
 
     // Wait for completion to ensure the outbound request is captured.
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     let output_item = final_mock.single_request().function_call_output(call_id);
     // Expect exactly the wall-time text and image item; no trailing truncation summary.
     let output = output_item.get("output").expect("output");
@@ -808,7 +808,7 @@ async fn mcp_tool_call_output_not_truncated_with_custom_limit() -> Result<()> {
             .expect("test mcp servers should accept any configuration");
     });
     let fixture = builder.build(&server).await?;
-    wait_for_mcp_server(&fixture.codex, server_name).await?;
+    wait_for_mcp_server(&fixture.myra, server_name).await?;
 
     fixture
         .submit_turn_with_permission_profile(

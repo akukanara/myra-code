@@ -394,10 +394,7 @@ impl AuthModeWidget {
 
     fn render_pick_mode(&self, area: Rect, buf: &mut Buffer) {
         let mut lines: Vec<Line> = vec![
-            Line::from(vec![
-                "  ".into(),
-                "Sign in to use Myra".into(),
-            ]),
+            Line::from(vec!["  ".into(), "Sign in to use Myra".into()]),
             "".into(),
         ];
 
@@ -553,7 +550,8 @@ impl AuthModeWidget {
             "Myra docs".underlined(),
             Some("https://developers.openai.com/codex/security"),
         );
-        let preferences_line = HyperlinkLine::new(Line::from("  Uses your plan's rate limits and credits.").dim());
+        let preferences_line =
+            HyperlinkLine::new(Line::from("  Uses your plan's rate limits and credits.").dim());
 
         let lines = vec![
             HyperlinkLine::new(
@@ -1256,7 +1254,7 @@ mod tests {
 
         assert_eq!(
             collect_osc8_chars(&buf, area, "https://developers.openai.com/codex/security"),
-            "MyraCode docs"
+            "Myra docs"
         );
         assert_eq!(
             collect_osc8_chars(&buf, area, "https://chatgpt.com/#settings"),
@@ -1295,10 +1293,10 @@ mod tests {
 
           Before you start:
 
-          Decide how much autonomy you want to grant MyraCode
-          For more details see the MyraCode docs
+          Decide how much autonomy you want to grant Myra
+          For more details see the Myra docs
 
-          MyraCode can make mistakes
+          Myra can make mistakes
           Review the code it writes and commands it runs
 
           Powered by your ChatGPT account

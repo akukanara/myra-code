@@ -140,7 +140,7 @@ async fn invalid_provider_rollout_budget_units_fail_without_retry() -> Result<()
         .build(&server)
         .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "reject invalid provider budget units".to_string(),
@@ -154,7 +154,7 @@ async fn invalid_provider_rollout_budget_units_fail_without_retry() -> Result<()
         .await?;
 
     let EventMsg::Error(error) =
-        wait_for_event(&test.codex, |event| matches!(event, EventMsg::Error(_))).await
+        wait_for_event(&test.myra, |event| matches!(event, EventMsg::Error(_))).await
     else {
         unreachable!();
     };
@@ -163,7 +163,7 @@ async fn invalid_provider_rollout_budget_units_fail_without_retry() -> Result<()
         "Fatal error: response.completed usage.codex_rollout_budget_units must be finite and non-negative"
     );
     assert_eq!(error.codex_error_info, Some(CodexErrorInfo::Other));
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -311,7 +311,7 @@ async fn exhausted_budget_fails_current_and_later_turns() -> Result<()> {
         .await?;
 
     for prompt in ["exhaust the budget", "try another turn"] {
-        test.codex
+        test.myra
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: prompt.to_string(),
@@ -324,7 +324,7 @@ async fn exhausted_budget_fails_current_and_later_turns() -> Result<()> {
             })
             .await?;
 
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.myra, |event| {
             matches!(
                 event,
                 EventMsg::Error(error)
@@ -332,7 +332,7 @@ async fn exhausted_budget_fails_current_and_later_turns() -> Result<()> {
             )
         })
         .await;
-        wait_for_event(&test.codex, |event| {
+        wait_for_event(&test.myra, |event| {
             matches!(event, EventMsg::TurnComplete(_))
         })
         .await;
@@ -398,8 +398,8 @@ async fn compaction_budget_exhaustion_fails_without_retry(
         .build(&server)
         .await?;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::Error(error)
@@ -407,7 +407,7 @@ async fn compaction_budget_exhaustion_fails_without_retry(
         )
     })
     .await;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -453,8 +453,8 @@ async fn restates_the_current_remainder_after_compaction() -> Result<()> {
         .await?;
 
     test.submit_turn("first turn").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -508,10 +508,10 @@ async fn restates_the_current_remainder_after_rollback() -> Result<()> {
         .await?;
 
     test.submit_turn("rolled-back turn").await?;
-    test.codex
+    test.myra
         .submit(Op::ThreadRollback { num_turns: 1 })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::ThreadRolledBack(_))
     })
     .await;

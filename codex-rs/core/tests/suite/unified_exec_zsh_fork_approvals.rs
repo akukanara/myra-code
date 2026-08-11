@@ -219,7 +219,7 @@ async fn unified_exec_zsh_fork_parent_approval_keeps_explicit_prompt_rule() -> R
     approve_expected_exec(&test, &command).await?;
 
     let approval_event = wait_for_event_with_timeout(
-        &test.codex,
+        &test.myra,
         |event| {
             matches!(
                 event,
@@ -402,7 +402,7 @@ async fn submit_turn_with_session_permissions(
         test.session_configured.permission_profile.clone(),
         test.cwd.path(),
     );
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -439,7 +439,7 @@ async fn approve_expected_exec(test: &TestCodex, expected_command: &str) -> Resu
 }
 
 async fn approve_exec(test: &TestCodex, approval_id: String) -> Result<()> {
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval_id,
             turn_id: None,
@@ -516,7 +516,7 @@ async fn expect_exec_approval(
     test: &TestCodex,
     expected_command: &str,
 ) -> ExecApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -543,7 +543,7 @@ async fn expect_exec_approval(
 }
 
 async fn wait_for_completion_without_approval(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -561,7 +561,7 @@ async fn wait_for_completion_without_approval(test: &TestCodex) {
 }
 
 async fn wait_for_completion(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

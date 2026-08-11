@@ -654,7 +654,7 @@ fn windows_restricted_token_supports_full_read_split_write_read_carveouts() {
     );
 
     // The workspace-write compatibility projection already protects top-level
-    // `.codex`, so the restricted-token overlay only needs the extra read-only
+    // `.myra`, so the restricted-token overlay only needs the extra read-only
     // docs carveout.
     let expected_deny_write_paths = vec![docs];
 

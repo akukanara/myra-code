@@ -38,9 +38,9 @@ struct PackageSummary {
 async fn selected_plugin_servers_use_managed_requirements_for_the_selected_root_id() -> TestResult {
     let codex_home = tempfile::tempdir()?;
     let plugin_root = tempfile::tempdir()?;
-    std::fs::create_dir_all(plugin_root.path().join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.path().join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.path().join(".codex-plugin/plugin.json"),
+        plugin_root.path().join(".myra-plugin/plugin.json"),
         r#"{"name":"different-manifest-name","interface":{"displayName":"Selected Demo"}}"#,
     )?;
     std::fs::write(
@@ -105,10 +105,10 @@ command = "expected-command"
 async fn selected_plugin_package_is_contributed_without_servers_or_connectors() -> TestResult {
     let codex_home = tempfile::tempdir()?;
     let plugin_root = tempfile::tempdir()?;
-    std::fs::create_dir_all(plugin_root.path().join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.path().join(".myra-plugin"))?;
     std::fs::create_dir_all(plugin_root.path().join("skills/deploy"))?;
     std::fs::write(
-        plugin_root.path().join(".codex-plugin/plugin.json"),
+        plugin_root.path().join(".myra-plugin/plugin.json"),
         r#"{"name":"skill-only","interface":{"displayName":"Skill Only"}}"#,
     )?;
     std::fs::write(
@@ -153,9 +153,9 @@ async fn selected_plugin_package_is_contributed_without_servers_or_connectors() 
 async fn high_level_discovery_matches_the_existing_plugin_provider() -> TestResult {
     let codex_home = tempfile::tempdir()?;
     let plugin_root = tempfile::tempdir()?;
-    std::fs::create_dir_all(plugin_root.path().join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.path().join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.path().join(".codex-plugin/plugin.json"),
+        plugin_root.path().join(".myra-plugin/plugin.json"),
         r#"{"name":"demo","interface":{"displayName":"Demo"},"mcpServers":"./servers.json"}"#,
     )?;
     std::fs::write(

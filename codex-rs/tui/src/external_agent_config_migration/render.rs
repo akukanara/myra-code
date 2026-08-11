@@ -79,12 +79,12 @@ impl WidgetRef for &ExternalAgentConfigMigrationScreen {
         let intro_lines = match self.view {
             MigrationView::Summary => vec![
                 Line::from("Bring over supported setup from another coding agent."),
-                Line::from("MyraCode may add files to your current project folder."),
+                Line::from("Myra may add files to your current project folder."),
                 Line::from("Your existing setup will not be changed."),
             ],
             MigrationView::Customize => vec![
                 Line::from("Choose items to import."),
-                Line::from("MyraCode may add files to your current project folder."),
+                Line::from("Myra may add files to your current project folder."),
                 Line::from("Your existing setup will not be changed."),
             ],
         };

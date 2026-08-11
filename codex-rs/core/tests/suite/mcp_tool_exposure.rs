@@ -360,7 +360,7 @@ async fn rapid_mcp_refreshes_coalesce_to_the_latest_config() -> Result<()> {
         .await?;
 
     contributor.block_next.store(true, Ordering::SeqCst);
-    test.codex
+    test.myra
         .refresh_runtime_config(config_with_mcp_marker(&test.config, "config-a"))
         .await;
     tokio::time::timeout(Duration::from_secs(5), contributor.entered.acquire())
@@ -369,10 +369,10 @@ async fn rapid_mcp_refreshes_coalesce_to_the_latest_config() -> Result<()> {
         .expect("entered semaphore should remain open")
         .forget();
 
-    test.codex
+    test.myra
         .refresh_runtime_config(config_with_mcp_marker(&test.config, "config-b"))
         .await;
-    test.codex
+    test.myra
         .refresh_runtime_config(config_with_mcp_marker(&test.config, "config-c"))
         .await;
     contributor.release.add_permits(1);
@@ -451,11 +451,11 @@ startup_timeout_sec = 0.1
     refresh_config.config_layer_stack = refresh_config
         .config_layer_stack
         .with_user_config(&user_config_path, user_config)?;
-    test.codex.refresh_runtime_config(refresh_config).await;
-    test.codex.submit(Op::RefreshMcpServers).await?;
+    test.myra.refresh_runtime_config(refresh_config).await;
+    test.myra.submit(Op::RefreshMcpServers).await?;
 
     let _ = test
-        .codex
+        .myra
         .read_mcp_resource("refreshed", "test://resource")
         .await;
     assert!(resource_client.has_server("refreshed").await);
@@ -519,7 +519,7 @@ async fn elevated_apps_catalog_limit_requires_host_owned_registration() -> Resul
             builder = builder.with_extensions(Arc::new(extensions.build()));
         }
         let test = builder.build_with_auto_env(&server).await?;
-        let startup = wait_for_mcp_server(&test.codex, CODEX_APPS_MCP_SERVER_NAME).await;
+        let startup = wait_for_mcp_server(&test.myra, CODEX_APPS_MCP_SERVER_NAME).await;
 
         if extension_id == Some("test-extension") {
             let error = startup.expect_err("an extension must retain the standard catalog limit");
@@ -557,7 +557,7 @@ async fn elevated_apps_catalog_limit_requires_host_owned_registration() -> Resul
             description.contains("Calendar"),
             "the accepted Apps catalog should remain model-discoverable: {description}"
         );
-        test.codex.shutdown_and_wait().await?;
+        test.myra.shutdown_and_wait().await?;
     }
 
     Ok(())
@@ -682,7 +682,7 @@ async fn deferred_tool_world_state_tracks_initial_unchanged_and_removed_namespac
     let mut builder = search_capable_apps_builder(apps_server.chatgpt_base_url.clone())
         .with_config(enable_deferred_tool_world_state_without_agents);
     let test = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&test.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&test.myra, CODEX_APPS_MCP_SERVER_NAME).await?;
 
     test.submit_turn("inspect initially available deferred tools")
         .await?;
@@ -699,8 +699,8 @@ enabled = false
     refresh_config.config_layer_stack = refresh_config
         .config_layer_stack
         .with_user_config(&user_config_path, user_config)?;
-    test.codex.refresh_runtime_config(refresh_config).await;
-    test.codex.submit(Op::RefreshMcpServers).await?;
+    test.myra.refresh_runtime_config(refresh_config).await;
+    test.myra.submit(Op::RefreshMcpServers).await?;
     test.submit_turn("inspect removed deferred tools").await?;
 
     let requests = response.requests();
@@ -741,9 +741,9 @@ async fn initially_empty_deferred_tool_world_state_is_not_rendered_or_persisted(
 
     let request = response.single_request();
     assert!(tools_state_sections(&request).is_empty());
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    test.myra.ensure_rollout_materialized().await;
+    test.myra.flush_rollout().await?;
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let world_states = tokio::fs::read_to_string(rollout_path)
         .await?
         .lines()
@@ -775,13 +775,13 @@ async fn deferred_tool_world_state_survives_resume_without_duplicate_updates() -
     let mut builder = search_capable_apps_builder(apps_server.chatgpt_base_url.clone())
         .with_config(enable_deferred_tool_world_state_without_agents);
     let initial = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&initial.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&initial.myra, CODEX_APPS_MCP_SERVER_NAME).await?;
     initial
         .submit_turn("inspect deferred tools before resume")
         .await?;
 
-    initial.codex.ensure_rollout_materialized().await;
-    initial.codex.flush_rollout().await?;
+    initial.myra.ensure_rollout_materialized().await;
+    initial.myra.flush_rollout().await?;
     let rollout_path = initial
         .session_configured
         .rollout_path
@@ -809,7 +809,7 @@ async fn deferred_tool_world_state_survives_resume_without_duplicate_updates() -
         .with_config(enable_deferred_tool_world_state_without_agents);
     let resumed = resume_builder.restart(&server, &initial).await?;
     drop(initial);
-    wait_for_mcp_server(&resumed.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&resumed.myra, CODEX_APPS_MCP_SERVER_NAME).await?;
     resumed
         .submit_turn("inspect unchanged deferred tools after resume")
         .await?;
@@ -903,7 +903,7 @@ async fn apps_guidance_and_deferred_namespace_appear_after_recovery_within_a_tur
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "use an app after it recovers".into(),
@@ -915,7 +915,7 @@ async fn apps_guidance_and_deferred_namespace_appear_after_recovery_within_a_tur
             thread_settings: Default::default(),
         })
         .await?;
-    let EventMsg::RequestUserInput(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::RequestUserInput(request) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::RequestUserInput(_))
     })
     .await
@@ -947,7 +947,7 @@ async fn apps_guidance_and_deferred_namespace_appear_after_recovery_within_a_tur
     release_apps_recovery
         .send(())
         .expect("background Apps recovery should still be waiting");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::McpStartupUpdate(update)
@@ -957,7 +957,7 @@ async fn apps_guidance_and_deferred_namespace_appear_after_recovery_within_a_tur
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -970,7 +970,7 @@ async fn apps_guidance_and_deferred_namespace_appear_after_recovery_within_a_tur
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1074,7 +1074,7 @@ async fn later_follow_up_uses_background_recovered_apps_after_mid_thread_startup
                 vec![SEARCH_CALENDAR_NAMESPACE.to_string()];
         });
     let test = builder.build(&server).await?;
-    wait_for_mcp_server(&test.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&test.myra, CODEX_APPS_MCP_SERVER_NAME).await?;
     test.submit_turn("use Calendar before refreshing MCP")
         .await?;
 
@@ -1091,8 +1091,8 @@ async fn later_follow_up_uses_background_recovered_apps_after_mid_thread_startup
 
     tokio::fs::remove_dir_all(test.codex_home_path().join("cache/codex_apps_tools")).await?;
     startup_control.fail_next_initialize_attempts(/*attempts*/ 1);
-    test.codex.submit(Op::RefreshMcpServers).await?;
-    test.codex
+    test.myra.submit(Op::RefreshMcpServers).await?;
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "use Calendar after transient Apps startup failures".into(),
@@ -1109,7 +1109,7 @@ async fn later_follow_up_uses_background_recovered_apps_after_mid_thread_startup
         let mut apps_ready = false;
         while !turn_complete || !apps_ready {
             let event = test
-                .codex
+                .myra
                 .next_event()
                 .await
                 .expect("event stream should stay open");

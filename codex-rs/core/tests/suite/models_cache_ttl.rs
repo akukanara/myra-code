@@ -67,7 +67,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
     });
 
     let test = builder.build(&server).await?;
-    let codex = Arc::clone(&test.codex);
+    let codex = Arc::clone(&test.myra);
     let config = test.config.clone();
 
     // Populate cache via initial refresh.

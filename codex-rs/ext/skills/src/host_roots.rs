@@ -108,7 +108,7 @@ fn roots_from_layer_stack(
                 }
             }
             ConfigLayerSource::User { .. } => {
-                // Deprecated user skills location (`$CODEX_HOME/skills`), kept for backward
+                // Deprecated user skills location (`$MYRA_HOME/skills`), kept for backward
                 // compatibility.
                 roots.push(local_root(
                     config_folder.join(SKILLS_DIR_NAME),

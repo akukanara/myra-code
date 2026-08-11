@@ -176,14 +176,14 @@ async fn run_agent_with_model(models_manager: SharedModelsManager, model_slug: &
     );
 
     submit_thread_settings(
-        &test.codex,
+        &test.myra,
         ThreadSettingsOverrides {
             model: Some(model_slug.to_string()),
             ..Default::default()
         },
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".to_string(),
@@ -197,7 +197,7 @@ async fn run_agent_with_model(models_manager: SharedModelsManager, model_slug: &
         .await?;
     loop {
         if matches!(
-            wait_for_event(&test.codex, |_| true).await,
+            wait_for_event(&test.myra, |_| true).await,
             EventMsg::TurnComplete(_)
         ) {
             break;

@@ -568,7 +568,7 @@ impl TestCodexBuilder {
             .rollout_path
             .clone()
             .context("rollout path")?;
-        previous.codex.shutdown_and_wait().await?;
+        previous.myra.shutdown_and_wait().await?;
         self.resume(server, Arc::clone(&previous.home), rollout_path)
             .await
     }
@@ -869,7 +869,7 @@ impl TestCodex {
 
     /// Submits a text turn without changing the current thread settings.
     pub async fn submit_text_turn(&self, prompt: &str) -> Result<()> {
-        self.codex
+        self.myra
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: prompt.into(),
@@ -882,7 +882,7 @@ impl TestCodex {
             })
             .await?;
 
-        wait_for_event(&self.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&self.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
         Ok(())
     }
 
@@ -1006,7 +1006,7 @@ impl TestCodex {
         let turn_environment_selections = environments.map(|environments| {
             TurnEnvironmentSelections::new(self.config.cwd.clone(), environments)
         });
-        self.codex
+        self.myra
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: prompt.into(),
@@ -1034,13 +1034,13 @@ impl TestCodex {
             })
             .await?;
 
-        let turn_id = wait_for_event_match(&self.codex, |event| match event {
+        let turn_id = wait_for_event_match(&self.myra, |event| match event {
             EventMsg::TurnStarted(event) => Some(event.turn_id.clone()),
             _ => None,
         })
         .await;
         wait_for_event_with_timeout(
-            &self.codex,
+            &self.myra,
             |event| match event {
                 EventMsg::TurnComplete(event) => event.turn_id == turn_id,
                 _ => false,

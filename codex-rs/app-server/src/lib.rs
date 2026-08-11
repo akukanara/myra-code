@@ -59,7 +59,7 @@ use codex_config::ConfigLoadError;
 use codex_config::TextRange as CoreTextRange;
 use codex_core::ExecPolicyError;
 use codex_core::check_execpolicy_for_warnings;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecServerRuntimePaths;
 use codex_features::Feature;
@@ -482,7 +482,7 @@ pub async fn run_main_with_transport_options(
             format!("error parsing -c overrides: {e}"),
         )
     })?;
-    let codex_home = find_codex_home()?;
+    let codex_home = find_myra_home()?;
     let local_runtime_paths = ExecServerRuntimePaths::from_optional_paths(
         arg0_paths.codex_self_exe.clone(),
         arg0_paths.codex_linux_sandbox_exe.clone(),

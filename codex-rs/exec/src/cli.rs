@@ -12,7 +12,7 @@ use std::path::PathBuf;
     override_usage = "myra exec [OPTIONS] [PROMPT]\n       myra exec [OPTIONS] <COMMAND> [ARGS]"
 )]
 pub struct Cli {
-    /// Process-only PSP routing selected by the parent MyraCode CLI.
+    /// Process-only PSP routing selected by the parent Myra CLI.
     #[clap(skip)]
     pub psp: bool,
 
@@ -20,14 +20,14 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,
 
-    /// Error out when config.toml contains fields that are not recognized by this version of MyraCode.
+    /// Error out when config.toml contains fields that are not recognized by this version of Myra.
     #[arg(long = "strict-config", global = true, default_value_t = false)]
     pub strict_config: bool,
 
     #[clap(flatten)]
     pub shared: ExecSharedCliOptions,
 
-    /// Allow running MyraCode outside a Git repository.
+    /// Allow running Myra outside a Git repository.
     #[arg(long = "skip-git-repo-check", global = true, default_value_t = false)]
     pub skip_git_repo_check: bool,
 
@@ -35,7 +35,7 @@ pub struct Cli {
     #[arg(long = "ephemeral", global = true, default_value_t = false)]
     pub ephemeral: bool,
 
-    /// Do not load `$CODEX_HOME/config.toml`; auth still uses `CODEX_HOME`.
+    /// Do not load `$MYRA_HOME/config.toml`; auth still uses `MYRA_HOME`.
     #[arg(long = "ignore-user-config", global = true, default_value_t = false)]
     pub ignore_user_config: bool,
 

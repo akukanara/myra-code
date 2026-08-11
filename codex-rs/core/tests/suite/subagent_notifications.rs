@@ -478,7 +478,7 @@ async fn setup_turn_one_with_custom_spawned_child(
     if child_response_delay.is_none() && wait_for_parent_notification {
         let _ = wait_for_requests(&child_request_log).await?;
         let rollout_path = test
-            .codex
+            .myra
             .rollout_path()
             .ok_or_else(|| anyhow::anyhow!("expected parent rollout path"))?;
         let deadline = Instant::now() + Duration::from_secs(6);

@@ -783,7 +783,7 @@ mod tests {
         let source = RequirementSource::Composite {
             sources: vec![
                 RequirementSource::SystemRequirementsToml {
-                    file: test_path_buf("/etc/codex/requirements.toml").abs(),
+                    file: test_path_buf("/etc/myra/requirements.toml").abs(),
                 },
                 RequirementSource::EnterpriseManaged {
                     id: "layer-1".to_string(),
@@ -1291,8 +1291,8 @@ mod tests {
 
     #[test]
     fn hook_metadata_for_config_layer_source_discards_source_details() {
-        let config_file = test_path_buf("/tmp/.codex/config.toml").abs();
-        let dot_codex_folder = test_path_buf("/tmp/worktree/.codex").abs();
+        let config_file = test_path_buf("/tmp/.myra/config.toml").abs();
+        let dot_codex_folder = test_path_buf("/tmp/worktree/.myra").abs();
 
         assert_eq!(
             super::hook_metadata_for_config_layer_source(&ConfigLayerSource::System {
@@ -1315,7 +1315,7 @@ mod tests {
         );
         assert_eq!(
             super::hook_metadata_for_config_layer_source(&ConfigLayerSource::Mdm {
-                domain: "com.openai.codex".to_string(),
+                domain: "com.openai.myra".to_string(),
                 key: "config".to_string(),
             }),
             (HookSource::Mdm, true),

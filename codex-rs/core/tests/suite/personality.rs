@@ -102,7 +102,7 @@ async fn user_turn_personality_none_does_not_add_update_message() -> anyhow::Res
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -111,7 +111,7 @@ async fn user_turn_personality_none_does_not_add_update_message() -> anyhow::Res
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let developer_texts = request.message_input_texts("developer");
@@ -140,7 +140,7 @@ async fn config_personality_some_sets_instructions_template() -> anyhow::Result<
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -149,7 +149,7 @@ async fn config_personality_some_sets_instructions_template() -> anyhow::Result<
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -185,7 +185,7 @@ async fn config_personality_none_sends_no_personality() -> anyhow::Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -194,7 +194,7 @@ async fn config_personality_none_sends_no_personality() -> anyhow::Result<()> {
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -244,7 +244,7 @@ async fn config_personality_none_strips_baked_personality_section() -> anyhow::R
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -253,7 +253,7 @@ async fn config_personality_none_strips_baked_personality_section() -> anyhow::R
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         resp_mock.single_request().instructions_text(),
@@ -281,7 +281,7 @@ async fn config_personality_none_preserves_explicit_base_instructions() -> anyho
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -290,7 +290,7 @@ async fn config_personality_none_preserves_explicit_base_instructions() -> anyho
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         resp_mock.single_request().instructions_text(),
@@ -314,7 +314,7 @@ async fn default_personality_is_pragmatic_without_config_toml() -> anyhow::Resul
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -323,7 +323,7 @@ async fn default_personality_is_pragmatic_without_config_toml() -> anyhow::Resul
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -355,7 +355,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -364,10 +364,10 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             personality: Some(Personality::Friendly),
             ..Default::default()
@@ -375,7 +375,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -384,7 +384,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -431,7 +431,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -440,10 +440,10 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             personality: Some(Personality::Pragmatic),
             ..Default::default()
@@ -451,7 +451,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -460,7 +460,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -551,7 +551,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -560,10 +560,10 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             personality: Some(Personality::Pragmatic),
             ..Default::default()
@@ -571,7 +571,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -580,7 +580,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -699,7 +699,7 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
 
     wait_for_model_available(&test.thread_manager.get_models_manager(), remote_slug).await;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn_with_personality(
             &test,
             "hello",
@@ -709,7 +709,7 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -825,7 +825,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
 
     wait_for_model_available(&test.thread_manager.get_models_manager(), remote_slug).await;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -834,10 +834,10 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             personality: Some(Personality::Friendly),
             ..Default::default()
@@ -845,7 +845,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_text_turn(
             &test,
             "hello",
@@ -854,7 +854,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
         ))
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");

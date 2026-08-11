@@ -31,7 +31,11 @@ impl ChatWidget {
         )
     }
 
-    pub(crate) fn should_show_fast_status(&self, _model: &str, _service_tier: Option<&str>) -> bool {
+    pub(crate) fn should_show_fast_status(
+        &self,
+        _model: &str,
+        _service_tier: Option<&str>,
+    ) -> bool {
         false
     }
 

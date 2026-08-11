@@ -7,14 +7,14 @@ use codex_utils_absolute_path::AbsolutePathBuf;
 
 const BIN_DIRNAME: &str = "bin";
 const CODE_MODE_HOST_EXECUTABLE_NAME: &str = if cfg!(windows) {
-    "codex-code-mode-host.exe"
+    "myra-code-mode-host.exe"
 } else {
-    "codex-code-mode-host"
+    "myra-code-mode-host"
 };
-const PACKAGE_METADATA_FILENAME: &str = "codex-package.json";
-const PATH_DIRNAME: &str = "codex-path";
+const PACKAGE_METADATA_FILENAME: &str = "myra-package.json";
+const PATH_DIRNAME: &str = "myra-path";
 const RELEASES_DIRNAME: &str = "releases";
-const RESOURCES_DIRNAME: &str = "codex-resources";
+const RESOURCES_DIRNAME: &str = "myra-resources";
 const STANDALONE_PACKAGES_DIRNAME: &str = "standalone";
 const ZSH_DIRNAME: &str = "zsh";
 static INSTALL_CONTEXT: OnceLock<InstallContext> = OnceLock::new();
@@ -48,20 +48,20 @@ pub enum InstallMethod {
     Standalone {
         /// The managed standalone release directory. Legacy installs use paths
         /// such as
-        /// `~/.codex/packages/standalone/releases/0.111.0-x86_64-unknown-linux-musl`.
+        /// `~/.myra/packages/standalone/releases/0.111.0-x86_64-unknown-linux-musl`.
         /// Package-layout installs use the package root that contains `bin/`,
-        /// `codex-resources/`, and `codex-path/`.
+        /// `myra-resources/`, and `myra-path/`.
         release_dir: AbsolutePathBuf,
         /// The bundled resource directory for managed dependencies.
         resources_dir: Option<AbsolutePathBuf>,
         /// The platform of the standalone release, either `Unix` or `Windows`.
         platform: StandalonePlatform,
     },
-    /// A Codex binary launched through the npm-managed `codex.js` shim.
+    /// A Myra binary launched through the npm-managed `myra.js` shim.
     Npm,
-    /// A Codex binary launched through the bun-managed `codex.js` shim.
+    /// A Myra binary launched through the bun-managed `myra.js` shim.
     Bun,
-    /// A Codex binary launched through the pnpm-managed `codex.js` shim.
+    /// A Myra binary launched through the pnpm-managed `myra.js` shim.
     Pnpm,
     /// A Codex binary that appears to come from a Homebrew install prefix.
     Brew,
@@ -78,7 +78,7 @@ impl InstallContext {
         current_exe: Option<&Path>,
         method_override: Option<InstallMethod>,
     ) -> Self {
-        let codex_home = codex_utils_home_dir::find_codex_home().ok();
+        let codex_home = codex_utils_home_dir::find_myra_home().ok();
         Self::from_exe_with_codex_home(
             is_macos,
             current_exe,
@@ -111,11 +111,11 @@ impl InstallContext {
     pub fn current() -> &'static Self {
         INSTALL_CONTEXT.get_or_init(|| {
             let current_exe = std::env::current_exe().ok();
-            let method_override = if std::env::var_os("CODEX_MANAGED_BY_PNPM").is_some() {
+            let method_override = if std::env::var_os("MYRA_MANAGED_BY_PNPM").is_some() {
                 Some(InstallMethod::Pnpm)
-            } else if std::env::var_os("CODEX_MANAGED_BY_NPM").is_some() {
+            } else if std::env::var_os("MYRA_MANAGED_BY_NPM").is_some() {
                 Some(InstallMethod::Npm)
-            } else if std::env::var_os("CODEX_MANAGED_BY_BUN").is_some() {
+            } else if std::env::var_os("MYRA_MANAGED_BY_BUN").is_some() {
                 Some(InstallMethod::Bun)
             } else {
                 None
@@ -153,7 +153,7 @@ impl InstallContext {
     }
 
     pub fn code_mode_host_program(&self) -> PathBuf {
-        // prefer the one packed under codex-resources
+        // Prefer the one packed under myra-resources.
         self.bundled_resource(CODE_MODE_HOST_EXECUTABLE_NAME)
             .map_or_else(
                 || self.code_mode_host_program_from_exe(std::env::current_exe().ok().as_deref()),
@@ -336,7 +336,7 @@ mod tests {
         fs::create_dir_all(&bin_dir)?;
         fs::create_dir_all(&resources_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         let resource_host = resources_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME);
         fs::write(&exe_path, "")?;
         fs::write(bin_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME), "legacy host")?;
@@ -363,7 +363,7 @@ mod tests {
         fs::create_dir_all(&bin_dir)?;
         fs::create_dir_all(&resources_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         let resource_host = resources_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME);
         fs::write(&exe_path, "")?;
         fs::write(&resource_host, "managed host")?;
@@ -390,7 +390,7 @@ mod tests {
         fs::create_dir_all(&bin_dir)?;
         fs::create_dir_all(resources_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME))?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         let legacy_host = bin_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME);
         fs::write(&exe_path, "")?;
         fs::write(&legacy_host, "legacy host")?;
@@ -416,7 +416,7 @@ mod tests {
             .join("packages/standalone/releases/1.2.3-x86_64-unknown-linux-musl");
         let resources_dir = release_dir.join(RESOURCES_DIRNAME);
         fs::create_dir_all(&resources_dir)?;
-        let exe_path = release_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = release_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
         fs::write(release_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME), "")?;
         fs::write(
@@ -473,7 +473,7 @@ mod tests {
             .path()
             .join("packages/standalone/releases/1.2.3-x86_64-unknown-linux-musl");
         fs::create_dir_all(&release_dir)?;
-        let exe_path = release_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = release_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
 
         let context = InstallContext::from_exe_with_codex_home(
@@ -496,7 +496,7 @@ mod tests {
         fs::create_dir_all(&resources_dir)?;
         fs::create_dir_all(&path_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
         fs::write(bin_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME), "")?;
         fs::write(resources_dir.join(TEST_RESOURCE_NAME), "")?;
@@ -577,7 +577,7 @@ mod tests {
         let bin_dir = package_dir.path().join(BIN_DIRNAME);
         fs::create_dir_all(&bin_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join("codex");
+        let exe_path = bin_dir.join("myra");
         let executable_target = package_dir.path().join("host-target");
         let executable_path = bin_dir.join(CODE_MODE_HOST_EXECUTABLE_NAME);
         fs::write(&exe_path, "")?;
@@ -613,7 +613,7 @@ mod tests {
         fs::create_dir_all(&resources_dir)?;
         fs::create_dir_all(&path_dir)?;
         fs::write(package_dir.join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
         fs::write(resources_dir.join(TEST_RESOURCE_NAME), "")?;
         fs::write(path_dir.join(default_rg_command()), "")?;
@@ -667,7 +667,7 @@ mod tests {
         fs::create_dir_all(&bin_dir)?;
         fs::create_dir_all(&path_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
         fs::write(path_dir.join(default_rg_command()), "")?;
         let canonical_path_dir = AbsolutePathBuf::from_absolute_path(path_dir.canonicalize()?)?;
@@ -689,12 +689,12 @@ mod tests {
     }
 
     #[test]
-    fn standalone_package_rg_falls_back_when_codex_path_is_missing() -> std::io::Result<()> {
+    fn standalone_package_rg_falls_back_when_myra_path_is_missing() -> std::io::Result<()> {
         let package_dir = tempfile::tempdir()?;
         let bin_dir = package_dir.path().join(BIN_DIRNAME);
         fs::create_dir_all(&bin_dir)?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
 
         let context = InstallContext::from_exe_with_codex_home(
@@ -718,9 +718,9 @@ mod tests {
         fs::create_dir_all(resources_dir.join(TEST_RESOURCE_NAME))?;
         fs::create_dir_all(path_dir.join(default_rg_command()))?;
         fs::write(package_dir.path().join(PACKAGE_METADATA_FILENAME), "{}")?;
-        let exe_path = bin_dir.join(if cfg!(windows) { "codex.exe" } else { "codex" });
+        let exe_path = bin_dir.join(if cfg!(windows) { "myra.exe" } else { "myra" });
         fs::write(&exe_path, "")?;
-        let fallback_exe_path = package_dir.path().join("fallback-codex");
+        let fallback_exe_path = package_dir.path().join("fallback-myra");
         fs::write(&fallback_exe_path, "")?;
 
         let context = InstallContext::from_exe_with_codex_home(
@@ -746,7 +746,7 @@ mod tests {
         };
 
         assert_eq!(
-            context.code_mode_host_program_from_exe(Some(Path::new("/opt/codex/bin/codex"))),
+            context.code_mode_host_program_from_exe(Some(Path::new("/opt/myra/bin/myra"))),
             PathBuf::from("/opt/codex/bin").join(CODE_MODE_HOST_EXECUTABLE_NAME)
         );
     }
@@ -810,7 +810,7 @@ mod tests {
     fn brew_is_detected_on_macos_prefixes() {
         let context = InstallContext::from_exe_with_codex_home(
             /*is_macos*/ true,
-            /*current_exe*/ Some(Path::new("/opt/homebrew/bin/codex")),
+            /*current_exe*/ Some(Path::new("/opt/homebrew/bin/myra")),
             /*method_override*/ None,
             /*codex_home*/ None,
         );

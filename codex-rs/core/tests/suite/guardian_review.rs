@@ -251,7 +251,7 @@ async fn guardian_session_prewarms_and_is_reused_for_first_review(
         .as_str()
         .expect("guardian thread id");
 
-    test.codex
+    test.myra
         .submit(
             vec![UserInput::Text {
                 text: "run a command that requires Guardian review".into(),
@@ -310,11 +310,11 @@ async fn guardian_session_prewarms_and_is_reused_for_first_review(
     assert_eq!(guardian_review.get("generate"), None);
 
     let guardian_rollout_path = test
-        .codex
+        .myra
         .guardian_trunk_rollout_path()
         .await
         .expect("guardian trunk rollout path");
-    test.codex.shutdown_and_wait().await?;
+    test.myra.shutdown_and_wait().await?;
     let guardian_context_windows = fs::read_to_string(guardian_rollout_path)?
         .lines()
         .map(serde_json::from_str::<RolloutLine>)
@@ -432,7 +432,7 @@ async fn guardian_session_is_reused_for_consecutive_tool_reviews_without_prewarm
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run two commands that require Guardian review".into(),
@@ -450,7 +450,7 @@ async fn guardian_session_is_reused_for_consecutive_tool_reviews_without_prewarm
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -558,7 +558,7 @@ async fn interrupted_guardian_tool_review_aborts_without_executing_the_command()
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "interrupt a Guardian-reviewed command".into(),
@@ -585,8 +585,8 @@ async fn interrupted_guardian_tool_review_aborts_without_executing_the_command()
     .await
     .context("timed out waiting for Guardian review request")?;
 
-    test.codex.submit(Op::Interrupt).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Interrupt).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnAborted(_))
     })
     .await;
@@ -605,7 +605,7 @@ async fn interrupted_guardian_tool_review_aborts_without_executing_the_command()
         ]),
     )
     .await;
-    test.codex
+    test.myra
         .submit(
             vec![UserInput::Text {
                 text: "verify Guardian cancellation left the next turn clean".into(),
@@ -614,7 +614,7 @@ async fn interrupted_guardian_tool_review_aborts_without_executing_the_command()
             .into(),
         )
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -705,7 +705,7 @@ async fn guardian_denial_rejects_tool_call_with_rationale() -> Result<()> {
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a command that Guardian should deny".into(),
@@ -722,7 +722,7 @@ async fn guardian_denial_rejects_tool_call_with_rationale() -> Result<()> {
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -819,7 +819,7 @@ async fn cyber_model_guardian_denial_interrupts_turn_immediately() -> Result<()>
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a command that Guardian should deny for a cyber model".into(),
@@ -837,7 +837,7 @@ async fn cyber_model_guardian_denial_interrupts_turn_immediately() -> Result<()>
         })
         .await?;
 
-    let warning = wait_for_event(&test.codex, |event| {
+    let warning = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::GuardianWarning(warning)
@@ -854,7 +854,7 @@ async fn cyber_model_guardian_denial_interrupts_turn_immediately() -> Result<()>
             .contains("1 consecutive, 1 in the last 50 reviews")
     );
 
-    let aborted = wait_for_event(&test.codex, |event| {
+    let aborted = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnAborted(_))
     })
     .await;
@@ -951,7 +951,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a command that requires Guardian review".into(),
@@ -969,7 +969,7 @@ printf '%s\n' "${@: -1}" >> "${payload_path}""#,
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

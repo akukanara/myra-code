@@ -48,7 +48,7 @@ async fn fork_thread_twice_drops_to_first_message() {
 
     let mut builder = test_codex();
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let thread_manager = test.thread_manager.clone();
     let config_for_fork = test.config.clone();
 
@@ -200,7 +200,7 @@ async fn assert_copied_fork_persists_inherited_history(history_mode: ThreadHisto
 
     let mut builder = test_codex().with_history_mode(history_mode);
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let thread_manager = test.thread_manager.clone();
 
     codex

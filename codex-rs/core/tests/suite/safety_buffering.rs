@@ -37,7 +37,7 @@ async fn emits_safety_buffering_with_the_header_fallback_model() -> anyhow::Resu
     .await;
 
     let test = test_codex().build(&server).await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Check this request".into(),
@@ -50,7 +50,7 @@ async fn emits_safety_buffering_with_the_header_fallback_model() -> anyhow::Resu
         })
         .await?;
 
-    let event = wait_for_event_match(&test.codex, |event| match event {
+    let event = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::SafetyBuffering(event) => Some(event.clone()),
         _ => None,
     })
@@ -65,7 +65,7 @@ async fn emits_safety_buffering_with_the_header_fallback_model() -> anyhow::Resu
             faster_model: Some(FASTER_MODEL.to_string()),
         }
     );
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -92,7 +92,7 @@ async fn emits_safety_buffering_with_the_responses_api_model_without_header_gati
     .await;
 
     let test = test_codex().build(&server).await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Check this request".into(),
@@ -105,7 +105,7 @@ async fn emits_safety_buffering_with_the_responses_api_model_without_header_gati
         })
         .await?;
 
-    let event = wait_for_event_match(&test.codex, |event| match event {
+    let event = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::SafetyBuffering(event) => Some(event.clone()),
         _ => None,
     })
@@ -120,7 +120,7 @@ async fn emits_safety_buffering_with_the_responses_api_model_without_header_gati
             faster_model: Some(FASTER_MODEL.to_string()),
         }
     );
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

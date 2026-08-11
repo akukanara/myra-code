@@ -737,8 +737,8 @@ mod tests {
 
         for path in [
             "",
-            "/home/user/.codex/plugins/cache/sample/scripts/run.py",
-            "C:/Users/user/.codex/plugins/cache/sample/scripts/run.py",
+            "/home/user/.myra/plugins/cache/sample/scripts/run.py",
+            "C:/Users/user/.myra/plugins/cache/sample/scripts/run.py",
             "scripts/C:/run.py",
             r"\\server\share\sample\scripts\run.py",
             r"scripts\run.py",

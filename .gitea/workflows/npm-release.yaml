@@ -4,7 +4,7 @@ name: npm-release
 #
 # macOS and Windows targets are intentionally out of scope: Gitea Actions has no
 # hosted runners for them, and cross-compiling darwin/win32 needs an Apple SDK
-# and MSVC respectively. Keep CODEX_PLATFORM_PACKAGES in
+# and MSVC respectively. Keep MYRA_PLATFORM_PACKAGES in
 # codex-cli/scripts/build_npm_package.py in sync with the targets built here, or
 # the root wrapper will alias optional dependencies that were never published.
 
@@ -18,6 +18,10 @@ on:
         description: "dist-tag for the root and sdk packages (blank = latest)"
         required: false
         default: ""
+      dry_run:
+        description: "Build and validate all tarballs without publishing to npm"
+        required: false
+        default: "false"
 
 jobs:
   build:
@@ -27,9 +31,9 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-musl
-            npm_package: codex-linux-x64
+            npm_package: myra-linux-x64
           - target: aarch64-unknown-linux-musl
-            npm_package: codex-linux-arm64
+            npm_package: myra-linux-arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -139,17 +143,30 @@ jobs:
         run: |
           set -euo pipefail
           "$PY311" codex-cli/scripts/build_npm_package.py \
-            --package codex --release-version "${{ inputs.version }}" \
-            --pack-output "dist/codex-${{ inputs.version }}.tgz"
+            --package myra --release-version "${{ inputs.version }}" \
+            --pack-output "dist/myra-${{ inputs.version }}.tgz"
           "$PY311" codex-cli/scripts/build_npm_package.py \
-            --package codex-sdk --release-version "${{ inputs.version }}" \
-            --pack-output "dist/codex-sdk-${{ inputs.version }}.tgz"
+            --package myra-sdk --release-version "${{ inputs.version }}" \
+            --pack-output "dist/myra-sdk-${{ inputs.version }}.tgz"
+
+      - name: Verify release tarballs (dry run)
+        if: ${{ inputs.dry_run == 'true' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tarballs=(dist/*.tgz)
+          test "${#tarballs[@]}" -eq 4
+          for tarball in "${tarballs[@]}"; do
+            tar -tzf "$tarball" >/dev/null
+            echo "verified $tarball"
+          done
 
       # Order matters and is not negotiable: the root wrapper aliases the
       # platform versions, and the SDK hard-depends on the root wrapper. npm
       # advances @latest the moment a tarball lands, so the wrong order
       # publishes a package whose dependencies do not exist yet.
       - name: Publish to npm
+        if: ${{ inputs.dry_run != 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           VERSION: ${{ inputs.version }}
@@ -173,7 +190,7 @@ jobs:
           }
 
           prefix="${NPM_TAG:+${NPM_TAG}-}"
-          publish "dist/codex-linux-x64-${VERSION}.tgz"   "${prefix}linux-x64"
-          publish "dist/codex-linux-arm64-${VERSION}.tgz" "${prefix}linux-arm64"
-          publish "dist/codex-${VERSION}.tgz"             "$NPM_TAG"
-          publish "dist/codex-sdk-${VERSION}.tgz"         "$NPM_TAG"
+          publish "dist/myra-linux-x64-${VERSION}.tgz"   "${prefix}linux-x64"
+          publish "dist/myra-linux-arm64-${VERSION}.tgz" "${prefix}linux-arm64"
+          publish "dist/myra-${VERSION}.tgz"             "$NPM_TAG"
+          publish "dist/myra-sdk-${VERSION}.tgz"         "$NPM_TAG"

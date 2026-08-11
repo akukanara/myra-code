@@ -635,7 +635,7 @@ async fn review_uses_updated_turn_permissions_and_approval_policy() {
         .build_with_auto_env(&server)
         .await
         .expect("review conversation should be created");
-    let codex = Arc::clone(&test.codex);
+    let codex = Arc::clone(&test.myra);
     let updated_cwd = test.config.cwd.join("updated-review-workspace");
     let mut selection = test.executor_environment().selection().clone();
     selection.cwd = selection
@@ -778,7 +778,7 @@ async fn review_uses_custom_review_model_from_config() {
         .build_with_auto_env(&server)
         .await
         .expect("custom review conversation should be created");
-    let codex = Arc::clone(&test.codex);
+    let codex = Arc::clone(&test.myra);
 
     codex
         .submit(Op::Review {
@@ -836,7 +836,7 @@ async fn review_uses_session_model_when_review_model_unset() {
         .build_with_auto_env(&server)
         .await
         .expect("same-model review conversation should be created");
-    let codex = Arc::clone(&test.codex);
+    let codex = Arc::clone(&test.myra);
 
     codex
         .submit(Op::Review {
@@ -1298,7 +1298,7 @@ where
         .build(server)
         .await
         .expect("create conversation")
-        .codex
+        .myra
 }
 
 /// Create a conversation resuming from a rollout file, configured to talk to the provided mock server.
@@ -1322,5 +1322,5 @@ where
         .resume(server, codex_home, resume_path)
         .await
         .expect("resume conversation")
-        .codex
+        .myra
 }

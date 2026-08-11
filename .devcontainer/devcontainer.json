@@ -1,5 +1,5 @@
 {
-  "name": "Codex",
+  "name": "Myra",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "..",

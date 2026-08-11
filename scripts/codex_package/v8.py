@@ -1,4 +1,4 @@
-"""Codex-built V8 artifact overrides for package Cargo builds."""
+"""Myra-built V8 artifact overrides for package Cargo builds."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def fetch_codex_v8_artifacts(
 ) -> RustyV8ArtifactPair:
     version = version or resolved_v8_crate_version()
     release_url = (
-        f"https://github.com/openai/codex/releases/download/rusty-v8-v{version}"
+        f"https://github.com/akukanara/myra-code/releases/download/rusty-v8-v{version}"
     )
     target = spec.target
     cache_dir = (cache_root or default_cache_root()) / f"rusty-v8-{version}-{target}"
@@ -104,7 +104,7 @@ def resolved_v8_crate_version() -> str:
 
 
 def default_cache_root() -> Path:
-    return Path(tempfile.gettempdir()) / "codex-package"
+    return Path(tempfile.gettempdir()) / "myra-package"
 
 
 def load_checksums(checksums_path: Path, artifact_names: set[str]) -> dict[str, str]:
@@ -151,7 +151,7 @@ def ensure_valid_artifact(artifact: Path, checksum: str, url: str) -> None:
 
     artifact.unlink(missing_ok=True)
     raise RuntimeError(
-        f"Codex-built V8 artifact {artifact} failed checksum validation."
+        f"Myra-built V8 artifact {artifact} failed checksum validation."
     )
 
 

@@ -14,7 +14,7 @@
 //! keystore that always encrypts secrets when they are transferred across the bus. If DBus isn't installed the keystore will fall back to the json
 //! file because we don't use the "vendored" feature.
 //!
-//! If the keyring is not available or fails, we fall back to CODEX_HOME/.credentials.json which is consistent with other coding CLI agents.
+//! If the keyring is not available or fails, we fall back to MYRA_HOME/.credentials.json which is consistent with other coding CLI agents.
 
 mod refresh_lock;
 mod refresh_transaction;
@@ -67,7 +67,7 @@ use codex_keyring_store::KeyringStore;
 use rmcp::transport::auth::AuthorizationManager;
 use tokio::sync::Mutex;
 
-use codex_utils_home_dir::find_codex_home;
+use codex_utils_home_dir::find_myra_home;
 
 pub(crate) use self::resolved_store::ResolvedOAuthCredentialStore;
 pub(crate) use self::resolved_store::ResolvedOAuthTokens;
@@ -233,7 +233,7 @@ fn load_oauth_tokens_from_secrets_keyring<K: KeyringStore + Clone + 'static>(
     url: &str,
 ) -> std::result::Result<Option<StoredOAuthTokens>, OAuthKeyringLoadError> {
     let _store_lock = OAuthStoreLock::acquire(OAuthStore::Secrets)?;
-    let codex_home = find_codex_home().map_err(anyhow::Error::from)?;
+    let codex_home = find_myra_home().map_err(anyhow::Error::from)?;
     let manager = SecretsManager::new_with_keyring_store_and_namespace(
         codex_home.to_path_buf(),
         SecretsBackendKind::Local,
@@ -352,7 +352,7 @@ fn save_oauth_tokens_to_secrets_keyring_with_lock_held<K: KeyringStore + Clone +
     tokens: &StoredOAuthTokens,
     serialized: &str,
 ) -> Result<()> {
-    let codex_home = find_codex_home()?;
+    let codex_home = find_myra_home()?;
     let manager = SecretsManager::new_with_keyring_store_and_namespace(
         codex_home.to_path_buf(),
         SecretsBackendKind::Local,
@@ -492,7 +492,7 @@ fn delete_oauth_tokens_from_secrets_keyring<K: KeyringStore + Clone + 'static>(
     url: &str,
 ) -> Result<bool> {
     let _store_lock = OAuthStoreLock::acquire(OAuthStore::Secrets)?;
-    let codex_home = find_codex_home()?;
+    let codex_home = find_myra_home()?;
     let manager = SecretsManager::new_with_keyring_store_and_namespace(
         codex_home.to_path_buf(),
         SecretsBackendKind::Local,
@@ -823,7 +823,7 @@ fn compute_secret_name(server_name: &str, server_url: &str) -> Result<SecretName
 }
 
 fn fallback_file_path() -> Result<PathBuf> {
-    Ok(find_codex_home()?.join(FALLBACK_FILENAME).to_path_buf())
+    Ok(find_myra_home()?.join(FALLBACK_FILENAME).to_path_buf())
 }
 
 fn read_fallback_file_unlocked() -> Result<Option<FallbackFile>> {

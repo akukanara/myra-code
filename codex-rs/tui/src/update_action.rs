@@ -8,17 +8,17 @@ use codex_install_context::StandalonePlatform;
 /// Update action the CLI should perform after the TUI exits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateAction {
-    /// Update via `npm install -g @openai/codex@latest`.
+    /// Update via `npm install -g @myralith/myra@latest`.
     NpmGlobalLatest,
-    /// Update via `bun install -g @openai/codex@latest`.
+    /// Update via `bun install -g @myralith/myra@latest`.
     BunGlobalLatest,
-    /// Update via `pnpm add -g @openai/codex@latest`.
+    /// Update via `pnpm add -g @myralith/myra@latest`.
     PnpmGlobalLatest,
-    /// Update via `brew upgrade codex`.
+    /// Update via `brew upgrade myra`.
     BrewUpgrade,
-    /// Update via `curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh`.
+    /// Update via the Myra standalone installer.
     StandaloneUnix,
-    /// Update via `$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex`.
+    /// Update via the Myra standalone installer on Windows.
     StandaloneWindows,
 }
 
@@ -41,15 +41,15 @@ impl UpdateAction {
     /// Returns the list of command-line arguments for invoking the update.
     pub fn command_args(self) -> (&'static str, &'static [&'static str]) {
         match self {
-            UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "@openai/codex"]),
-            UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "@openai/codex"]),
-            UpdateAction::PnpmGlobalLatest => ("pnpm", &["add", "-g", "@openai/codex"]),
-            UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "codex"]),
+            UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "@myralith/myra"]),
+            UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "@myralith/myra"]),
+            UpdateAction::PnpmGlobalLatest => ("pnpm", &["add", "-g", "@myralith/myra"]),
+            UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "myra"]),
             UpdateAction::StandaloneUnix => (
                 "sh",
                 &[
                     "-c",
-                    "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh",
+                    "curl -fsSL https://raw.githubusercontent.com/akukanara/myra-code/main/scripts/install/install.sh | MYRA_NON_INTERACTIVE=1 sh",
                 ],
             ),
             UpdateAction::StandaloneWindows => (
@@ -58,7 +58,7 @@ impl UpdateAction {
                     "-ExecutionPolicy",
                     "Bypass",
                     "-c",
-                    "$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex",
+                    "$env:MYRA_NON_INTERACTIVE=1; irm https://raw.githubusercontent.com/akukanara/myra-code/main/scripts/install/install.ps1 | iex",
                 ],
             ),
         }
@@ -129,7 +129,7 @@ mod tests {
                 method: InstallMethod::Standalone {
                     platform: StandalonePlatform::Unix,
                     release_dir: native_release_dir.clone(),
-                    resources_dir: Some(native_release_dir.join("codex-resources")),
+                    resources_dir: Some(native_release_dir.join("myra-resources")),
                 },
                 package_layout: None,
             }),
@@ -140,7 +140,7 @@ mod tests {
                 method: InstallMethod::Standalone {
                     platform: StandalonePlatform::Windows,
                     release_dir: native_release_dir.clone(),
-                    resources_dir: Some(native_release_dir.join("codex-resources")),
+                    resources_dir: Some(native_release_dir.join("myra-resources")),
                 },
                 package_layout: None,
             }),
@@ -156,7 +156,7 @@ mod tests {
                 "sh",
                 &[
                     "-c",
-                    "curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh"
+                    "curl -fsSL https://raw.githubusercontent.com/akukanara/myra-code/main/scripts/install/install.sh | MYRA_NON_INTERACTIVE=1 sh"
                 ][..],
             )
         );
@@ -168,7 +168,7 @@ mod tests {
                     "-ExecutionPolicy",
                     "Bypass",
                     "-c",
-                    "$env:CODEX_NON_INTERACTIVE=1; irm https://chatgpt.com/codex/install.ps1 | iex"
+                    "$env:MYRA_NON_INTERACTIVE=1; irm https://raw.githubusercontent.com/akukanara/myra-code/main/scripts/install/install.ps1 | iex"
                 ][..],
             )
         );

@@ -1508,7 +1508,7 @@ async fn responses_websocket_usage_limit_error_emits_rate_limit_event() {
         .expect("build websocket codex");
 
     let submission_id = test
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1523,7 +1523,7 @@ async fn responses_websocket_usage_limit_error_emits_rate_limit_event() {
         .expect("submission should succeed while emitting usage limit error events");
 
     let token_event =
-        wait_for_event(&test.codex, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
+        wait_for_event(&test.myra, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
     let EventMsg::TokenCount(event) = token_event else {
         unreachable!();
     };
@@ -1559,7 +1559,7 @@ async fn responses_websocket_usage_limit_error_emits_rate_limit_event() {
         })
     );
 
-    let error_event = wait_for_event(&test.codex, |msg| matches!(msg, EventMsg::Error(_))).await;
+    let error_event = wait_for_event(&test.myra, |msg| matches!(msg, EventMsg::Error(_))).await;
     let EventMsg::Error(error_event) = error_event else {
         unreachable!();
     };
@@ -1603,7 +1603,7 @@ async fn responses_websocket_invalid_request_error_with_status_is_forwarded() {
         .expect("build websocket codex");
 
     let submission_id = test
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1617,7 +1617,7 @@ async fn responses_websocket_invalid_request_error_with_status_is_forwarded() {
         .await
         .expect("submission should succeed while emitting invalid request events");
 
-    let error_event = wait_for_event(&test.codex, |msg| matches!(msg, EventMsg::Error(_))).await;
+    let error_event = wait_for_event(&test.myra, |msg| matches!(msg, EventMsg::Error(_))).await;
     let EventMsg::Error(error_event) = error_event else {
         unreachable!();
     };

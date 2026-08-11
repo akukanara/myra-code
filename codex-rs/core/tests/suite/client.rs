@@ -277,7 +277,7 @@ async fn non_openai_responses_requests_include_item_ids_without_passthrough_meta
         .build(&server)
         .await
         .unwrap()
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -337,7 +337,7 @@ async fn sends_audio_urls_to_responses() {
         .build(&server)
         .await
         .unwrap()
-        .codex;
+        .myra;
     let audio_url = "data:audio/wav;base64,AAAA";
 
     codex
@@ -386,7 +386,7 @@ async fn sends_local_audio_to_responses() -> anyhow::Result<()> {
         })
         .build(&server)
         .await?
-        .codex;
+        .myra;
     let temp_dir = tempfile::tempdir()?;
     let audio_path = temp_dir.path().join("recording.wav");
     std::fs::write(&audio_path, b"audio")?;
@@ -458,8 +458,8 @@ async fn response_item_ids_persist_across_resume_and_preserve_server_ids() -> an
         .expect("rollout path");
 
     initial.submit_turn("before resume").await?;
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |event| {
+    initial.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -549,8 +549,8 @@ async fn synthetic_call_output_id_is_stable_across_resumes() -> anyhow::Result<(
         .await?;
 
     first.submit_turn("first resume").await?;
-    first.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&first.codex, |event| {
+    first.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&first.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -618,8 +618,8 @@ async fn response_item_ids_are_sent_for_all_remote_v2_compaction_requests() -> a
         .await?;
 
     test.submit_turn("before compaction").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -901,7 +901,7 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
         .resume(&server, codex_home, session_path.clone())
         .await
         .expect("resume conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let session_configured = test.session_configured;
 
     // 1) Assert initial_messages only includes existing EventMsg entries; response items are not converted
@@ -1304,7 +1304,7 @@ async fn includes_session_id_thread_id_and_model_headers_in_request() {
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let expected_session_id = test.session_configured.session_id;
     let expected_thread_id = test.session_configured.thread_id;
 
@@ -1571,7 +1571,7 @@ async fn includes_base_instructions_override_in_request() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -1626,7 +1626,7 @@ async fn chatgpt_auth_sends_correct_request() {
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let expected_session_id = test.session_configured.session_id;
     let expected_thread_id = test.session_configured.thread_id;
 
@@ -1799,7 +1799,7 @@ async fn includes_user_instructions_message_in_request() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -1893,7 +1893,7 @@ async fn includes_apps_guidance_as_developer_message_for_chatgpt_auth() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -1956,7 +1956,7 @@ async fn omits_apps_guidance_for_api_key_auth_even_when_feature_enabled() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -2015,7 +2015,7 @@ async fn omits_apps_guidance_when_configured_off() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -2092,7 +2092,7 @@ async fn omits_apps_guidance_when_orchestrator_mcp_is_disabled() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -2174,7 +2174,7 @@ async fn omits_environment_context_when_configured_off() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -2941,7 +2941,7 @@ async fn includes_developer_instructions_message_in_request() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -3268,7 +3268,7 @@ async fn token_count_includes_rate_limits_snapshot() {
         .build(&server)
         .await
         .expect("create conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -3400,7 +3400,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
 
     let mut builder = test_codex();
     let codex_fixture = builder.build(&server).await?;
-    let codex = codex_fixture.codex.clone();
+    let codex = codex_fixture.myra.clone();
 
     let expected_limits = json!({
         "limit_id": "codex",
@@ -3713,7 +3713,7 @@ async fn azure_overrides_assign_properties_used_for_responses_url() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -3803,7 +3803,7 @@ async fn env_var_overrides_loaded_auth() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -3859,7 +3859,7 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     // Turn 1: user sends U1; wait for completion.
     codex

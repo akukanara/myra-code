@@ -39,6 +39,6 @@ async fn consolidation_rebinds_workspace_roots_to_memory_root() -> anyhow::Resul
         }
     );
 
-    test.codex.shutdown_and_wait().await?;
+    test.myra.shutdown_and_wait().await?;
     Ok(())
 }

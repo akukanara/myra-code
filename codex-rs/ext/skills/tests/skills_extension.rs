@@ -74,7 +74,7 @@ use tokio::sync::Semaphore;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
-static NEXT_CODEX_HOME_ID: AtomicUsize = AtomicUsize::new(0);
+static NEXT_MYRA_HOME_ID: AtomicUsize = AtomicUsize::new(0);
 const SKILLS_INTRO_WITH_ABSOLUTE_PATHS: &str = "A skill is a set of instructions provided through a `SKILL.md` source. Below is the list of skills that can be used. Each entry includes a name, description, and source locator. `file` locators are on the host filesystem, `environment resource` locators are owned by an execution environment, `orchestrator resource` locators are opaque non-filesystem resources, and `custom resource` locators use their provider's access mechanism.";
 const DEMO_SKILL_CONTENTS: &str =
     "---\nname: demo\ndescription: Demo skill.\n---\n# Demo\n\nUse the demo skill.\n";
@@ -2212,7 +2212,7 @@ fn skills_extension_config(config: &TestConfig) -> SkillsExtensionConfig {
 }
 
 fn test_codex_home() -> PathBuf {
-    let id = NEXT_CODEX_HOME_ID.fetch_add(1, Ordering::Relaxed);
+    let id = NEXT_MYRA_HOME_ID.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
         "codex-skills-extension-test-{}-{id}",
         std::process::id(),

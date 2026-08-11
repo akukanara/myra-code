@@ -102,9 +102,9 @@ fn write_plugin_with_skill(
     )?;
 
     let plugin_root = repo_root.join(plugin_name);
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         format!(r#"{{"name":"{plugin_name}"}}"#),
     )?;
 
@@ -121,9 +121,9 @@ fn write_cached_remote_plugin_with_skill(
     codex_home: &std::path::Path,
 ) -> Result<std::path::PathBuf> {
     let plugin_root = codex_home.join("plugins/cache/openai-curated-remote/linear/local");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"linear"}"#,
     )?;
 
@@ -139,9 +139,9 @@ fn write_cached_remote_plugin_with_skill(
 
 fn write_cached_local_curated_plugin_with_skill(codex_home: &std::path::Path) -> Result<()> {
     let plugin_root = codex_home.join("plugins/cache/openai-curated/google-calendar/local");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"google-calendar"}"#,
     )?;
 
@@ -707,7 +707,7 @@ async fn skills_list_skips_cwd_roots_when_environment_disabled() -> Result<()> {
     let codex_home = TempDir::new()?;
     let cwd = TempDir::new()?;
     write_skill(&codex_home, "home-skill")?;
-    let repo_skill_dir = cwd.path().join(".codex/skills/repo-skill");
+    let repo_skill_dir = cwd.path().join(".myra/skills/repo-skill");
     std::fs::create_dir_all(&repo_skill_dir)?;
     std::fs::write(
         repo_skill_dir.join("SKILL.md"),
@@ -840,7 +840,7 @@ async fn skills_list_uses_cached_result_after_session_default_writes_until_force
             .all(|skill| skill.name != "late-extra-skill")
     );
 
-    let skill_dir = cwd.path().join(".codex/skills/late-extra-skill");
+    let skill_dir = cwd.path().join(".myra/skills/late-extra-skill");
     std::fs::create_dir_all(&skill_dir)?;
     std::fs::write(
         skill_dir.join("SKILL.md"),

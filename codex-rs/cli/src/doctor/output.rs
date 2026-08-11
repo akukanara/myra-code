@@ -75,7 +75,7 @@ pub(super) fn render_human_report(report: &DoctorReport, options: HumanOutputOpt
     let _ = writeln!(
         out,
         "{} {}",
-        bold("MyraCode Doctor", options),
+        bold("Myra Doctor", options),
         dim(&header_suffix(report), options)
     );
     out.push('\n');

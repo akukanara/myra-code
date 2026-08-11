@@ -18,7 +18,7 @@ class SourceBinariesForTargetTest(unittest.TestCase):
         self.assertEqual(
             source_binaries_for_target(
                 TARGET_SPECS["aarch64-apple-darwin"],
-                PACKAGE_VARIANTS["codex"],
+                PACKAGE_VARIANTS["myra"],
                 build_entrypoint=False,
                 build_code_mode_host=False,
                 build_bwrap=False,
@@ -34,7 +34,7 @@ class SourceBinariesForTargetTest(unittest.TestCase):
         self.assertEqual(
             source_binaries_for_target(
                 TARGET_SPECS["x86_64-unknown-linux-musl"],
-                PACKAGE_VARIANTS["codex"],
+                PACKAGE_VARIANTS["myra"],
                 build_entrypoint=False,
                 build_code_mode_host=False,
                 build_bwrap=False,
@@ -50,7 +50,7 @@ class SourceBinariesForTargetTest(unittest.TestCase):
         self.assertEqual(
             source_binaries_for_target(
                 TARGET_SPECS["x86_64-pc-windows-msvc"],
-                PACKAGE_VARIANTS["codex"],
+                PACKAGE_VARIANTS["myra"],
                 build_entrypoint=False,
                 build_code_mode_host=False,
                 build_bwrap=False,
@@ -64,7 +64,7 @@ class SourceBinariesForTargetTest(unittest.TestCase):
         self.assertEqual(
             source_binaries_for_target(
                 TARGET_SPECS["x86_64-pc-windows-msvc"],
-                PACKAGE_VARIANTS["codex"],
+                PACKAGE_VARIANTS["myra"],
                 build_entrypoint=False,
                 build_code_mode_host=False,
                 build_bwrap=False,
@@ -78,7 +78,7 @@ class SourceBinariesForTargetTest(unittest.TestCase):
         self.assertEqual(
             source_binaries_for_target(
                 TARGET_SPECS["aarch64-apple-darwin"],
-                PACKAGE_VARIANTS["codex-app-server"],
+                PACKAGE_VARIANTS["myra-app-server"],
                 build_entrypoint=False,
                 build_code_mode_host=True,
                 build_bwrap=False,
@@ -98,20 +98,20 @@ class SourceBinariesForTargetTest(unittest.TestCase):
 
             outputs = build_source_binaries(
                 TARGET_SPECS["x86_64-pc-windows-msvc"],
-                PACKAGE_VARIANTS["codex"],
+                PACKAGE_VARIANTS["myra"],
                 cargo=str(root / "cargo-that-should-not-run"),
                 profile="release",
                 entrypoint_bin=entrypoint,
                 code_mode_host_bin=code_mode_host,
                 bwrap_bin=None,
-                codex_command_runner_bin=command_runner,
-                codex_windows_sandbox_setup_bin=sandbox_setup,
+                myra_command_runner_bin=command_runner,
+                myra_windows_sandbox_setup_bin=sandbox_setup,
             )
 
         self.assertEqual(outputs.entrypoint_bin, entrypoint)
         self.assertEqual(outputs.code_mode_host_bin, code_mode_host)
-        self.assertEqual(outputs.codex_command_runner_bin, command_runner)
-        self.assertEqual(outputs.codex_windows_sandbox_setup_bin, sandbox_setup)
+        self.assertEqual(outputs.myra_command_runner_bin, command_runner)
+        self.assertEqual(outputs.myra_windows_sandbox_setup_bin, sandbox_setup)
 
 
 def touch_file(path: Path) -> Path:

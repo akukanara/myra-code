@@ -3,7 +3,7 @@ use anyhow::Result;
 use anyhow::bail;
 use clap::Parser;
 use codex_core::config::Config;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core_plugins::ConfiguredMarketplace;
 use codex_core_plugins::OPENAI_BUNDLED_MARKETPLACE_NAME;
 use codex_core_plugins::PluginInstallOutcome;
@@ -584,7 +584,7 @@ struct PluginCommandContext {
 async fn load_plugin_command_context(
     overrides: Vec<(String, toml::Value)>,
 ) -> Result<PluginCommandContext> {
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
     let config = Config::load_with_cli_overrides(overrides)
         .await
         .context("failed to load configuration")?;

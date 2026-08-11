@@ -8,8 +8,8 @@ use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
 use ratatui::buffer::Buffer;
-use ratatui::style::Color;
 use ratatui::layout::Rect;
+use ratatui::style::Color;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::text::Span;
@@ -568,7 +568,7 @@ pub(crate) fn feedback_upload_consent_params(
             super::SelectionItem {
                 name: "Yes".to_string(),
                 description: Some(
-                    "Share the current MyraCode session logs and diagnostics with the team for troubleshooting."
+                    "Share the current Myra session logs and diagnostics with the team for troubleshooting."
                         .to_string(),
                 ),
                 actions: vec![yes_action],

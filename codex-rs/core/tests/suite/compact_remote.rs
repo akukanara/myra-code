@@ -395,8 +395,8 @@ async fn amazon_bedrock_uses_remote_compaction_endpoint() -> Result<()> {
     .await;
 
     harness.test().submit_turn("before compact").await?;
-    harness.test().codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&harness.test().codex).await;
+    harness.test().myra.submit(Op::Compact).await?;
+    wait_for_turn_complete(&harness.test().myra).await;
     harness.test().submit_turn("after compact").await?;
 
     let compact_request = compact_mock.single_request();
@@ -500,7 +500,7 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
     let session_id = harness.test().session_configured.session_id.to_string();
     let thread_id = harness.test().session_configured.thread_id.to_string();
 
@@ -745,7 +745,7 @@ async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
         )),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let _responses_mock = responses::mount_sse_once(
         harness.server(),
@@ -808,7 +808,7 @@ async fn assert_remote_manual_compact_request_parity(
         });
     }
     let harness = TestCodexHarness::with_builder(builder).await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
     let image_url =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
             .to_string();
@@ -1337,7 +1337,7 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
@@ -1447,7 +1447,7 @@ async fn remote_compact_v2_accepts_additional_output_items_before_compaction() -
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -1564,9 +1564,9 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
             ..StartThreadOptions::new(test.config.clone())
         })
         .await?;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
 
     let responses_mock = mount_sse_once(
         &server,
@@ -1683,10 +1683,10 @@ async fn remote_compact_does_not_charge_inline_audio_payload_as_text() -> Result
             ..StartThreadOptions::new(test.config.clone())
         })
         .await?;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Return a recording".to_string(),
@@ -1698,14 +1698,14 @@ async fn remote_compact_does_not_charge_inline_audio_payload_as_text() -> Result
             thread_settings: Default::default(),
         })
         .await?;
-    let EventMsg::DynamicToolCallRequest(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::DynamicToolCallRequest(request) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::DynamicToolCallRequest(_))
     })
     .await
     else {
         unreachable!("event guard guarantees DynamicToolCallRequest");
     };
-    test.codex
+    test.myra
         .submit(Op::DynamicToolResponse {
             id: request.call_id,
             response: DynamicToolResponse {
@@ -1716,10 +1716,10 @@ async fn remote_compact_does_not_charge_inline_audio_payload_as_text() -> Result
             },
         })
         .await?;
-    wait_for_turn_complete(&test.codex).await;
+    wait_for_turn_complete(&test.myra).await;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_turn_complete(&test.codex).await;
+    test.myra.submit(Op::Compact).await?;
+    wait_for_turn_complete(&test.myra).await;
 
     assert_eq!(responses_mock.requests().len(), 2);
     let output = compact_mock
@@ -1749,7 +1749,7 @@ async fn remote_compact_runs_automatically() -> Result<()> {
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
     let session_id = harness.test().session_configured.session_id.to_string();
     let thread_id = harness.test().session_configured.thread_id.to_string();
 
@@ -1892,7 +1892,7 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -2019,7 +2019,7 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -2136,7 +2136,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -2328,9 +2328,9 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
             ..StartThreadOptions::new(test.config.clone())
         })
         .await?;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
 
     codex
         .submit(Op::UserInput {
@@ -2387,7 +2387,7 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     mount_sse_once(
         harness.server(),
@@ -2496,7 +2496,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             }),
     )
     .await?;
-    let baseline_codex = baseline_harness.test().codex.clone();
+    let baseline_codex = baseline_harness.test().myra.clone();
 
     responses::mount_sse_sequence(
         baseline_harness.server(),
@@ -2604,7 +2604,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             }),
     )
     .await?;
-    let override_codex = override_harness.test().codex.clone();
+    let override_codex = override_harness.test().myra.clone();
 
     responses::mount_sse_sequence(
         override_harness.server(),
@@ -2704,7 +2704,7 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     mount_sse_once(
         harness.server(),
@@ -2785,7 +2785,7 @@ async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     mount_sse_once(
         harness.server(),
@@ -2850,7 +2850,7 @@ async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> 
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
     let rollout_path = harness
         .test()
         .session_configured
@@ -3037,7 +3037,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     .await;
 
     initial
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start remote compact flow".into(),
@@ -3049,13 +3049,13 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Compact).await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    initial.myra.submit(Op::Compact).await?;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     initial
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact in same session".into(),
@@ -3067,20 +3067,17 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |ev| {
-        matches!(ev, EventMsg::ShutdownComplete)
-    })
-    .await;
+    initial.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     let mut resume_builder =
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after resume".into(),
@@ -3092,7 +3089,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3179,7 +3176,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start remote compact flow".into(),
@@ -3191,12 +3188,12 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact in same session".into(),
@@ -3208,7 +3205,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3266,9 +3263,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.myra.as_ref()).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -3280,9 +3277,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3294,7 +3291,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3318,7 +3315,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_restates_realtime_sta
         )
     );
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.myra.as_ref()).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -3347,9 +3344,9 @@ async fn remote_request_uses_custom_experimental_realtime_start_instructions() -
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.myra.as_ref()).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -3361,14 +3358,14 @@ async fn remote_request_uses_custom_experimental_realtime_start_instructions() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_request_contains_custom_realtime_start(
         &responses_mock.single_request(),
         custom_instructions,
     );
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.myra.as_ref()).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -3403,14 +3400,11 @@ async fn active_realtime_does_not_diff_changed_start_instructions_after_resume()
     )
     .await;
 
-    start_realtime_conversation(initial.codex.as_ref()).await?;
+    start_realtime_conversation(initial.myra.as_ref()).await?;
     initial.submit_turn("USER_ONE").await?;
-    close_realtime_conversation(initial.codex.as_ref()).await?;
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |ev| {
-        matches!(ev, EventMsg::ShutdownComplete)
-    })
-    .await;
+    close_realtime_conversation(initial.myra.as_ref()).await?;
+    initial.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
     initial_realtime_server.shutdown().await;
 
     let resumed_realtime_server = start_remote_realtime_server().await;
@@ -3424,7 +3418,7 @@ async fn active_realtime_does_not_diff_changed_start_instructions_after_resume()
         });
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
-    start_realtime_conversation(resumed.codex.as_ref()).await?;
+    start_realtime_conversation(resumed.myra.as_ref()).await?;
     resumed.submit_turn("USER_TWO").await?;
 
     let requests = responses_mock.requests();
@@ -3440,7 +3434,7 @@ async fn active_realtime_does_not_diff_changed_start_instructions_after_resume()
         "did not expect an active-to-active instruction change to emit a diff"
     );
 
-    close_realtime_conversation(resumed.codex.as_ref()).await?;
+    close_realtime_conversation(resumed.myra.as_ref()).await?;
     resumed_realtime_server.shutdown().await;
     Ok(())
 }
@@ -3478,9 +3472,9 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.myra.as_ref()).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_ONE".to_string(),
@@ -3492,12 +3486,12 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3509,7 +3503,7 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3533,7 +3527,7 @@ async fn snapshot_request_shape_remote_manual_compact_restates_realtime_start() 
         )
     );
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.myra.as_ref()).await?;
     realtime_server.shutdown().await;
     Ok(())
 }
@@ -3578,9 +3572,9 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
     )
     .await;
 
-    start_realtime_conversation(test.codex.as_ref()).await?;
+    start_realtime_conversation(test.myra.as_ref()).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "SETUP_USER".to_string(),
@@ -3592,11 +3586,11 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    close_realtime_conversation(test.codex.as_ref()).await?;
+    close_realtime_conversation(test.myra.as_ref()).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "USER_TWO".to_string(),
@@ -3608,7 +3602,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_does_not_restate_real
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -3659,7 +3653,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_including_incoming_us
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -3762,7 +3756,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let initial_turn_request_mock = responses::mount_sse_once(
         harness.server(),
@@ -3897,7 +3891,7 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceed
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -4003,7 +3997,7 @@ async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
@@ -4076,7 +4070,7 @@ async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
         vec![
@@ -4160,7 +4154,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_http() -> Result<()> {
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
     let responses_mock = responses::mount_response_sequence(
         harness.server(),
         vec![
@@ -4297,7 +4291,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
 
     // Phase 1: startup prewarm stays empty, then WebSocket sampling mints state and schedules
     // inline v2 compaction.
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "RUN_WITH_WS_MID_TURN_COMPACT_V2".to_string(),
@@ -4309,7 +4303,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_turn_complete(&test.codex).await;
+    wait_for_turn_complete(&test.myra).await;
 
     let requests = server.single_connection();
     assert_eq!(requests.len(), 5);
@@ -4352,7 +4346,7 @@ async fn snapshot_request_shape_remote_mid_turn_continuation_compaction() -> Res
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -4425,7 +4419,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_summary_only_reinject
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let initial_turn_request_mock = responses::mount_sse_once(
         harness.server(),
@@ -4513,7 +4507,7 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_multi_summary_reinjec
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let setup_turn_request_mock = responses::mount_sse_once(
         harness.server(),
@@ -4622,7 +4616,7 @@ async fn snapshot_request_shape_remote_manual_compact_without_previous_user_mess
         test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let responses_mock = responses::mount_sse_once(
         harness.server(),

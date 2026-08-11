@@ -497,7 +497,7 @@ fn selected_capability_fixture(
     )?;
 
     let plugin = TempDir::new()?;
-    let manifest_dir = plugin.path().join(".codex-plugin");
+    let manifest_dir = plugin.path().join(".myra-plugin");
     let skill_dir = plugin.path().join("skills/deploy");
     let pid_file = plugin.path().join("executor-mcp.pid");
     std::fs::create_dir_all(&manifest_dir)?;
@@ -753,7 +753,7 @@ async fn spawn_exec_server(codex_home: &std::path::Path, url: &str) -> Result<Ch
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .kill_on_drop(true)
-        .env("CODEX_HOME", codex_home)
+        .env("MYRA_HOME", codex_home)
         .env(EXECUTOR_ENV_NAME, EXECUTOR_ENV_VALUE)
         .spawn()?;
     let stdout = child

@@ -43,7 +43,7 @@ fn write_file(path: &Path, contents: &str) {
 fn write_test_plugin(root: &Path, plugin_name: &str) -> PathBuf {
     let plugin_path = root.join(plugin_name);
     write_file(
-        &plugin_path.join(".codex-plugin/plugin.json"),
+        &plugin_path.join(".myra-plugin/plugin.json"),
         &format!(r#"{{"name":"{plugin_name}"}}"#),
     );
     write_file(
@@ -286,7 +286,7 @@ async fn save_remote_plugin_share_creates_workspace_plugin() {
     let archive_files = archive_file_entries(&upload_request.body);
     assert_eq!(
         archive_files
-            .get(".codex-plugin/plugin.json")
+            .get(".myra-plugin/plugin.json")
             .map(Vec::as_slice),
         Some(br#"{"name":"demo-plugin"}"#.as_slice())
     );
@@ -327,13 +327,13 @@ fn archive_plugin_for_upload_places_manifest_at_archive_root() {
     assert_eq!(
         archive_files.keys().cloned().collect::<Vec<_>>(),
         vec![
-            ".codex-plugin/plugin.json".to_string(),
+            ".myra-plugin/plugin.json".to_string(),
             "skills/example/SKILL.md".to_string()
         ]
     );
     assert_eq!(
         archive_files
-            .get(".codex-plugin/plugin.json")
+            .get(".myra-plugin/plugin.json")
             .map(Vec::as_slice),
         Some(br#"{"name":"demo-plugin"}"#.as_slice())
     );
@@ -364,7 +364,7 @@ fn archive_plugin_for_upload_round_trips_through_plugin_bundle_archive_with_long
     .expect("extract shared plugin archive");
 
     assert_eq!(
-        fs::read_to_string(destination.path().join(".codex-plugin/plugin.json")).unwrap(),
+        fs::read_to_string(destination.path().join(".myra-plugin/plugin.json")).unwrap(),
         r#"{"name":"demo-plugin"}"#
     );
     assert_eq!(

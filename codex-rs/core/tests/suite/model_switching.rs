@@ -136,7 +136,7 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
     let test = builder.build(&server).await?;
     let next_model = "gpt-5.4";
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -146,10 +146,10 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
             test.session_configured.model.clone(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             model: Some(next_model.to_string()),
             ..Default::default()
@@ -157,7 +157,7 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -167,7 +167,7 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
             next_model.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -183,9 +183,9 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
         "expected model switch preamble, got: {model_switch_text:?}"
     );
 
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    test.myra.ensure_rollout_materialized().await;
+    test.myra.flush_rollout().await?;
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let model_states = std::fs::read_to_string(rollout_path)?
         .lines()
         .map(serde_json::from_str::<RolloutLine>)
@@ -231,7 +231,7 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
     let test = builder.build(&server).await?;
     let next_model = "exp-codex-personality";
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -241,10 +241,10 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
             test.session_configured.model.clone(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             model: Some(next_model.to_string()),
             personality: Some(Personality::Pragmatic),
@@ -253,7 +253,7 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -263,7 +263,7 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
             next_model.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -409,7 +409,7 @@ async fn unsupported_configured_service_tier_warns_at_session_start() -> Result<
         });
     let test = builder.build(&server).await?;
 
-    let warning = wait_for_event(&test.codex, |event| {
+    let warning = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::Warning(warning)
@@ -558,7 +558,7 @@ async fn model_change_from_multimodal_to_text_strips_prior_media_content() -> Re
     let image_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="
         .to_string();
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![
@@ -577,9 +577,9 @@ async fn model_change_from_multimodal_to_text_strips_prior_media_content() -> Re
             multimodal_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -589,7 +589,7 @@ async fn model_change_from_multimodal_to_text_strips_prior_media_content() -> Re
             text_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = responses.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -676,7 +676,7 @@ async fn generated_image_is_replayed_for_image_capable_models() -> Result<()> {
         )
         .await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -686,9 +686,9 @@ async fn generated_image_is_replayed_for_image_capable_models() -> Result<()> {
             image_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -698,7 +698,7 @@ async fn generated_image_is_replayed_for_image_capable_models() -> Result<()> {
             image_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = responses.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -773,7 +773,7 @@ async fn model_change_from_generated_image_to_text_preserves_prior_generated_ima
         )
         .await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -783,9 +783,9 @@ async fn model_change_from_generated_image_to_text_preserves_prior_generated_ima
             image_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -795,7 +795,7 @@ async fn model_change_from_generated_image_to_text_preserves_prior_generated_ima
             text_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = responses.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -872,7 +872,7 @@ async fn thread_rollback_after_generated_image_drops_entire_image_turn_history()
         )
         .await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -882,17 +882,14 @@ async fn thread_rollback_after_generated_image_drops_entire_image_turn_history()
             image_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(Op::ThreadRollback { num_turns: 1 })
         .await?;
-    wait_for_event(&test.codex, |ev| {
-        matches!(ev, EventMsg::ThreadRolledBack(_))
-    })
-    .await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::ThreadRolledBack(_))).await;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -902,7 +899,7 @@ async fn thread_rollback_after_generated_image_drops_entire_image_turn_history()
             image_model_slug.to_string(),
         ))
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = responses.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -1046,7 +1043,7 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
         Some(smaller_context_window)
     );
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1057,7 +1054,7 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
         ))
         .await?;
 
-    let large_window_event = wait_for_event(&test.codex, |event| {
+    let large_window_event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::TokenCount(token_count)
@@ -1078,10 +1075,10 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
             .and_then(|info| info.model_context_window),
         Some(large_effective_window)
     );
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             model: Some(smaller_model_slug.to_string()),
             ..Default::default()
@@ -1089,7 +1086,7 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(read_only_user_turn(
             &test,
             vec![UserInput::Text {
@@ -1100,7 +1097,7 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
         ))
         .await?;
 
-    let smaller_turn_started_event = wait_for_event(&test.codex, |event| {
+    let smaller_turn_started_event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::TurnStarted(started)
@@ -1116,7 +1113,7 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
         Some(smaller_effective_window)
     );
 
-    let smaller_window_event = wait_for_event(&test.codex, |event| {
+    let smaller_window_event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::TokenCount(token_count)
@@ -1136,7 +1133,7 @@ async fn model_switch_to_smaller_model_updates_token_context_window() -> Result<
         .and_then(|info| info.model_context_window);
     assert_eq!(smaller_window, Some(smaller_effective_window));
     assert_ne!(smaller_window, Some(large_effective_window));
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     Ok(())
 }

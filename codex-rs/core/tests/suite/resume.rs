@@ -25,7 +25,7 @@ async fn resume_includes_initial_messages_from_rollout_events() -> Result<()> {
     let server = start_mock_server().await;
     let mut builder = test_codex();
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let codex = Arc::clone(&initial.myra);
 
     let initial_sse = sse(vec![
         ev_response_created("resp-initial"),
@@ -90,7 +90,7 @@ async fn resume_includes_initial_messages_from_reasoning_events() -> Result<()> 
         config.show_raw_agent_reasoning = true;
     });
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let codex = Arc::clone(&initial.myra);
 
     let initial_sse = sse(vec![
         ev_response_created("resp-initial"),
@@ -154,7 +154,7 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
         config.model = Some("gpt-5.2".to_string());
     });
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let codex = Arc::clone(&initial.myra);
 
     let initial_sse = sse(vec![
         ev_response_created("resp-initial"),
@@ -205,7 +205,7 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
     });
     let resumed = resume_builder.restart(&server, &initial).await?;
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Resume with different model".into(),
@@ -217,13 +217,13 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Second turn after resume".into(),
@@ -235,7 +235,7 @@ async fn resume_switches_models_preserves_base_instructions() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -279,7 +279,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
         config.model = Some("gpt-5.2".to_string());
     });
     let initial = builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let codex = Arc::clone(&initial.myra);
 
     let initial_mock = mount_sse_once(
         &server,
@@ -320,7 +320,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
     });
     let resumed = resume_builder.restart(&server, &initial).await?;
     core_test_support::submit_thread_settings(
-        &resumed.codex,
+        &resumed.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             model: Some("gpt-5.4".to_string()),
             ..Default::default()
@@ -328,7 +328,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
     )
     .await?;
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn after override".into(),
@@ -340,7 +340,7 @@ async fn resume_model_switch_is_not_duplicated_after_pre_turn_override() -> Resu
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

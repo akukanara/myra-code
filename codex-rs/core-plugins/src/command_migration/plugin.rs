@@ -13,7 +13,7 @@ use std::io;
 use std::path::Path;
 
 const PLUGIN_COMMANDS_DIR: &str = "commands";
-const PLUGIN_METADATA_DIR: &str = ".codex-plugin";
+const PLUGIN_METADATA_DIR: &str = ".myra-plugin";
 const MIGRATED_COMMAND_SKILLS_DIR: &str = "migrated-command-skills";
 const MAX_MIGRATED_COMMAND_SKILL_BYTES: usize = 4_000;
 

@@ -17,10 +17,10 @@ use super::load_environment_skills_from_root;
 async fn loads_plugin_namespace_dependencies_and_policy() {
     let root = tempdir().expect("tempdir");
     let skill_dir = root.path().join("skills/deploy");
-    fs::create_dir_all(root.path().join(".codex-plugin")).expect("manifest dir");
+    fs::create_dir_all(root.path().join(".myra-plugin")).expect("manifest dir");
     fs::create_dir_all(skill_dir.join("agents")).expect("metadata dir");
     fs::write(
-        root.path().join(".codex-plugin/plugin.json"),
+        root.path().join(".myra-plugin/plugin.json"),
         r#"{"name":"demo-plugin"}"#,
     )
     .expect("manifest");

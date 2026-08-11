@@ -7,7 +7,7 @@ use super::*;
 
 impl ChatWidget {
     pub(super) fn open_theme_picker(&mut self) {
-        let codex_home = codex_utils_home_dir::find_codex_home().ok();
+        let codex_home = codex_utils_home_dir::find_myra_home().ok();
         let terminal_width = self
             .last_rendered_width
             .get()
@@ -80,7 +80,7 @@ impl ChatWidget {
 
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Select Personality".bold()));
-        header.push(Line::from("Choose a communication style for MyraCode.".dim()));
+        header.push(Line::from("Choose a communication style for Myra.".dim()));
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             header: Box::new(header),

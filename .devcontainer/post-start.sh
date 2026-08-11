@@ -26,10 +26,10 @@ for domain in "${domains[@]}"; do
   printf '%s\n' "$domain" >> "$tmp_file"
 done
 
-sudo install -d -m 0755 /etc/codex
-sudo cp "$tmp_file" /etc/codex/allowed_domains.txt
-sudo chown root:root /etc/codex/allowed_domains.txt
-sudo chmod 0444 /etc/codex/allowed_domains.txt
+sudo install -d -m 0755 /etc/myra
+sudo cp "$tmp_file" /etc/myra/allowed_domains.txt
+sudo chown root:root /etc/myra/allowed_domains.txt
+sudo chmod 0444 /etc/myra/allowed_domains.txt
 rm -f "$tmp_file"
 
 echo "[devcontainer] Applying firewall policy for domains: ${domains[*]}"

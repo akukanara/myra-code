@@ -30,7 +30,7 @@ use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecServerRuntimePaths;
 use codex_protocol::ThreadId;
 use codex_utils_cli::CliConfigOverrides;
-use codex_utils_home_dir::find_codex_home;
+use codex_utils_home_dir::find_myra_home;
 use codex_utils_oss::get_default_model_for_oss_provider;
 use color_eyre::eyre::Result;
 use color_eyre::eyre::WrapErr;
@@ -83,7 +83,7 @@ pub async fn run_session_archive_command(
     target: String,
     options: SessionArchiveCommandOptions,
 ) -> Result<String> {
-    let codex_home = find_codex_home().wrap_err("failed to find MyraCode home")?;
+    let codex_home = find_myra_home().wrap_err("failed to find Myra home")?;
     let mut app_server =
         start_app_server_for_archive_command(options, codex_home.to_path_buf()).await?;
     run_session_archive_action_with_app_server(

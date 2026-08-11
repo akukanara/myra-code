@@ -523,7 +523,7 @@ async fn summarize_context_three_requests_and_instructions() {
         config.model_auto_compact_token_limit = Some(200_000);
     });
     let test = builder.build(&server).await.unwrap();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let rollout_path = test.session_configured.rollout_path.expect("rollout path");
 
     // 1) Normal user input – should hit server once.
@@ -720,7 +720,7 @@ async fn manual_pre_compact_block_decision_does_not_block_compaction() {
             set_test_compact_prompt(config);
         });
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
 
     codex
         .submit(Op::UserInput {
@@ -793,7 +793,7 @@ async fn compact_hooks_respect_matchers_and_post_runs_after_compaction() {
             set_test_compact_prompt(config);
         });
     let test = builder.build(&server).await.expect("create conversation");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
 
     codex
         .submit(Op::UserInput {
@@ -863,7 +863,7 @@ async fn manual_compact_uses_custom_prompt() {
         .build(&server)
         .await
         .expect("create conversation")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -951,7 +951,7 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     // Trigger manual compact and collect TokenCount events for the compact turn.
     codex.submit(Op::Compact).await.unwrap();
@@ -1010,7 +1010,7 @@ async fn manual_compact_emits_context_compaction_items() {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     codex
         .submit(Op::UserInput {
@@ -1080,7 +1080,7 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     // user message
     let user_message = "create an app";
@@ -1651,7 +1651,7 @@ async fn auto_compact_runs_after_token_limit_hit() {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     codex
         .submit(Op::UserInput {
@@ -1849,7 +1849,7 @@ async fn auto_compact_emits_context_compaction_items() {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     let mut started_item = None;
     let mut completed_item = None;
@@ -1935,7 +1935,7 @@ async fn auto_compact_starts_after_turn_started() {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     codex
         .submit(Op::UserInput {
@@ -2078,7 +2078,7 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
     mount_sse_once_match(&server, follow_up_matcher, sse_follow_up).await;
 
     resumed
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             follow_up_user,
             resumed.cwd.path().to_path_buf(),
@@ -2087,11 +2087,11 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
         .await
         .unwrap();
 
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::ContextCompacted(_))
     })
     .await;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2157,7 +2157,7 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2165,12 +2165,12 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2178,7 +2178,7 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
         ))
         .await
         .expect("submit second user turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2259,7 +2259,7 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2267,12 +2267,12 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2280,7 +2280,7 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
         ))
         .await
         .expect("submit second user turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2367,7 +2367,7 @@ async fn pre_sampling_compact_falls_back_from_retired_previous_model_after_renam
         .expect("rollout path");
 
     initial
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "before switch",
             initial.cwd.path().to_path_buf(),
@@ -2375,17 +2375,17 @@ async fn pre_sampling_compact_falls_back_from_retired_previous_model_after_renam
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .myra
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -2404,7 +2404,7 @@ async fn pre_sampling_compact_falls_back_from_retired_previous_model_after_renam
         .expect("resume codex");
 
     resumed
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "after switch",
             resumed.cwd.path().to_path_buf(),
@@ -2412,7 +2412,7 @@ async fn pre_sampling_compact_falls_back_from_retired_previous_model_after_renam
         ))
         .await
         .expect("submit renamed-model turn");
-    assert_compaction_uses_turn_lifecycle_id(&resumed.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&resumed.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2506,7 +2506,7 @@ async fn pre_sampling_compact_falls_back_when_previous_model_is_not_found() {
         .expect("rollout path");
 
     initial
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "before switch",
             initial.cwd.path().to_path_buf(),
@@ -2514,17 +2514,17 @@ async fn pre_sampling_compact_falls_back_when_previous_model_is_not_found() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .myra
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -2544,7 +2544,7 @@ async fn pre_sampling_compact_falls_back_when_previous_model_is_not_found() {
         .expect("resume codex");
 
     resumed
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "after switch",
             resumed.cwd.path().to_path_buf(),
@@ -2552,7 +2552,7 @@ async fn pre_sampling_compact_falls_back_when_previous_model_is_not_found() {
         ))
         .await
         .expect("submit renamed-model turn");
-    assert_compaction_uses_turn_lifecycle_id(&resumed.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&resumed.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2639,7 +2639,7 @@ async fn pre_sampling_compact_falls_back_after_previous_model_invalid_request_on
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2647,12 +2647,12 @@ async fn pre_sampling_compact_falls_back_after_previous_model_invalid_request_on
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2660,7 +2660,7 @@ async fn pre_sampling_compact_falls_back_after_previous_model_invalid_request_on
         ))
         .await
         .expect("submit smaller-model turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -2744,7 +2744,7 @@ async fn pre_sampling_legacy_remote_compact_falls_back_after_previous_model_inva
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2752,12 +2752,12 @@ async fn pre_sampling_legacy_remote_compact_falls_back_after_previous_model_inva
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2765,7 +2765,7 @@ async fn pre_sampling_legacy_remote_compact_falls_back_after_previous_model_inva
         ))
         .await
         .expect("submit smaller-model turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.myra).await;
 
     let requests = request_log.requests();
     let compact_requests = compact_request_log.requests();
@@ -2834,7 +2834,7 @@ async fn pre_sampling_compact_keeps_unknown_previous_model_for_api_key_auth_and_
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -2842,12 +2842,12 @@ async fn pre_sampling_compact_keeps_unknown_previous_model_for_api_key_auth_and_
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -2855,7 +2855,7 @@ async fn pre_sampling_compact_keeps_unknown_previous_model_for_api_key_auth_and_
         ))
         .await
         .expect("submit next-model turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2924,7 +2924,7 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before hash",
             test.cwd.path().to_path_buf(),
@@ -2932,12 +2932,12 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "hash introduced",
             test.cwd.path().to_path_buf(),
@@ -2945,12 +2945,12 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         ))
         .await
         .expect("submit second user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "hash removed",
             test.cwd.path().to_path_buf(),
@@ -2958,7 +2958,7 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
         ))
         .await
         .expect("submit third user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3033,7 +3033,7 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
         });
     let test = builder.build(&server).await.expect("build test codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "before switch",
             test.cwd.path().to_path_buf(),
@@ -3041,12 +3041,12 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "after switch",
             test.cwd.path().to_path_buf(),
@@ -3054,7 +3054,7 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
         ))
         .await
         .expect("submit second user turn");
-    assert_compaction_uses_turn_lifecycle_id(&test.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&test.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -3133,7 +3133,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         .expect("rollout path");
 
     initial
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "before resume",
             initial.cwd.path().to_path_buf(),
@@ -3141,17 +3141,17 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         ))
         .await
         .expect("submit pre-resume turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .myra
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -3170,7 +3170,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         .expect("resume codex");
 
     resumed
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "after resume",
             resumed.cwd.path().to_path_buf(),
@@ -3178,7 +3178,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
         ))
         .await
         .expect("submit resumed user turn");
-    assert_compaction_uses_turn_lifecycle_id(&resumed.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&resumed.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -3254,7 +3254,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         .expect("rollout path");
 
     initial
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "before resume",
             initial.cwd.path().to_path_buf(),
@@ -3262,17 +3262,17 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         ))
         .await
         .expect("submit pre-resume turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .myra
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -3301,7 +3301,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         .expect("resume codex");
 
     resumed
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "after resume",
             resumed.cwd.path().to_path_buf(),
@@ -3309,7 +3309,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
         ))
         .await
         .expect("submit resumed user turn");
-    assert_compaction_uses_turn_lifecycle_id(&resumed.codex).await;
+    assert_compaction_uses_turn_lifecycle_id(&resumed.myra).await;
 
     let requests = request_log.requests();
     assert_eq!(models_mock.requests().len(), 1);
@@ -3381,7 +3381,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         .expect("rollout path");
 
     initial
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "before resume",
             initial.cwd.path().to_path_buf(),
@@ -3389,17 +3389,17 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         ))
         .await
         .expect("submit pre-resume turn");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     initial
-        .codex
+        .myra
         .submit(Op::Shutdown)
         .await
         .expect("shutdown initial session");
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -3426,7 +3426,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         .expect("resume codex");
 
     resumed
-        .codex
+        .myra
         .submit(disabled_permission_user_turn(
             "after resume",
             resumed.cwd.path().to_path_buf(),
@@ -3434,7 +3434,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
         ))
         .await
         .expect("submit resumed user turn");
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -3518,7 +3518,7 @@ async fn auto_compact_persists_rollout_entries() {
         config.model_auto_compact_token_limit = Some(200_000);
     });
     let test = builder.build(&server).await.unwrap();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let session_configured = test.session_configured;
 
     codex
@@ -3633,7 +3633,7 @@ async fn manual_compact_retries_after_context_window_error() {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     codex
         .submit(Op::UserInput {
@@ -3737,7 +3737,7 @@ async fn manual_compact_non_context_failure_retries_then_emits_task_error() {
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -3832,7 +3832,7 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     codex
         .submit(Op::UserInput {
@@ -4074,7 +4074,7 @@ async fn auto_compact_allows_multiple_attempts_when_interleaved_with_other_turn_
         // Leave enough headroom for per-item request metadata before the second compaction.
         config.model_auto_compact_token_limit = Some(300);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     let mut auto_compact_lifecycle_events = Vec::new();
     for user in [MULTI_AUTO_MSG, follow_up_user, final_user] {
@@ -4181,7 +4181,7 @@ async fn snapshot_request_shape_mid_turn_continuation_compaction() {
         config.model_context_window = Some(context_window);
         config.model_auto_compact_token_limit = Some(limit);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let codex = builder.build(&server).await.unwrap().myra;
 
     codex
         .submit(Op::UserInput {
@@ -4612,7 +4612,7 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     for (idx, user) in [first_user, second_user, third_user]
         .into_iter()
@@ -4738,7 +4738,7 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     for user in [first_user, second_user, third_user] {
         codex
@@ -4800,7 +4800,7 @@ async fn snapshot_request_shape_pre_turn_compaction_including_incoming_user_mess
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     for user in ["USER_ONE", "USER_TWO"] {
         codex
@@ -4929,7 +4929,7 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
         .await
         .expect("build codex");
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "BEFORE_SWITCH_USER",
             test.cwd.path().to_path_buf(),
@@ -4937,12 +4937,12 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
         ))
         .await
         .expect("submit first user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(disabled_permission_user_turn(
             "AFTER_SWITCH_USER",
             test.cwd.path().to_path_buf(),
@@ -4950,7 +4950,7 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
         ))
         .await
         .expect("submit second user turn");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -5024,7 +5024,7 @@ async fn snapshot_request_shape_pre_turn_compaction_context_window_exceeded() {
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -5109,7 +5109,7 @@ async fn snapshot_request_shape_manual_compact_without_previous_user_messages() 
         .build(&server)
         .await
         .expect("build codex")
-        .codex;
+        .myra;
 
     codex.submit(Op::Compact).await.expect("run /compact");
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
@@ -5189,7 +5189,7 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
 
     // Assert the pre-compaction source list points at the creation-time file.
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread reports the creation-time global source before compaction"
     );
@@ -5203,8 +5203,8 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
     )?;
     assert_eq!(source, rewritten_source);
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -5219,7 +5219,7 @@ async fn manual_compaction_keeps_the_creation_time_global_instructions() -> Resu
     assert_single_instruction_fragment(&requests[1], &expected_fragment);
     assert_single_instruction_fragment(&requests[2], &expected_fragment);
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread retains the creation-time global source after compaction"
     );
@@ -5269,7 +5269,7 @@ async fn mid_turn_compaction_keeps_the_creation_time_global_instructions() -> Re
 
     // Assert the pre-compaction source list points at the creation-time file.
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread reports the creation-time global source before mid-turn compaction"
     );
@@ -5291,7 +5291,7 @@ async fn mid_turn_compaction_keeps_the_creation_time_global_instructions() -> Re
     assert_single_instruction_fragment(&requests[1], &expected_fragment);
     assert_single_instruction_fragment(&requests[2], &expected_fragment);
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "thread retains the creation-time global source after mid-turn compaction"
     );
@@ -5347,13 +5347,13 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         NEW_GLOBAL_INSTRUCTIONS,
     )?;
     assert_eq!(source, rewritten_source);
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
     test.submit_turn("after remote v2 compaction").await?;
-    test.codex.flush_rollout().await?;
+    test.myra.flush_rollout().await?;
 
     // Assert the compact request, installed replacement history, and follow-up all keep the
     // creation-time item despite the file-backed source now containing new text.
@@ -5368,7 +5368,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         Some(&json!({"type": "compaction_trigger"})),
         "remote-v2 compact request should append exactly one compaction trigger"
     );
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let replacement_history = replacement_history_from_rollout(&rollout_path)?;
     assert_eq!(
         instruction_fragments_in_items(&replacement_history),
@@ -5376,7 +5376,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         "remote-v2 replacement history currently omits the global-instruction fragment"
     );
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "running thread retains the selected same-path source"
     );
@@ -5387,8 +5387,8 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
     );
 
     // Cold-resume the persisted replacement history with freshly loaded same-path configuration.
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -5431,7 +5431,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
         "remote-v2 cold resume should replay the complete post-compaction structured prefix"
     );
     assert_eq!(
-        resumed.codex.instruction_sources().await,
+        resumed.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "cold-resumed thread reports the same rewritten source path"
     );

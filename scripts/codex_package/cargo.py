@@ -1,4 +1,4 @@
-"""Cargo builds for source-built Codex package artifacts."""
+"""Cargo builds for source-built Myra package artifacts."""
 
 import os
 import subprocess
@@ -19,8 +19,8 @@ class SourceBuildOutputs:
     entrypoint_bin: Path
     code_mode_host_bin: Path
     bwrap_bin: Path | None
-    codex_command_runner_bin: Path | None
-    codex_windows_sandbox_setup_bin: Path | None
+    myra_command_runner_bin: Path | None
+    myra_windows_sandbox_setup_bin: Path | None
 
 
 def build_source_binaries(
@@ -32,14 +32,14 @@ def build_source_binaries(
     entrypoint_bin: Path | None,
     code_mode_host_bin: Path | None,
     bwrap_bin: Path | None,
-    codex_command_runner_bin: Path | None,
-    codex_windows_sandbox_setup_bin: Path | None,
+    myra_command_runner_bin: Path | None,
+    myra_windows_sandbox_setup_bin: Path | None,
 ) -> SourceBuildOutputs:
     validate_prebuilt_resource_inputs(
         spec,
         bwrap_bin=bwrap_bin,
-        codex_command_runner_bin=codex_command_runner_bin,
-        codex_windows_sandbox_setup_bin=codex_windows_sandbox_setup_bin,
+        myra_command_runner_bin=myra_command_runner_bin,
+        myra_windows_sandbox_setup_bin=myra_windows_sandbox_setup_bin,
     )
     binaries = source_binaries_for_target(
         spec,
@@ -47,9 +47,9 @@ def build_source_binaries(
         build_entrypoint=entrypoint_bin is None,
         build_code_mode_host=code_mode_host_bin is None,
         build_bwrap=spec.is_linux and bwrap_bin is None,
-        build_codex_command_runner=spec.is_windows and codex_command_runner_bin is None,
+        build_codex_command_runner=spec.is_windows and myra_command_runner_bin is None,
         build_codex_windows_sandbox_setup=spec.is_windows
-        and codex_windows_sandbox_setup_bin is None,
+        and myra_windows_sandbox_setup_bin is None,
     )
     if binaries:
         cmd = [
@@ -82,7 +82,7 @@ def build_source_binaries(
         entrypoint_bin=resolve_output_path(
             entrypoint_bin,
             # Cargo names this file after the bin target (`myra`), not after the
-            # stem the package stages it under (`codex`) -- the two diverged when
+            # stem the package stages it under (`myra`) -- the two diverged when
             # the CLI bin was renamed. Looking for the staged stem here made the
             # build fail after a successful compile.
             output_dir / f"{variant.cargo_bin}{spec.exe_suffix}",
@@ -96,12 +96,12 @@ def build_source_binaries(
             bwrap_bin,
             output_dir / "bwrap" if spec.is_linux else None,
         ),
-        codex_command_runner_bin=resolve_output_path(
-            codex_command_runner_bin,
+        myra_command_runner_bin=resolve_output_path(
+            myra_command_runner_bin,
             output_dir / "codex-command-runner.exe" if spec.is_windows else None,
         ),
-        codex_windows_sandbox_setup_bin=resolve_output_path(
-            codex_windows_sandbox_setup_bin,
+        myra_windows_sandbox_setup_bin=resolve_output_path(
+            myra_windows_sandbox_setup_bin,
             output_dir / "codex-windows-sandbox-setup.exe" if spec.is_windows else None,
         ),
     )
@@ -137,18 +137,18 @@ def validate_prebuilt_resource_inputs(
     spec: TargetSpec,
     *,
     bwrap_bin: Path | None,
-    codex_command_runner_bin: Path | None,
-    codex_windows_sandbox_setup_bin: Path | None,
+    myra_command_runner_bin: Path | None,
+    myra_windows_sandbox_setup_bin: Path | None,
 ) -> None:
     if bwrap_bin is not None and not spec.is_linux:
         raise RuntimeError("--bwrap-bin is only supported for Linux targets.")
-    if codex_command_runner_bin is not None and not spec.is_windows:
+    if myra_command_runner_bin is not None and not spec.is_windows:
         raise RuntimeError(
-            "--codex-command-runner-bin is only supported for Windows targets."
+            "--myra-command-runner-bin is only supported for Windows targets."
         )
-    if codex_windows_sandbox_setup_bin is not None and not spec.is_windows:
+    if myra_windows_sandbox_setup_bin is not None and not spec.is_windows:
         raise RuntimeError(
-            "--codex-windows-sandbox-setup-bin is only supported for Windows targets."
+            "--myra-windows-sandbox-setup-bin is only supported for Windows targets."
         )
 
 
@@ -191,8 +191,8 @@ def validate_source_outputs(outputs: SourceBuildOutputs) -> None:
         outputs.entrypoint_bin,
         outputs.code_mode_host_bin,
         outputs.bwrap_bin,
-        outputs.codex_command_runner_bin,
-        outputs.codex_windows_sandbox_setup_bin,
+        outputs.myra_command_runner_bin,
+        outputs.myra_windows_sandbox_setup_bin,
     ]:
         if path is not None and not path.is_file():
             raise RuntimeError(f"cargo build did not produce expected binary: {path}")

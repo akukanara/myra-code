@@ -707,7 +707,9 @@ impl HistoryCell for StatusHistoryCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(vec![
-            Span::from(format!("{}>_ ", FieldFormatter::INDENT)).fg(Color::Rgb(190, 242, 100)).bold(),
+            Span::from(format!("{}>_ ", FieldFormatter::INDENT))
+                .fg(Color::Rgb(190, 242, 100))
+                .bold(),
             Span::from("Myralith Myra").bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{CODEX_CLI_VERSION})")).dim(),

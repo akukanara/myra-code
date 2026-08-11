@@ -46,7 +46,7 @@ async fn submit_turn_with_policies(
 ) -> Result<()> {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.cwd_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.to_string(),
@@ -116,7 +116,7 @@ fn skill_script_command(test: &TestCodex, script_name: &str) -> Result<String> {
 }
 
 async fn wait_for_exec_approval_request(test: &TestCodex) -> Option<ExecApprovalRequestEvent> {
-    wait_for_event_match(test.codex.as_ref(), |event| match event {
+    wait_for_event_match(test.myra.as_ref(), |event| match event {
         EventMsg::ExecApprovalRequest(request) => Some(Some(request.clone())),
         EventMsg::TurnComplete(_) => Some(None),
         _ => None,
@@ -125,7 +125,7 @@ async fn wait_for_exec_approval_request(test: &TestCodex) -> Option<ExecApproval
 }
 
 async fn wait_for_turn_complete(test: &TestCodex) {
-    wait_for_event(test.codex.as_ref(), |event| {
+    wait_for_event(test.myra.as_ref(), |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

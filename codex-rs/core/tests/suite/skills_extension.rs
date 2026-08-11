@@ -416,7 +416,7 @@ async fn rendered_catalogs_for_turns(
 
     let mut client_warning_messages = Vec::new();
     for _ in 0..turn_count {
-        test.codex
+        test.myra
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: "Inspect the available skills.".to_string(),
@@ -429,7 +429,7 @@ async fn rendered_catalogs_for_turns(
             })
             .await?;
         loop {
-            match core_test_support::wait_for_event(&test.codex, |_| true).await {
+            match core_test_support::wait_for_event(&test.myra, |_| true).await {
                 EventMsg::Warning(warning) => client_warning_messages.push(warning.message),
                 EventMsg::TurnComplete(_) => break,
                 _ => {}
@@ -483,9 +483,9 @@ async fn capability_sections_render_in_order_with_host_repo_and_plugin_skills() 
     )?;
     let host_skill_path = dunce::canonicalize(host_skill_path)?;
     let plugin_root = codex_home.path().join("plugins/cache/test/sample/local");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"sample","description":"inspect sample data"}"#,
     )?;
     let plugin_skill_dir = plugin_root.join("skills/sample-search");
@@ -553,7 +553,7 @@ async fn capability_sections_render_in_order_with_host_repo_and_plugin_skills() 
         .to_abs_path()?
         .to_path_buf();
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![
                 UserInput::Text {
@@ -580,7 +580,7 @@ async fn capability_sections_render_in_order_with_host_repo_and_plugin_skills() 
         })
         .await?;
 
-    core_test_support::wait_for_event(&test.codex, |event| {
+    core_test_support::wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -774,7 +774,7 @@ async fn explicit_only_orchestrator_skill_is_hidden_but_can_be_invoked() -> Resu
             config.orchestrator_skills_enabled = true;
         });
     let test = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&test.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&test.myra, CODEX_APPS_MCP_SERVER_NAME).await?;
 
     test.submit_turn("Use $demo:explicit-only.").await?;
 
@@ -1164,7 +1164,7 @@ async fn production_turn_uses_provider_host_catalog_and_core_snapshot_injection(
         .with_extensions(Arc::new(extensions.build()))
         .with_config(configure_catalog_test);
     let test = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&test.codex, CODEX_APPS_MCP_SERVER_NAME).await?;
+    wait_for_mcp_server(&test.myra, CODEX_APPS_MCP_SERVER_NAME).await?;
 
     test.submit_turn(&format!("Use ${skill_name}.")).await?;
     let request = response.single_request();

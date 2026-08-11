@@ -29,7 +29,7 @@ use wiremock::matchers::path;
 
 fn codex_command(codex_home: &Path) -> Result<assert_cmd::Command> {
     let mut cmd = assert_cmd::Command::new(codex_utils_cargo_bin::cargo_bin("codex")?);
-    cmd.env("CODEX_HOME", codex_home);
+    cmd.env("MYRA_HOME", codex_home);
     Ok(cmd)
 }
 
@@ -74,9 +74,9 @@ enabled = true
     let plugin_root = codex_home
         .path()
         .join("plugins/cache/openai-api-curated/api-docs/local");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"api-docs","version":"local"}"#,
     )?;
     std::fs::write(

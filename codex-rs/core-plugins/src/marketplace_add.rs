@@ -431,7 +431,7 @@ url = "https://github.com/example/allowed.git"
 
     fn write_marketplace_source(source: &Path, marker: &str) -> std::io::Result<()> {
         fs::create_dir_all(source.join(".agents/plugins"))?;
-        fs::create_dir_all(source.join("plugins/sample/.codex-plugin"))?;
+        fs::create_dir_all(source.join("plugins/sample/.myra-plugin"))?;
         fs::write(
             source.join(".agents/plugins/marketplace.json"),
             r#"{
@@ -448,7 +448,7 @@ url = "https://github.com/example/allowed.git"
 }"#,
         )?;
         fs::write(
-            source.join("plugins/sample/.codex-plugin/plugin.json"),
+            source.join("plugins/sample/.myra-plugin/plugin.json"),
             r#"{"name":"sample"}"#,
         )?;
         fs::write(source.join("plugins/sample/marker.txt"), marker)?;

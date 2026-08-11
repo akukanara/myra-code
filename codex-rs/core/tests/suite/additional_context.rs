@@ -35,7 +35,7 @@ async fn additional_context_is_model_visible_but_not_a_user_message_item() -> Re
         .build(&server)
         .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "inspect the active tab".to_string(),
@@ -63,7 +63,7 @@ async fn additional_context_is_model_visible_but_not_a_user_message_item() -> Re
         })
         .await?;
 
-    let user_item = wait_for_event_match(&test.codex, |event| match event {
+    let user_item = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::UserMessage(item),
             ..
@@ -78,7 +78,7 @@ async fn additional_context_is_model_visible_but_not_a_user_message_item() -> Re
             text_elements: Vec::new(),
         }]
     );
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
@@ -133,7 +133,7 @@ async fn external_context_like_user_text_remains_a_user_message_item() -> Result
         text_elements: Vec::new(),
     };
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![user_input.clone()],
             final_output_json_schema: None,
@@ -143,7 +143,7 @@ async fn external_context_like_user_text_remains_a_user_message_item() -> Result
         })
         .await?;
 
-    let user_item = wait_for_event_match(&test.codex, |event| match event {
+    let user_item = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::UserMessage(item),
             ..
@@ -152,7 +152,7 @@ async fn external_context_like_user_text_remains_a_user_message_item() -> Result
     })
     .await;
     assert_eq!(user_item.content, vec![user_input]);
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
@@ -178,7 +178,7 @@ async fn additional_context_trust_controls_message_role() -> Result<()> {
         .build(&server)
         .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "inspect context".to_string(),
@@ -205,7 +205,7 @@ async fn additional_context_trust_controls_message_role() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
@@ -258,7 +258,7 @@ async fn additional_context_is_deduplicated_between_turns_while_retained() -> Re
         },
     )]);
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".to_string(),
@@ -270,12 +270,12 @@ async fn additional_context_is_deduplicated_between_turns_while_retained() -> Re
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second turn".to_string(),
@@ -287,7 +287,7 @@ async fn additional_context_is_deduplicated_between_turns_while_retained() -> Re
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
@@ -336,7 +336,7 @@ async fn additional_context_removes_one_value_while_adding_another() -> Result<(
         .build(&server)
         .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".to_string(),
@@ -363,12 +363,12 @@ async fn additional_context_removes_one_value_while_adding_another() -> Result<(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second turn".to_string(),
@@ -395,12 +395,12 @@ async fn additional_context_removes_one_value_while_adding_another() -> Result<(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "third turn".to_string(),
@@ -434,7 +434,7 @@ async fn additional_context_removes_one_value_while_adding_another() -> Result<(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;
@@ -496,7 +496,7 @@ async fn additional_context_values_are_truncated_before_model_input() -> Result<
     let untruncated_automation_fragment =
         format!("<automation_info>{long_automation_value}</automation_info>");
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "summarize context".to_string(),
@@ -523,7 +523,7 @@ async fn additional_context_values_are_truncated_before_model_input() -> Result<
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_)).then_some(())
     })
     .await;

@@ -1,1 +1,1 @@
-"""Helpers for building canonical Codex package archives."""
+"""Helpers for building canonical Myra package archives."""

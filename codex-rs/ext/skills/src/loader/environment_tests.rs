@@ -14,7 +14,7 @@ use super::load_environment_skills_from_discovery;
 #[tokio::test]
 async fn executor_bundle_parser_matches_the_existing_environment_loader() {
     let root = tempdir().expect("tempdir");
-    let plugin_manifest = root.path().join(".codex-plugin/plugin.json");
+    let plugin_manifest = root.path().join(".myra-plugin/plugin.json");
     let nested_manifest = root.path().join("nested/.claude-plugin/plugin.json");
     let deploy_skill = root.path().join("skills/deploy/SKILL.md");
     let deploy_metadata = root.path().join("skills/deploy/agents/openai.yaml");
@@ -89,7 +89,7 @@ async fn executor_bundle_parser_matches_the_existing_environment_loader() {
 async fn executor_bundle_preserves_parent_namespace_and_manifest_precedence() {
     let plugin = tempdir().expect("tempdir");
     for (relative_path, name) in [
-        (".codex-plugin/plugin.json", "codex-name"),
+        (".myra-plugin/plugin.json", "codex-name"),
         (".claude-plugin/plugin.json", "claude-name"),
         (".cursor-plugin/plugin.json", "cursor-name"),
     ] {
@@ -136,7 +136,7 @@ async fn executor_bundle_preserves_parent_namespace_and_manifest_precedence() {
         discovery.namespace_manifests[0]
             .path
             .to_string()
-            .ends_with("/.codex-plugin/plugin.json")
+            .ends_with("/.myra-plugin/plugin.json")
     );
     assert_eq!(bundled.warnings, existing.warnings);
     assert_eq!(

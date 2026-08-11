@@ -185,16 +185,16 @@ impl ChatWidget {
                     GuardianAssessmentAction::McpToolCall {
                         server, tool_name, ..
                     } => history_cell::new_guardian_timed_out_action_request(format!(
-                        "MyraCode could call MCP tool {server}.{tool_name}"
+                        "Myra could call MCP tool {server}.{tool_name}"
                     )),
                     GuardianAssessmentAction::NetworkAccess { target, .. } => {
                         history_cell::new_guardian_timed_out_action_request(format!(
-                            "MyraCode could access {target}"
+                            "Myra could access {target}"
                         ))
                     }
                     GuardianAssessmentAction::RequestPermissions { reason, .. } => {
                         history_cell::new_guardian_timed_out_action_request(
-                            permission_request_summary("MyraCode could request permissions", reason),
+                            permission_request_summary("Myra could request permissions", reason),
                         )
                     }
                     GuardianAssessmentAction::Command { .. } => unreachable!(),
@@ -229,16 +229,16 @@ impl ChatWidget {
                 GuardianAssessmentAction::McpToolCall {
                     server, tool_name, ..
                 } => history_cell::new_guardian_denied_action_request(format!(
-                    "MyraCode to call MCP tool {server}.{tool_name}"
+                    "Myra to call MCP tool {server}.{tool_name}"
                 )),
                 GuardianAssessmentAction::NetworkAccess { target, .. } => {
                     history_cell::new_guardian_denied_action_request(format!(
-                        "MyraCode to access {target}"
+                        "Myra to access {target}"
                     ))
                 }
                 GuardianAssessmentAction::RequestPermissions { reason, .. } => {
                     history_cell::new_guardian_denied_action_request(permission_request_summary(
-                        "MyraCode to request permissions",
+                        "Myra to request permissions",
                         reason,
                     ))
                 }

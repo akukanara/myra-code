@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG NODE_MAJOR=22
 ARG RUST_TOOLCHAIN=1.95.0
 # Keep this in sync with .devcontainer/codex-install/package.json and pnpm-lock.yaml.
-ARG CODEX_NPM_VERSION=0.121.0
+ARG MYRA_NPM_VERSION=0.121.0
 
 ENV TZ="$TZ"
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
@@ -53,10 +53,10 @@ COPY .devcontainer/codex-install/package.json \
 RUN curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
     && apt-get update \
     && apt-get install -y --no-install-recommends nodejs \
-    && test "$(node -p "require('/opt/codex-install/package.json').dependencies['@myralith/myra']")" = "${CODEX_NPM_VERSION}" \
+    && test "$(node -p "require('/opt/codex-install/package.json').dependencies['@myralith/myra']")" = "${MYRA_NPM_VERSION}" \
     && cd /opt/codex-install \
     && corepack pnpm install --prod --frozen-lockfile \
-    && ln -s /opt/codex-install/node_modules/.bin/codex /usr/local/bin/codex \
+    && ln -s /opt/codex-install/node_modules/.bin/myra /usr/local/bin/myra \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

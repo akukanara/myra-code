@@ -115,7 +115,7 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
                 }],
             );
 
-            test.codex
+            test.myra
                 .submit(Op::UserInput {
                     items: vec![UserInput::Text {
                         text: "run the Windows smoke command".to_string(),
@@ -147,7 +147,7 @@ async fn windows_exec_server_runs_with_native_shell_and_cwd() -> Result<()> {
             let mut patch_end = None;
             let mut turn_complete = false;
             loop {
-                match wait_for_event(&test.codex, |_| true).await {
+                match wait_for_event(&test.myra, |_| true).await {
                     EventMsg::ExecCommandBegin(event) if event.call_id == CALL_ID => {
                         begin = Some(event)
                     }

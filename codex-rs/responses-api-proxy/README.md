@@ -11,9 +11,9 @@ echo $OPENAI_API_KEY | ./target/debug/codex-responses-api-proxy \
     --dump-dir /tmp/proxy
 
 
-# Add this to ~/.codex/config.toml:
+# Add this to ~/.myra/config.toml:
 
-[model_providers.codex-responses-api-proxy]
+[model_providers.myra-responses-api-proxy]
 name = 'codex-responses-api-proxy'
 base_url = 'http://127.0.0.1:60001/v1'
 wire_api='responses'

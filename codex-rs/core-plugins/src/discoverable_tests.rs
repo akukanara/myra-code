@@ -381,7 +381,7 @@ async fn clear_cache_invalidates_cached_tool_suggest_metadata() {
     let codex_home = tempdir().expect("tempdir should succeed");
     let curated_root = curated_plugins_repo_path(codex_home.path());
     write_openai_curated_marketplace(&curated_root, &["slack"]);
-    let plugin_manifest = curated_root.join("plugins/slack/.codex-plugin/plugin.json");
+    let plugin_manifest = curated_root.join("plugins/slack/.myra-plugin/plugin.json");
     write_file(
         &plugin_manifest,
         r#"{
@@ -481,7 +481,7 @@ async fn normalizes_description() {
     let curated_root = curated_plugins_repo_path(codex_home.path());
     write_openai_curated_marketplace(&curated_root, &["installed", "slack"]);
     write_file(
-        &curated_root.join("plugins/slack/.codex-plugin/plugin.json"),
+        &curated_root.join("plugins/slack/.myra-plugin/plugin.json"),
         r#"{
   "name": "slack",
   "description": "  Plugin\n   with   extra   spacing  "
@@ -601,7 +601,7 @@ async fn does_not_reload_marketplace_per_plugin() {
     let too_long_prompt = "x".repeat(129);
     for plugin_name in ["gmail", "openai-developers"] {
         write_file(
-            &curated_root.join(format!("plugins/{plugin_name}/.codex-plugin/plugin.json")),
+            &curated_root.join(format!("plugins/{plugin_name}/.myra-plugin/plugin.json")),
             &format!(
                 r#"{{
   "name": "{plugin_name}",
@@ -646,9 +646,9 @@ async fn does_not_reload_marketplace_per_plugin() {
         .expect("utf8 logs")
         .replace('\\', "/");
     assert_eq!(logs.matches("ignoring interface.defaultPrompt").count(), 8);
-    assert_eq!(logs.matches("gmail/.codex-plugin/plugin.json").count(), 4);
+    assert_eq!(logs.matches("gmail/.myra-plugin/plugin.json").count(), 4);
     assert_eq!(
-        logs.matches("openai-developers/.codex-plugin/plugin.json")
+        logs.matches("openai-developers/.myra-plugin/plugin.json")
             .count(),
         4
     );

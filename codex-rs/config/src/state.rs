@@ -209,7 +209,7 @@ impl ConfigLayerEntry {
         }
     }
 
-    // Get the `.codex/` folder associated with this config layer, if any.
+    // Get the `.myra/` folder associated with this config layer, if any.
     pub fn config_folder(&self) -> Option<AbsolutePathBuf> {
         match &self.name {
             ConfigLayerSource::Mdm { .. } => None,
@@ -223,7 +223,7 @@ impl ConfigLayerEntry {
         }
     }
 
-    /// Returns the `.codex/` folder that should be used for hook declarations.
+    /// Returns the `.myra/` folder that should be used for hook declarations.
     ///
     /// Project layers normally use their own config folder. Linked Git worktrees
     /// can instead point hook discovery at the matching folder from the root
@@ -303,7 +303,7 @@ impl ConfigLayerStack {
     ///
     /// This does not merge other config layers or apply any requirements. When
     /// a profile-v2 layer is active, this returns that profile layer rather than
-    /// the base `$CODEX_HOME/config.toml` layer because the active layer is the
+    /// the base `$MYRA_HOME/config.toml` layer because the active layer is the
     /// writable target for profile-aware edits.
     pub fn get_active_user_layer(&self) -> Option<&ConfigLayerEntry> {
         self.layers

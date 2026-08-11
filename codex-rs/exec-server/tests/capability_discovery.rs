@@ -32,7 +32,7 @@ use pretty_assertions::assert_eq;
 async fn discovers_a_complete_capability_bundle_in_one_request() -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     write_file(
-        &root.path().join(".codex-plugin/plugin.json"),
+        &root.path().join(".myra-plugin/plugin.json"),
         r#"{
   "name": "demo",
   "interface": {"displayName": "Demo Plugin"},
@@ -93,7 +93,7 @@ async fn discovers_a_complete_capability_bundle_in_one_request() -> anyhow::Resu
     let plugin = discovery.plugin.as_ref().expect("root plugin");
     assert_eq!(
         plugin.manifest.path,
-        root_uri.join(".codex-plugin/plugin.json")?
+        root_uri.join(".myra-plugin/plugin.json")?
     );
     assert!(plugin.manifest.contents.contains("Demo Plugin"));
     assert_eq!(
@@ -111,7 +111,7 @@ async fn discovers_a_complete_capability_bundle_in_one_request() -> anyhow::Resu
             .map(|file| file.path.clone())
             .collect::<Vec<_>>(),
         vec![
-            root_uri.join(".codex-plugin/plugin.json")?,
+            root_uri.join(".myra-plugin/plugin.json")?,
             root_uri.join("nested/.claude-plugin/plugin.json")?,
             root_uri.join("nested-cursor/.cursor-plugin/plugin.json")?,
         ]
@@ -187,7 +187,7 @@ async fn sandboxed_discovery_follows_only_permitted_external_symlinks() -> anyho
     let root = tempfile::tempdir()?;
     let external = tempfile::tempdir()?;
     write_file(
-        &root.path().join(".codex-plugin/plugin.json"),
+        &root.path().join(".myra-plugin/plugin.json"),
         r#"{"name":"linked-plugin","mcpServers":"./external-mcp.json"}"#,
     )?;
     write_file(

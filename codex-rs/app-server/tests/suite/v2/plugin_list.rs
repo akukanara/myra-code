@@ -508,7 +508,7 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
     std::fs::create_dir_all(
         valid_repo_root
             .path()
-            .join("plugins/valid-plugin/.codex-plugin"),
+            .join("plugins/valid-plugin/.myra-plugin"),
     )?;
     std::fs::create_dir_all(invalid_repo_root.path().join(".git"))?;
     std::fs::create_dir_all(invalid_repo_root.path().join(".agents/plugins"))?;
@@ -545,7 +545,7 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
     std::fs::write(
         valid_repo_root
             .path()
-            .join("plugins/valid-plugin/.codex-plugin/plugin.json"),
+            .join("plugins/valid-plugin/.myra-plugin/plugin.json"),
         r#"{"name":"valid-plugin","keywords":["api-key","developer tools"]}"#,
     )?;
     std::fs::write(invalid_marketplace_path.as_path(), "{not json")?;
@@ -711,7 +711,7 @@ async fn plugin_list_reuses_cached_workspace_codex_plugins_setting() -> Result<(
     let server = MockServer::start().await;
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
-    std::fs::create_dir_all(repo_root.path().join("demo-plugin/.codex-plugin"))?;
+    std::fs::create_dir_all(repo_root.path().join("demo-plugin/.myra-plugin"))?;
     write_plugins_enabled_config_with_base_url(
         codex_home.path(),
         &format!("{}/backend-api/", server.uri()),
@@ -744,7 +744,7 @@ async fn plugin_list_reuses_cached_workspace_codex_plugins_setting() -> Result<(
     std::fs::write(
         repo_root
             .path()
-            .join("demo-plugin/.codex-plugin/plugin.json"),
+            .join("demo-plugin/.myra-plugin/plugin.json"),
         r#"{"name":"demo-plugin"}"#,
     )?;
 
@@ -996,7 +996,7 @@ async fn plugin_list_returns_share_context_for_shared_local_plugin() -> Result<(
     let plugin_root = repo_root.path().join("plugins/demo-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     write_plugins_enabled_config(codex_home.path())?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
@@ -1014,7 +1014,7 @@ async fn plugin_list_returns_share_context_for_shared_local_plugin() -> Result<(
 }"#,
     )?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"demo-plugin","version":"1.2.3"}"#,
     )?;
     write_plugin_share_local_path_mapping(
@@ -1070,7 +1070,7 @@ async fn plugin_list_force_refetch_waits_for_same_path_local_plugin_upgrade() ->
     std::fs::create_dir_all(marketplace_root.path().join(".agents/plugins"))?;
     let source_manifest = marketplace_root
         .path()
-        .join("sample-plugin/.codex-plugin/plugin.json");
+        .join("sample-plugin/.myra-plugin/plugin.json");
     std::fs::create_dir_all(source_manifest.parent().expect("source manifest parent"))?;
     std::fs::write(
         &source_manifest,
@@ -1167,7 +1167,7 @@ enabled = true
     let plugin_cache = codex_home
         .path()
         .join("plugins/cache/sample-marketplace/sample-plugin");
-    let installed_manifest = plugin_cache.join("1.1.0/.codex-plugin/plugin.json");
+    let installed_manifest = plugin_cache.join("1.1.0/.myra-plugin/plugin.json");
     assert!(
         installed_manifest.is_file(),
         "force-refetched plugin/list must finish installing the newer local plugin before responding"
@@ -1368,9 +1368,9 @@ enabled = true
   ]
 }"#,
     )?;
-    std::fs::create_dir_all(workspace_enabled.path().join(".codex"))?;
+    std::fs::create_dir_all(workspace_enabled.path().join(".myra"))?;
     std::fs::write(
-        workspace_enabled.path().join(".codex/config.toml"),
+        workspace_enabled.path().join(".myra/config.toml"),
         r#"[plugins."shared-plugin@codex-curated"]
 enabled = false
 "#,
@@ -1426,7 +1426,7 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
     let plugin_root = repo_root.path().join("plugins/demo-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     write_plugins_enabled_config(codex_home.path())?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
@@ -1449,7 +1449,7 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
 }"#,
     )?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r##"{
   "name": "demo-plugin",
   "interface": {
@@ -1560,7 +1560,7 @@ async fn plugin_list_accepts_legacy_string_default_prompt() -> Result<()> {
     let plugin_root = repo_root.path().join("plugins/demo-plugin");
     std::fs::create_dir_all(repo_root.path().join(".git"))?;
     std::fs::create_dir_all(repo_root.path().join(".agents/plugins"))?;
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     write_plugins_enabled_config(codex_home.path())?;
     std::fs::write(
         repo_root.path().join(".agents/plugins/marketplace.json"),
@@ -1578,7 +1578,7 @@ async fn plugin_list_accepts_legacy_string_default_prompt() -> Result<()> {
 }"#,
     )?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r##"{
   "name": "demo-plugin",
   "interface": {
@@ -1650,9 +1650,9 @@ async fn plugin_list_returns_installed_git_source_interface_from_cache() -> Resu
         ),
     )?;
     let cached_plugin_root = codex_home.path().join("plugins/cache/debug/toolkit/local");
-    std::fs::create_dir_all(cached_plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(cached_plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        cached_plugin_root.join(".codex-plugin/plugin.json"),
+        cached_plugin_root.join(".myra-plugin/plugin.json"),
         r##"{
   "name": "toolkit",
   "interface": {
@@ -1790,9 +1790,9 @@ async fn app_server_startup_sync_downloads_remote_installed_plugin_bundles() -> 
         .build_initialized_with_timeout(DEFAULT_TIMEOUT)
         .await?;
 
-    wait_for_path_exists(&installed_path.join(".codex-plugin/plugin.json")).await?;
+    wait_for_path_exists(&installed_path.join(".myra-plugin/plugin.json")).await?;
     let installed_plugin_manifest: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(installed_path.join(".codex-plugin/plugin.json"))?,
+        &std::fs::read_to_string(installed_path.join(".myra-plugin/plugin.json"))?,
     )?;
     assert_eq!(
         installed_plugin_manifest["version"],
@@ -1892,9 +1892,9 @@ async fn plugin_list_sync_upgrades_and_removes_remote_installed_plugin_bundles()
         vec![("linear@openai-curated-remote".to_string(), true, true)]
     );
 
-    wait_for_path_exists(&new_path.join(".codex-plugin/plugin.json")).await?;
+    wait_for_path_exists(&new_path.join(".myra-plugin/plugin.json")).await?;
     let installed_plugin_manifest: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(new_path.join(".codex-plugin/plugin.json"))?,
+        &std::fs::read_to_string(new_path.join(".myra-plugin/plugin.json"))?,
     )?;
     assert_eq!(
         installed_plugin_manifest["version"],
@@ -3553,7 +3553,7 @@ plugin_sharing = false
     );
     wait_for_path_exists(
         &codex_home.path().join(
-            "plugins/cache/created-by-me-remote/private-linear/1.2.3/.codex-plugin/plugin.json",
+            "plugins/cache/created-by-me-remote/private-linear/1.2.3/.myra-plugin/plugin.json",
         ),
     )
     .await?;
@@ -3640,7 +3640,7 @@ trusted_hash = "sha256:unrelated"
     wait_for_path_exists(
         &codex_home
             .path()
-            .join("plugins/cache/workspace-directory/no-hooks/1.2.3/.codex-plugin/plugin.json"),
+            .join("plugins/cache/workspace-directory/no-hooks/1.2.3/.myra-plugin/plugin.json"),
     )
     .await?;
     let config: toml::Value = toml::from_str(&std::fs::read_to_string(
@@ -5273,7 +5273,7 @@ fn remote_plugin_bundle_tar_gz_bytes(
     let mut tar = tar::Builder::new(encoder);
     let mut entries = vec![
         (
-            ".codex-plugin/plugin.json",
+            ".myra-plugin/plugin.json",
             manifest.as_bytes(),
             /*mode*/ 0o644,
         ),
@@ -5320,7 +5320,7 @@ fn write_installed_plugin_with_version(
         .join(marketplace_name)
         .join(plugin_name)
         .join(plugin_version)
-        .join(".codex-plugin");
+        .join(".myra-plugin");
     std::fs::create_dir_all(&plugin_root)?;
     std::fs::write(
         plugin_root.join("plugin.json"),
@@ -5472,7 +5472,7 @@ fn write_curated_marketplace(
     )?;
 
     for plugin_name in plugin_names {
-        let plugin_root = curated_root.join(format!("plugins/{plugin_name}/.codex-plugin"));
+        let plugin_root = curated_root.join(format!("plugins/{plugin_name}/.myra-plugin"));
         std::fs::create_dir_all(&plugin_root)?;
         std::fs::write(
             plugin_root.join("plugin.json"),

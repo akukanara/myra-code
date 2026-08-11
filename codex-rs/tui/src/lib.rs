@@ -62,7 +62,7 @@ use codex_rollout::state_db;
 use codex_state::log_db;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_absolute_path::canonicalize_existing_preserving_symlinks;
-use codex_utils_home_dir::find_codex_home;
+use codex_utils_home_dir::find_myra_home;
 use codex_utils_oss::ensure_oss_provider_ready;
 use codex_utils_oss::get_default_model_for_oss_provider;
 use color_eyre::eyre::WrapErr;
@@ -363,7 +363,7 @@ fn websocket_url_supports_auth_token(parsed: &Url) -> bool {
 pub fn resolve_remote_addr(addr: &str) -> color_eyre::Result<RemoteAppServerEndpoint> {
     if let Some(socket_path) = addr.strip_prefix("unix://") {
         let socket_path = if socket_path.is_empty() {
-            let codex_home = find_codex_home().wrap_err("failed to resolve CODEX_HOME")?;
+            let codex_home = find_myra_home().wrap_err("failed to resolve MYRA_HOME")?;
             codex_app_server_client::app_server_control_socket_path(&codex_home)
                 .map_err(color_eyre::Report::new)?
         } else {
@@ -925,10 +925,10 @@ pub async fn run_main(
 
     // we load config.toml here to determine project state.
     #[allow(clippy::print_stderr)]
-    let codex_home = match find_codex_home() {
+    let codex_home = match find_myra_home() {
         Ok(codex_home) => codex_home.to_path_buf(),
         Err(err) => {
-            eprintln!("Error finding MyraCode home: {err}");
+            eprintln!("Error finding Myra home: {err}");
             std::process::exit(1);
         }
     };
@@ -1663,7 +1663,7 @@ async fn run_ratatui_app(
     // this must happen after the last possible reload.
     if let Some(w) = crate::render::highlight::set_theme_override(
         config.tui_theme.clone(),
-        find_codex_home().ok().map(AbsolutePathBuf::into_path_buf),
+        find_myra_home().ok().map(AbsolutePathBuf::into_path_buf),
     ) {
         config.startup_warnings.push(w);
     }
@@ -2437,7 +2437,7 @@ mod tests {
 
     #[test]
     fn resolve_remote_addr_accepts_default_socket() -> color_eyre::Result<()> {
-        let codex_home = find_codex_home().wrap_err("failed to resolve CODEX_HOME")?;
+        let codex_home = find_myra_home().wrap_err("failed to resolve MYRA_HOME")?;
         assert_eq!(
             resolve_remote_addr("unix://")?,
             RemoteAppServerEndpoint::UnixSocket {

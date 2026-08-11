@@ -154,7 +154,7 @@ async fn run_snapshot_command_with_options(
     mount_sse_sequence(harness.server(), responses).await;
 
     let test = harness.test();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let codex_home = test.home.path().to_path_buf();
     let session_model = test.session_configured.model.clone();
     let cwd = test.config.cwd.clone();
@@ -252,7 +252,7 @@ async fn run_shell_command_snapshot_with_options(
     mount_sse_sequence(harness.server(), responses).await;
 
     let test = harness.test();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let codex_home = test.home.path().to_path_buf();
     let session_model = test.session_configured.model.clone();
     let cwd = test.config.cwd.clone();
@@ -333,7 +333,7 @@ async fn run_tool_turn_on_harness(
     mount_sse_sequence(harness.server(), responses).await;
 
     let test = harness.test();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let session_model = test.session_configured.model.clone();
     let cwd = test.config.cwd.clone();
     let (sandbox_policy, permission_profile) =
@@ -550,7 +550,7 @@ async fn shell_command_snapshot_still_intercepts_apply_patch() -> Result<()> {
     let harness = TestCodexHarness::with_builder(builder).await?;
 
     let test = harness.test();
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
     let cwd = test.config.cwd.clone();
     let codex_home = test.home.path().to_path_buf();
     let target = cwd.join("snapshot-apply.txt");
@@ -659,7 +659,7 @@ async fn shell_snapshot_deleted_after_shutdown_with_skills() -> Result<()> {
     let harness = TestCodexHarness::with_builder(builder).await?;
     let home = harness.test().home.clone();
     let codex_home = home.path().to_path_buf();
-    let codex = harness.test().codex.clone();
+    let codex = harness.test().myra.clone();
 
     let snapshot_path = wait_for_snapshot(&codex_home).await?;
     assert!(snapshot_path.exists());

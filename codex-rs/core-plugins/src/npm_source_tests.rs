@@ -59,7 +59,7 @@ pwd > "$destination/pwd.txt"
     assert!(
         plugin_root
             .as_path()
-            .join(".codex-plugin/plugin.json")
+            .join(".myra-plugin/plugin.json")
             .is_file()
     );
     let args = fs::read_to_string(tempdir.path().join("args.txt")).expect("read npm arguments");
@@ -91,7 +91,7 @@ fn npm_package_archive_bytes(package: &str, version: &str) -> std::io::Result<Ve
     )?;
     append_archive_file(
         &mut archive,
-        "package/.codex-plugin/plugin.json",
+        "package/.myra-plugin/plugin.json",
         br#"{"name":"plugin"}"#,
     )?;
     let encoder = archive.into_inner()?;

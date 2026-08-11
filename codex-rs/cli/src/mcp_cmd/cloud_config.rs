@@ -7,7 +7,7 @@ use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::LoaderOverrides;
 use codex_core::config::bootstrap_auth_config;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core::config::load_config_toml_with_layer_stack;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_cli::CliConfigOverrides;
@@ -19,7 +19,7 @@ pub(super) async fn load_mcp_config(
     let cli_overrides = config_overrides
         .parse_overrides()
         .map_err(anyhow::Error::msg)?;
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    let codex_home = find_myra_home().context("failed to resolve MYRA_HOME")?;
     let cwd = AbsolutePathBuf::current_dir().context("failed to resolve current directory")?;
     let bootstrap_config = load_config_toml_with_layer_stack(
         codex_home.as_path(),

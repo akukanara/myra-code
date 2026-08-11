@@ -66,19 +66,19 @@ def _load_release_version_module():
 
 def _write_fake_codex_package(package_dir: Path, script) -> Path:
     (package_dir / "bin").mkdir(parents=True)
-    (package_dir / "codex-resources").mkdir()
-    (package_dir / "codex-path").mkdir()
-    (package_dir / "codex-package.json").write_text('{"variant":"codex"}\n')
-    (package_dir / "bin" / script.runtime_binary_name()).write_text("fake codex\n")
+    (package_dir / "myra-resources").mkdir()
+    (package_dir / "myra-path").mkdir()
+    (package_dir / "myra-package.json").write_text('{"variant":"myra"}\n')
+    (package_dir / "bin" / script.runtime_binary_name()).write_text("fake myra\n")
     (package_dir / "bin" / script.runtime_code_mode_host_name()).write_text("fake code mode host\n")
-    (package_dir / "codex-resources" / "bwrap").write_text("fake bwrap\n")
-    (package_dir / "codex-path" / "rg").write_text("fake rg\n")
+    (package_dir / "myra-resources" / "bwrap").write_text("fake bwrap\n")
+    (package_dir / "myra-path" / "rg").write_text("fake rg\n")
     return package_dir
 
 
 def _write_fake_codex_package_archive(tmp_path: Path, script) -> Path:
-    package_dir = _write_fake_codex_package(tmp_path / "codex-package", script)
-    archive_path = tmp_path / "codex-package.tar.gz"
+    package_dir = _write_fake_codex_package(tmp_path / "myra-package", script)
+    archive_path = tmp_path / "myra-package.tar.gz"
     _write_package_archive(package_dir, archive_path)
     return archive_path
 
@@ -540,7 +540,7 @@ def test_source_sdk_package_declares_stable_documentation() -> None:
         "description": "Python SDK for Codex",
         "is_stable": True,
         "license": "Apache-2.0",
-        "documentation": "https://github.com/openai/codex/tree/main/sdk/python/docs",
+        "documentation": "https://github.com/akukanara/myra-code/tree/main/sdk/python/docs",
         "readme_is_stable": True,
         "local_license_file": False,
     }
@@ -603,9 +603,9 @@ def test_runtime_setup_reads_independent_runtime_pin_and_release_tags() -> None:
 @pytest.mark.parametrize(
     ("system", "machine", "asset_name"),
     [
-        ("Darwin", "arm64", "codex-package-aarch64-apple-darwin.tar.gz"),
-        ("Linux", "x86_64", "codex-package-x86_64-unknown-linux-musl.tar.gz"),
-        ("Windows", "AMD64", "codex-package-x86_64-pc-windows-msvc.tar.gz"),
+        ("Darwin", "arm64", "myra-package-aarch64-apple-darwin.tar.gz"),
+        ("Linux", "x86_64", "myra-package-x86_64-unknown-linux-musl.tar.gz"),
+        ("Windows", "AMD64", "myra-package-x86_64-pc-windows-msvc.tar.gz"),
     ],
 )
 def test_runtime_setup_downloads_codex_package_archives(
@@ -670,10 +670,10 @@ def test_runtime_package_is_wheel_only_and_builds_platform_specific_wheels() -> 
     assert pyproject["tool"]["hatch"]["build"]["targets"]["wheel"] == {
         "packages": ["src/codex_cli_bin"],
         "include": [
-            "src/codex_cli_bin/codex-package.json",
+            "src/codex_cli_bin/myra-package.json",
             "src/codex_cli_bin/bin/**",
-            "src/codex_cli_bin/codex-resources/**",
-            "src/codex_cli_bin/codex-path/**",
+            "src/codex_cli_bin/myra-resources/**",
+            "src/codex_cli_bin/myra-path/**",
         ],
         "hooks": {"custom": {}},
     }
@@ -702,14 +702,14 @@ def test_stage_runtime_release_copies_package_layout_and_sets_version(
     package_root = script.staged_runtime_package_root(staged)
 
     assert {
-        "metadata": (package_root / "codex-package.json").read_text(),
+        "metadata": (package_root / "myra-package.json").read_text(),
         "codex": (package_root / "bin" / script.runtime_binary_name()).read_text(),
         "code_mode_host": (package_root / "bin" / script.runtime_code_mode_host_name()).read_text(),
-        "bwrap": (package_root / "codex-resources" / "bwrap").read_text(),
-        "rg": (package_root / "codex-path" / "rg").read_text(),
+        "bwrap": (package_root / "myra-resources" / "bwrap").read_text(),
+        "rg": (package_root / "myra-path" / "rg").read_text(),
     } == {
-        "metadata": '{"variant":"codex"}\n',
-        "codex": "fake codex\n",
+        "metadata": '{"variant":"myra"}\n',
+        "codex": "fake myra\n",
         "code_mode_host": "fake code mode host\n",
         "bwrap": "fake bwrap\n",
         "rg": "fake rg\n",
@@ -787,7 +787,7 @@ def test_stage_runtime_release_replaces_existing_staging_dir(tmp_path: Path) -> 
     assert staged == staging_dir
     assert not old_file.exists()
     package_root = script.staged_runtime_package_root(staged)
-    assert (package_root / "bin" / script.runtime_binary_name()).read_text() == "fake codex\n"
+    assert (package_root / "bin" / script.runtime_binary_name()).read_text() == "fake myra\n"
 
 
 def test_stage_runtime_release_can_pin_wheel_platform_tag(tmp_path: Path) -> None:
@@ -807,12 +807,12 @@ def test_stage_runtime_release_can_pin_wheel_platform_tag(tmp_path: Path) -> Non
 
 def test_stage_runtime_release_rejects_incomplete_package_layout(tmp_path: Path) -> None:
     script = _load_update_script_module()
-    package_dir = tmp_path / "codex-package"
+    package_dir = tmp_path / "myra-package"
     (package_dir / "bin").mkdir(parents=True)
-    package_archive = tmp_path / "codex-package.tar.gz"
+    package_archive = tmp_path / "myra-package.tar.gz"
     _write_package_archive(package_dir, package_archive)
 
-    with pytest.raises(RuntimeError, match="Missing Codex package layout entries"):
+    with pytest.raises(RuntimeError, match="Missing Myra package layout entries"):
         script.stage_python_runtime_package(tmp_path / "runtime-stage", "1.2.3", package_archive)
 
 
@@ -830,10 +830,10 @@ def test_runtime_package_layout_is_included_by_wheel_config(
 
     pyproject = tomllib.loads((staged / "pyproject.toml").read_text())
     assert pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["include"] == [
-        "src/codex_cli_bin/codex-package.json",
+        "src/codex_cli_bin/myra-package.json",
         "src/codex_cli_bin/bin/**",
-        "src/codex_cli_bin/codex-resources/**",
-        "src/codex_cli_bin/codex-path/**",
+        "src/codex_cli_bin/myra-resources/**",
+        "src/codex_cli_bin/myra-path/**",
     ]
 
 
@@ -997,7 +997,7 @@ def test_stage_runtime_stages_package_without_type_generation(tmp_path: Path) ->
 
     script.run_command(args, ops)
 
-    assert calls == ["stage_runtime:0.116.0a1:manylinux_2_17_x86_64:codex-package.tar.gz"]
+    assert calls == ["stage_runtime:0.116.0a1:manylinux_2_17_x86_64:myra-package.tar.gz"]
 
 
 def test_default_runtime_is_resolved_from_installed_runtime_package(
@@ -1020,7 +1020,7 @@ def test_default_runtime_is_resolved_from_installed_runtime_package(
 def test_runtime_path_dir_is_prepended_without_duplicates(tmp_path: Path) -> None:
     from openai_codex import client as client_module
 
-    path_dir = tmp_path / "codex-path"
+    path_dir = tmp_path / "myra-path"
     env = {"PATH": os.pathsep.join(["/usr/bin", str(path_dir), "/bin"])}
 
     client_module._prepend_path_dirs(env, (path_dir,))
@@ -1034,7 +1034,7 @@ def test_runtime_path_dir_preserves_windows_path_key(
 ) -> None:
     from openai_codex import client as client_module
 
-    path_dir = tmp_path / "codex-path"
+    path_dir = tmp_path / "myra-path"
     monkeypatch.setattr(client_module.os, "name", "nt")
     env = {
         "PATH": "/usr/bin",

@@ -202,7 +202,7 @@ async fn submit_turn_with_approval_and_environments(
         test.config.cwd.clone(),
         environments,
     );
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -236,7 +236,7 @@ async fn expect_patch_approval(
     test: &TestCodex,
     expected_call_id: &str,
 ) -> ApplyPatchApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -255,7 +255,7 @@ async fn expect_patch_approval(
 }
 
 async fn wait_for_completion_without_patch_approval(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -536,7 +536,7 @@ async fn settings_update_does_not_retarget_active_turn_environment() -> Result<(
     let next_workspace = TempDir::new()?;
     let next_cwd = next_workspace.path().abs();
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "pause before continuing".into(),
@@ -548,14 +548,14 @@ async fn settings_update_does_not_retarget_active_turn_environment() -> Result<(
             thread_settings: Default::default(),
         })
         .await?;
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
     .await;
 
     submit_thread_settings(
-        &test.codex,
+        &test.myra,
         ThreadSettingsOverrides {
             environments: Some(TurnEnvironmentSelections::new(
                 next_cwd.clone(),
@@ -565,7 +565,7 @@ async fn settings_update_does_not_retarget_active_turn_environment() -> Result<(
         },
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -578,7 +578,7 @@ async fn settings_update_does_not_retarget_active_turn_environment() -> Result<(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -672,7 +672,7 @@ async fn deferred_executor_promotes_primary_environment_when_startup_completes()
         Some(vec![local_selection.clone(), remote_selection.clone()]),
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the primary environment".into(),
@@ -690,7 +690,7 @@ async fn deferred_executor_promotes_primary_environment_when_startup_completes()
             },
         })
         .await?;
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
@@ -707,7 +707,7 @@ async fn deferred_executor_promotes_primary_environment_when_startup_completes()
     assert!(initial_context.contains("<status>starting</status>"));
 
     serve_environment_info(listener).await;
-    test.codex
+    test.myra
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -720,7 +720,7 @@ async fn deferred_executor_promotes_primary_environment_when_startup_completes()
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -735,9 +735,9 @@ async fn deferred_executor_promotes_primary_environment_when_startup_completes()
     assert!(updated_context.contains("<environment id=\"remote\" primary=\"true\">"));
     assert!(updated_context.contains("<shell>zsh</shell>"));
 
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
-    let rollout = fs::read_to_string(test.codex.rollout_path().context("rollout path")?)?;
+    test.myra.ensure_rollout_materialized().await;
+    test.myra.flush_rollout().await?;
+    let rollout = fs::read_to_string(test.myra.rollout_path().context("rollout path")?)?;
     let world_state_patch = rollout
         .lines()
         .map(serde_json::from_str::<RolloutLine>)
@@ -1197,7 +1197,7 @@ async fn deferred_executor_stays_pending_after_materialization() -> Result<()> {
         provider.clone(),
     )?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the environment".into(),
@@ -1245,8 +1245,8 @@ async fn deferred_executor_stays_pending_after_materialization() -> Result<()> {
         Some(WAIT_FOR_ENVIRONMENT_TEST_ENVIRONMENT_ID_DESCRIPTION)
     );
 
-    test.codex.submit(Op::Interrupt).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Interrupt).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnAborted(_))
     })
     .await;
@@ -1341,7 +1341,7 @@ async fn deferred_executor_spawn_agent_inherits_ready_step_environments(
     let expected_environments = vec![remote_selection, local(test.config.cwd.clone())];
     let mut created_threads = test.thread_manager.subscribe_thread_created();
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "spawn after the environment becomes ready".into(),
@@ -1361,7 +1361,7 @@ async fn deferred_executor_spawn_agent_inherits_ready_step_environments(
         .await?;
     wait_for_response_request_count(&response_mock, /*expected_count*/ 1).await;
     attach_tx.send(()).expect("attach remote environment");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1442,7 +1442,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
         .await
         .context("thread startup should not wait for the remote environment")??;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "load the environment instructions".into(),
@@ -1457,7 +1457,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
     wait_for_response_request_count(&response_mock, /*expected_count*/ 1).await;
     let agents_path = PathUri::from_abs_path(&test.config.cwd).join("AGENTS.md")?;
     attach_tx.send(()).expect("attach environment");
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1473,7 +1473,7 @@ async fn deferred_executor_loads_agents_md_when_environment_becomes_ready() -> R
     assert_eq!(environment_instructions_occurrences(&requests[0]), 1);
     assert_eq!(environment_instructions_occurrences(&requests[1]), 1);
     assert_eq!(environment_instructions_occurrences(&requests[2]), 1);
-    assert_eq!(test.codex.instruction_sources().await, vec![agents_path]);
+    assert_eq!(test.myra.instruction_sources().await, vec![agents_path]);
 
     Ok(())
 }
@@ -1556,7 +1556,7 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
         .await
         .context("thread startup should not wait for the remote environment")??;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the environment".into(),
@@ -1568,14 +1568,14 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
             thread_settings: Default::default(),
         })
         .await?;
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
     .await;
 
     serve_environment_info(listener).await;
-    test.codex
+    test.myra
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -1588,7 +1588,7 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1627,9 +1627,9 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
         .expect("the next sampling step should report that the environment is ready");
     assert!(starting_index < ready_index);
 
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
-    let rollout_path = test.codex.rollout_path().context("rollout path")?;
+    test.myra.ensure_rollout_materialized().await;
+    test.myra.flush_rollout().await?;
+    let rollout_path = test.myra.rollout_path().context("rollout path")?;
     let rollout = fs::read_to_string(rollout_path)?;
     let world_state_items = rollout
         .lines()
@@ -1941,7 +1941,7 @@ async fn remote_exec_materializes_target_roots_before_sandbox_selection() -> Res
     );
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "try to read the denied remote workspace root".into(),
@@ -1981,7 +1981,7 @@ async fn remote_exec_materializes_target_roots_before_sandbox_selection() -> Res
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2137,7 +2137,7 @@ async fn remote_request_permissions_grant_unblocks_later_remote_exec() -> Result
     )
     .await?;
 
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -2155,14 +2155,14 @@ async fn remote_request_permissions_grant_unblocks_later_remote_exec() -> Result
     assert_eq!(request.cwd.as_ref(), Some(&remote_cwd));
     assert_eq!(request.permissions, expected_permissions);
 
-    test.codex
+    test.myra
         .submit(Op::RequestPermissionsResponse {
             id: "permissions-call".to_string(),
             response: approved_response.clone(),
         })
         .await?;
 
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -2417,13 +2417,13 @@ async fn apply_patch_approvals_are_remembered_per_environment() -> Result<()> {
     )
     .await?;
     let approval = expect_patch_approval(&test, "call-local").await;
-    test.codex
+    test.myra
         .submit(Op::PatchApproval {
             id: approval.call_id,
             decision: ReviewDecision::ApprovedForSession,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2437,13 +2437,13 @@ async fn apply_patch_approvals_are_remembered_per_environment() -> Result<()> {
     )
     .await?;
     let approval = expect_patch_approval(&test, "call-remote").await;
-    test.codex
+    test.myra
         .submit(Op::PatchApproval {
             id: approval.call_id,
             decision: ReviewDecision::ApprovedForSession,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

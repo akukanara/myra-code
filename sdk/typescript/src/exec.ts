@@ -42,7 +42,7 @@ export type CodexExecArgs = {
 
 const INTERNAL_ORIGINATOR_ENV = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
 const TYPESCRIPT_SDK_ORIGINATOR = "codex_sdk_ts";
-const CODEX_NPM_NAME = "@myralith/myra";
+const MYRA_NPM_NAME = "@myralith/myra";
 
 const PLATFORM_PACKAGE_BY_TARGET: Record<string, string> = {
   "x86_64-unknown-linux-musl": "@myralith/myra-linux-x64",
@@ -229,7 +229,7 @@ export class CodexExec {
       if (code !== 0 || signal) {
         const stderrBuffer = Buffer.concat(stderrChunks);
         const detail = signal ? `signal ${signal}` : `code ${code ?? 1}`;
-        throw new Error(`Codex Exec exited with ${detail}: ${stderrBuffer.toString("utf8")}`);
+        throw new Error(`Myra Exec exited with ${detail}: ${stderrBuffer.toString("utf8")}`);
       }
     } finally {
       rl.close();
@@ -259,7 +259,7 @@ function flattenConfigOverrides(
       overrides.push(`${prefix}=${toTomlValue(value, prefix)}`);
       return;
     } else {
-      throw new Error("Codex config overrides must be a plain object");
+      throw new Error("Myra config overrides must be a plain object");
     }
   }
 
@@ -275,7 +275,7 @@ function flattenConfigOverrides(
 
   for (const [key, child] of entries) {
     if (!key) {
-      throw new Error("Codex config override keys must be non-empty strings");
+      throw new Error("Myra config override keys must be non-empty strings");
     }
     if (child === undefined) {
       continue;
@@ -294,7 +294,7 @@ function toTomlValue(value: CodexConfigValue, path: string): string {
     return JSON.stringify(value);
   } else if (typeof value === "number") {
     if (!Number.isFinite(value)) {
-      throw new Error(`Codex config override at ${path} must be a finite number`);
+      throw new Error(`Myra config override at ${path} must be a finite number`);
     }
     return `${value}`;
   } else if (typeof value === "boolean") {
@@ -306,7 +306,7 @@ function toTomlValue(value: CodexConfigValue, path: string): string {
     const parts: string[] = [];
     for (const [key, child] of Object.entries(value)) {
       if (!key) {
-        throw new Error("Codex config override keys must be non-empty strings");
+        throw new Error("Myra config override keys must be non-empty strings");
       }
       if (child === undefined) {
         continue;
@@ -315,10 +315,10 @@ function toTomlValue(value: CodexConfigValue, path: string): string {
     }
     return `{${parts.join(", ")}}`;
   } else if (value === null) {
-    throw new Error(`Codex config override at ${path} cannot be null`);
+    throw new Error(`Myra config override at ${path} cannot be null`);
   } else {
     const typeName = typeof value;
-    throw new Error(`Unsupported Codex config override value at ${path}: ${typeName}`);
+    throw new Error(`Unsupported Myra config override value at ${path}: ${typeName}`);
   }
 }
 
@@ -388,27 +388,21 @@ function findCodexPath(): CodexPathResolution {
 
   let vendorRoot: string;
   try {
-    const codexPackageJsonPath = moduleRequire.resolve(`${CODEX_NPM_NAME}/package.json`);
-    const codexRequire = createRequire(codexPackageJsonPath);
-    const platformPackageJsonPath = codexRequire.resolve(`${platformPackage}/package.json`);
+    const myraPackageJsonPath = moduleRequire.resolve(`${MYRA_NPM_NAME}/package.json`);
+    const myraRequire = createRequire(myraPackageJsonPath);
+    const platformPackageJsonPath = myraRequire.resolve(`${platformPackage}/package.json`);
     vendorRoot = path.join(path.dirname(platformPackageJsonPath), "vendor");
   } catch {
     throw new Error(
-      `Unable to locate Codex CLI binaries. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
+      `Unable to locate Myra CLI binaries. Ensure ${MYRA_NPM_NAME} is installed with optional dependencies.`,
     );
   }
 
-  // Packages built from this repo stage the entrypoint as `bin/codex`, but
-  // accept `bin/myra` too so a renamed entrypoint still resolves.
-  const binaryNames =
-    process.platform === "win32" ? ["myra.exe", "codex.exe"] : ["myra", "codex"];
-  const nativePackage = binaryNames.reduce<CodexPathResolution | null>(
-    (found, name) => found ?? resolveNativePackage(vendorRoot, targetTriple, name),
-    null,
-  );
+  const binaryName = process.platform === "win32" ? "myra.exe" : "myra";
+  const nativePackage = resolveNativePackage(vendorRoot, targetTriple, binaryName);
   if (!nativePackage) {
     throw new Error(
-      `Unable to locate Codex CLI binaries for ${targetTriple}. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
+      `Unable to locate Myra CLI binaries for ${targetTriple}. Ensure ${MYRA_NPM_NAME} is installed with optional dependencies.`,
     );
   }
 
@@ -418,22 +412,14 @@ function findCodexPath(): CodexPathResolution {
 export function resolveNativePackage(
   vendorRoot: string,
   targetTriple: string,
-  codexBinaryName: string,
+  myraBinaryName: string,
 ): CodexPathResolution | null {
   const packageRoot = path.join(vendorRoot, targetTriple);
-  const packageBinaryPath = path.join(packageRoot, "bin", codexBinaryName);
-  if (isFile(packageBinaryPath) && isFile(path.join(packageRoot, "codex-package.json"))) {
+  const packageBinaryPath = path.join(packageRoot, "bin", myraBinaryName);
+  if (isFile(packageBinaryPath) && isFile(path.join(packageRoot, "myra-package.json"))) {
     return {
       executablePath: packageBinaryPath,
-      pathDirs: existingDirs(path.join(packageRoot, "codex-path")),
-    };
-  }
-
-  const legacyBinaryPath = path.join(packageRoot, "codex", codexBinaryName);
-  if (isFile(legacyBinaryPath)) {
-    return {
-      executablePath: legacyBinaryPath,
-      pathDirs: existingDirs(path.join(packageRoot, "path")),
+      pathDirs: existingDirs(path.join(packageRoot, "myra-path")),
     };
   }
 

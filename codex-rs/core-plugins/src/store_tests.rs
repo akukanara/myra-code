@@ -11,13 +11,13 @@ fn write_plugin_with_version(
     manifest_version: Option<&str>,
 ) {
     let plugin_root = root.join(dir_name);
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::create_dir_all(plugin_root.join("skills")).unwrap();
     let version = manifest_version
         .map(|manifest_version| format!(r#","version":"{manifest_version}""#))
         .unwrap_or_default();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         format!(r#"{{"name":"{manifest_name}"{version}}}"#),
     )
     .unwrap();
@@ -68,7 +68,7 @@ fn install_copies_plugin_into_default_marketplace() {
             installed_path: AbsolutePathBuf::try_from(installed_path.clone()).unwrap(),
         }
     );
-    assert!(installed_path.join(".codex-plugin/plugin.json").is_file());
+    assert!(installed_path.join(".myra-plugin/plugin.json").is_file());
     assert!(installed_path.join("skills/SKILL.md").is_file());
 }
 
@@ -76,9 +76,9 @@ fn install_copies_plugin_into_default_marketplace() {
 fn install_accepts_manifest_mcp_server_objects() {
     let tmp = tempdir().unwrap();
     let plugin_root = tmp.path().join("counter-sample");
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{
   "name": "counter-sample",
   "version": "1.1.1",
@@ -109,7 +109,7 @@ fn install_accepts_manifest_mcp_server_objects() {
             installed_path: AbsolutePathBuf::try_from(installed_path.clone()).unwrap(),
         }
     );
-    assert!(installed_path.join(".codex-plugin/plugin.json").is_file());
+    assert!(installed_path.join(".myra-plugin/plugin.json").is_file());
 }
 
 #[test]
@@ -211,7 +211,7 @@ fn install_with_version_uses_requested_cache_version() {
             installed_path: AbsolutePathBuf::try_from(installed_path.clone()).unwrap(),
         }
     );
-    assert!(installed_path.join(".codex-plugin/plugin.json").is_file());
+    assert!(installed_path.join(".myra-plugin/plugin.json").is_file());
 }
 
 #[test]
@@ -237,7 +237,7 @@ fn remote_plugin_install_metadata_follows_installed_cache_lifecycle() {
     let metadata_path = store.remote_plugin_install_metadata_path(&plugin_id);
     assert_eq!(
         metadata_path.as_path().file_name(),
-        Some(std::ffi::OsStr::new(".codex-remote-plugin-install.json"))
+        Some(std::ffi::OsStr::new(".myra-remote-plugin-install.json"))
     );
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(
@@ -349,7 +349,7 @@ fn install_prefers_on_disk_manifest_version_over_fallback() {
             installed_path: AbsolutePathBuf::try_from(installed_path.clone()).unwrap(),
         }
     );
-    assert!(installed_path.join(".codex-plugin/plugin.json").is_file());
+    assert!(installed_path.join(".myra-plugin/plugin.json").is_file());
 }
 
 #[test]
@@ -411,7 +411,7 @@ fn agent_plugin_install_does_not_migrate_commands() {
     assert!(
         !result
             .installed_path
-            .join(".codex-plugin/migrated-command-skills")
+            .join(".myra-plugin/migrated-command-skills")
             .exists()
     );
 }

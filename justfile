@@ -11,14 +11,14 @@ python := if os_family() == "windows" { "python" } else { "python3" }
 help:
     just -l
 
-# `codex`
-alias c := codex
-codex *args:
-    cargo run --bin codex -- {args}
+# `myra`
+alias c := myra
+myra *args:
+    cargo run --bin myra -- {args}
 
 # `codex exec`
 exec *args:
-    cargo run --bin codex -- exec {args}
+    cargo run --bin myra -- exec {args}
 
 # Start `codex exec-server` and run codex-tui.
 [no-cd]
@@ -112,12 +112,12 @@ bench-e2e-smoke:
     # Compile exec-platform Rust tools through those release-only cfg paths too.
     bazel test --compilation_mode=fastbuild --@rules_rust//rust/settings:extra_rustc_flag=-Cdebug-assertions=no --@rules_rust//rust/settings:extra_exec_rustc_flag=-Cdebug-assertions=no --cache_test_results=no --test_output=streamed --test_arg=--test //codex-rs:e2e-benchmarks
 
-# Build and run Codex from source using Bazel.
+# Build and run Myra from source using Bazel.
 # On Unix, use `[no-cd]` and `--run_under="cd $PWD &&"` to ensure Bazel runs
 # the command in the current working directory.
 [no-cd]
 [unix]
-bazel-codex *args:
+bazel-myra *args:
     bazel run //codex-rs/cli:codex --run_under="cd $PWD &&" -- "$@"
 
 [windows]

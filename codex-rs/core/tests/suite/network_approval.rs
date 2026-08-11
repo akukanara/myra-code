@@ -255,11 +255,11 @@ async fn cancelled_guardian_network_review_fails_closed_without_rewriting_turn_s
     )
     .await?;
     wait_for_response_request(&pending_guardian).await;
-    test.codex.submit(Op::Interrupt).await?;
+    test.myra.submit(Op::Interrupt).await?;
     let mut saw_turn_aborted = false;
     let mut saw_guardian_aborted = false;
     while !saw_turn_aborted || !saw_guardian_aborted {
-        let event = tokio::time::timeout(Duration::from_secs(5), test.codex.next_event())
+        let event = tokio::time::timeout(Duration::from_secs(5), test.myra.next_event())
             .await
             .context("timed out waiting for parent and Guardian cancellation")?
             .context("event stream ended while waiting for cancellation")?;
@@ -451,7 +451,7 @@ async fn user_network_approval_once_session_and_denial_semantics() -> Result<()>
         approval.reason.as_deref(),
         Some("codex-network-test.invalid is not in the allowed_domains")
     );
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -478,7 +478,7 @@ async fn user_network_approval_once_session_and_denial_semantics() -> Result<()>
     let approval = expect_network_approval(&test, LOCAL_ENVIRONMENT_ID).await?;
     assert_eq!(approval.approval_id.as_deref(), None);
     assert_ne!(approval.call_id, first_approval_call_id);
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -530,7 +530,7 @@ async fn user_network_approval_once_session_and_denial_semantics() -> Result<()>
         NetworkApprovalProtocol::Http,
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -578,14 +578,14 @@ async fn user_network_approval_once_session_and_denial_semantics() -> Result<()>
         NetworkApprovalProtocol::Socks5Tcp,
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
             decision: ReviewDecision::Abort,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnAborted(_))
     })
     .await;
@@ -641,7 +641,7 @@ async fn allowing_network_policy_amendment_persists_context_and_bypasses_prompt(
             },
         ]
     );
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -712,7 +712,7 @@ async fn failed_network_policy_amendment_denies_request_and_does_not_approve_hos
     )
     .await?;
     let approval = expect_network_approval(&test, LOCAL_ENVIRONMENT_ID).await?;
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -749,7 +749,7 @@ async fn failed_network_policy_amendment_denies_request_and_does_not_approve_hos
     )
     .await?;
     let approval = expect_network_approval(&test, LOCAL_ENVIRONMENT_ID).await?;
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -806,7 +806,7 @@ async fn unattributed_network_request_uses_active_turn_environment_fallback() ->
     let approval = expect_network_approval(&test, LOCAL_ENVIRONMENT_ID).await?;
     assert_eq!(approval.command, ["network-access", NETWORK_TEST_TARGET]);
     assert_eq!(approval.cwd, test.config.cwd);
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(approval.turn_id),
@@ -818,8 +818,8 @@ async fn unattributed_network_request_uses_active_turn_environment_fallback() ->
         .context("unattributed proxy request did not finish")???;
     assert!(response.starts_with("HTTP/1.1 200") || response.starts_with("HTTP/1.1 502"));
 
-    test.codex.submit(Op::Interrupt).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Interrupt).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnAborted(_))
     })
     .await;
@@ -894,7 +894,7 @@ async fn ambiguous_unattributed_network_request_is_not_assigned_to_active_calls(
     assert!(
         tokio::time::timeout(
             Duration::from_secs(1),
-            wait_for_event(&test.codex, |event| matches!(
+            wait_for_event(&test.myra, |event| matches!(
                 event,
                 EventMsg::ExecApprovalRequest(_)
             ))
@@ -904,15 +904,15 @@ async fn ambiguous_unattributed_network_request_is_not_assigned_to_active_calls(
         "ambiguous request was incorrectly assigned to an active call"
     );
 
-    test.codex.submit(Op::Interrupt).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Interrupt).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnAborted(_))
     })
     .await;
-    test.codex.submit(Op::CleanBackgroundTerminals).await?;
+    test.myra.submit(Op::CleanBackgroundTerminals).await?;
     tokio::time::timeout(Duration::from_secs(10), async {
         loop {
-            if test.codex.list_background_terminals().await.is_empty() {
+            if test.myra.list_background_terminals().await.is_empty() {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(10)).await;
@@ -1257,7 +1257,7 @@ async fn remote_guardian_network_decisions_are_scoped_to_each_request_and_enviro
             )
             .await?;
             let approval = expect_network_approval(&test, REMOTE_ENVIRONMENT_ID).await?;
-            test.codex
+            test.myra
                 .submit(Op::ExecApproval {
                     id: approval.effective_approval_id(),
                     turn_id: Some(approval.turn_id),
@@ -1404,7 +1404,7 @@ async fn approved_network_host_for_one_environment_still_prompts_in_another() ->
     )
     .await?;
     let approval = expect_network_approval(&test, LOCAL_ENVIRONMENT_ID).await?;
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -1430,7 +1430,7 @@ async fn approved_network_host_for_one_environment_still_prompts_in_another() ->
     .await?;
     let approval = expect_network_approval(&test, REMOTE_ENVIRONMENT_ID).await?;
     let rejection = "approval request failed because the client disconnected";
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
@@ -1576,7 +1576,7 @@ async fn submit_managed_network_turn(
     let turn_environment_selections =
         TurnEnvironmentSelections::new(test.config.cwd.clone(), environments);
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -1741,7 +1741,7 @@ async fn expect_network_approval_target(
         .checked_duration_since(std::time::Instant::now())
         .context("timed out waiting for network approval request")?;
     let event = wait_for_event_with_timeout(
-        &test.codex,
+        &test.myra,
         |event| {
             matches!(
                 event,
@@ -1778,7 +1778,7 @@ async fn expect_network_approval_target(
 }
 
 async fn wait_for_completion_without_network_prompt(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -1838,7 +1838,7 @@ async fn wait_for_paths(paths: &[&std::path::Path]) -> Result<()> {
 }
 
 async fn wait_for_turn_complete(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

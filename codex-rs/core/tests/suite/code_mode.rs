@@ -267,7 +267,7 @@ async fn run_unavailable_code_mode_turn(
     )
     .await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "list available tools".to_string(),
@@ -282,7 +282,7 @@ async fn run_unavailable_code_mode_turn(
 
     let mut warnings = Vec::new();
     loop {
-        match wait_for_event(&test.codex, |_| true).await {
+        match wait_for_event(&test.myra, |_| true).await {
             EventMsg::Warning(warning) => warnings.push(warning.message),
             EventMsg::TurnComplete(_) => break,
             _ => {}
@@ -658,7 +658,7 @@ async fn run_code_mode_turn_with_rmcp_config(
             .expect("test mcp servers should accept any configuration");
     });
     let test = builder.build(server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
     responses::mount_sse_once(
         server,
@@ -754,11 +754,11 @@ async fn code_mode_exec_holds_captured_result_during_elicitation() -> Result<()>
     .await;
 
     assert_eq!(
-        test.codex.increment_out_of_band_elicitation_count().await?,
+        test.myra.increment_out_of_band_elicitation_count().await?,
         1
     );
     assert_eq!(
-        test.codex.increment_out_of_band_elicitation_count().await?,
+        test.myra.increment_out_of_band_elicitation_count().await?,
         2
     );
     let release_elicitation = async {
@@ -775,7 +775,7 @@ async fn code_mode_exec_holds_captured_result_during_elicitation() -> Result<()>
             "captured exec result should not return during an elicitation"
         );
         assert_eq!(
-            test.codex.decrement_out_of_band_elicitation_count().await?,
+            test.myra.decrement_out_of_band_elicitation_count().await?,
             1
         );
         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -784,7 +784,7 @@ async fn code_mode_exec_holds_captured_result_during_elicitation() -> Result<()>
             "captured exec result should wait for every elicitation"
         );
         assert_eq!(
-            test.codex.decrement_out_of_band_elicitation_count().await?,
+            test.myra.decrement_out_of_band_elicitation_count().await?,
             0
         );
         Ok::<(), anyhow::Error>(())
@@ -936,9 +936,9 @@ async fn code_mode_excludes_mcp_servers_using_their_configured_identity() -> Res
                 })
                 .await?;
             let mut test = base_test;
-            test.codex = new_thread.thread;
+            test.myra = new_thread.thread;
             test.session_configured = new_thread.session_configured;
-            wait_for_mcp_server(&test.codex, "rmcp").await?;
+            wait_for_mcp_server(&test.myra, "rmcp").await?;
             test.submit_turn("inspect the directly callable MCP tool")
                 .await?;
 
@@ -1140,7 +1140,7 @@ async fn mcp_code_mode_exclusion_does_not_change_direct_mode_tool_exposure() -> 
                         .expect("test config should allow MCP servers");
                 });
             let test = builder.build_with_auto_env(&server).await?;
-            wait_for_mcp_server(&test.codex, "rmcp").await?;
+            wait_for_mcp_server(&test.myra, "rmcp").await?;
             test.submit_turn("inspect ordinary direct-mode MCP tool exposure")
                 .await?;
 
@@ -2125,7 +2125,7 @@ async fn code_mode_wait_timeout_reconnects_on_next_exec() -> Result<()> {
     .await
     .completion;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "wait for the stalled cell".to_string(),
@@ -2137,7 +2137,7 @@ async fn code_mode_wait_timeout_reconnects_on_next_exec() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event_match(&test.codex, |event| match event {
+    wait_for_event_match(&test.myra, |event| match event {
         EventMsg::RawResponseItem(raw) => match &raw.item {
             ResponseItem::FunctionCall { call_id, .. } if call_id == "call-2" => Some(()),
             _ => None,
@@ -2157,7 +2157,7 @@ async fn code_mode_wait_timeout_reconnects_on_next_exec() -> Result<()> {
         }
     }
     tokio::time::resume();
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -4641,7 +4641,7 @@ async fn code_mode_uses_the_first_dynamic_tool_for_a_normalized_name() -> Result
             })
             .await?;
         let mut test = base_test;
-        test.codex = new_thread.thread;
+        test.myra = new_thread.thread;
         test.session_configured = new_thread.session_configured;
 
         let first_mock = responses::mount_sse_once(
@@ -4678,7 +4678,7 @@ text(JSON.stringify({
         let cwd = test.config.cwd.clone();
         let (sandbox_policy, permission_profile) =
             turn_permission_fields(PermissionProfile::Disabled, cwd.as_path());
-        test.codex
+        test.myra
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: "inspect and call normalized dynamic tools".to_string(),
@@ -4708,12 +4708,12 @@ text(JSON.stringify({
             })
             .await?;
 
-        let turn_id = wait_for_event_match(&test.codex, |event| match event {
+        let turn_id = wait_for_event_match(&test.myra, |event| match event {
             EventMsg::TurnStarted(event) => Some(event.turn_id.clone()),
             _ => None,
         })
         .await;
-        let request = wait_for_event_match(&test.codex, |event| match event {
+        let request = wait_for_event_match(&test.myra, |event| match event {
             EventMsg::DynamicToolCallRequest(request) => Some(request.clone()),
             _ => None,
         })
@@ -4721,7 +4721,7 @@ text(JSON.stringify({
         assert_eq!(request.namespace, None);
         assert_eq!(request.tool, "foo-bar");
         assert_eq!(request.arguments, serde_json::json!({}));
-        test.codex
+        test.myra
             .submit(Op::DynamicToolResponse {
                 id: request.call_id,
                 response: DynamicToolResponse {
@@ -4732,7 +4732,7 @@ text(JSON.stringify({
                 },
             })
             .await?;
-        wait_for_event(&test.codex, |event| match event {
+        wait_for_event(&test.myra, |event| match event {
             EventMsg::TurnComplete(event) => event.turn_id == turn_id,
             _ => false,
         })
@@ -4872,7 +4872,7 @@ async fn code_mode_can_call_hidden_dynamic_tools() -> Result<()> {
         })
         .await?;
     let mut test = base_test;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
 
     let code = r#"
@@ -4910,7 +4910,7 @@ text(
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, cwd.as_path());
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "use exec to inspect and call hidden tools".into(),
@@ -4940,12 +4940,12 @@ text(
         })
         .await?;
 
-    let turn_id = wait_for_event_match(&test.codex, |event| match event {
+    let turn_id = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::TurnStarted(event) => Some(event.turn_id.clone()),
         _ => None,
     })
     .await;
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::DynamicToolCallRequest(request) => Some(request.clone()),
         _ => None,
     })
@@ -4953,7 +4953,7 @@ text(
     assert_eq!(request.namespace.as_deref(), Some("codex_app"));
     assert_eq!(request.tool, "hidden_dynamic_tool");
     assert_eq!(request.arguments, serde_json::json!({ "city": "Paris" }));
-    test.codex
+    test.myra
         .submit(Op::DynamicToolResponse {
             id: request.call_id,
             response: DynamicToolResponse {
@@ -4964,7 +4964,7 @@ text(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| match event {
+    wait_for_event(&test.myra, |event| match event {
         EventMsg::TurnComplete(event) => event.turn_id == turn_id,
         _ => false,
     })
@@ -5038,7 +5038,7 @@ async fn code_mode_excludes_configured_nested_tool_namespaces() -> Result<()> {
         })
         .await?;
     let mut test = base_test;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
 
     let first_mock = responses::mount_sse_once(
@@ -5130,7 +5130,7 @@ async fn code_mode_omits_configured_mcp_server_tools() -> Result<()> {
                 .expect("test config should allow MCP servers");
         });
     let test = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
     let first_mock = responses::mount_sse_once(
         &server,
@@ -5221,7 +5221,7 @@ async fn code_mode_only_keeps_mcp_tools_direct_when_nested_exposure_is_omitted()
                 .expect("test config should allow MCP servers");
         });
     let test = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
     let first_mock = responses::mount_sse_once(
         &server,
@@ -5315,7 +5315,7 @@ async fn code_mode_only_can_call_mcp_tools_hidden_from_direct_and_deferred_expos
                 .expect("test config should allow MCP servers");
         });
     let test = builder.build_with_auto_env(&server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
     let first_mock = responses::mount_sse_once(
         &server,

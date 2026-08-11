@@ -33,7 +33,7 @@ async fn codex_delegate_ignores_legacy_deltas() {
     let test = builder.build(&server).await.expect("build test codex");
 
     // Kick off review (delegated).
-    test.codex
+    test.myra
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -48,7 +48,7 @@ async fn codex_delegate_ignores_legacy_deltas() {
     let mut reasoning_delta_count = 0;
 
     loop {
-        let ev = wait_for_event(&test.codex, |_| true).await;
+        let ev = wait_for_event(&test.myra, |_| true).await;
         match ev {
             EventMsg::ReasoningContentDelta(_) => reasoning_delta_count += 1,
             EventMsg::TurnComplete(_) => break,

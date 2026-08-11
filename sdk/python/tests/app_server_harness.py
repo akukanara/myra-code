@@ -208,7 +208,7 @@ class AppServerHarness:
 
     def __init__(self, tmp_path: Path, *, requires_openai_auth: bool = False) -> None:
         self.tmp_path = tmp_path
-        self.codex_home = tmp_path / "codex-home"
+        self.codex_home = tmp_path / "myra-home"
         self.workspace = tmp_path / "workspace"
         self.requires_openai_auth = requires_openai_auth
         self.responses = MockResponsesServer()
@@ -230,7 +230,7 @@ class AppServerHarness:
         return CodexConfig(
             cwd=str(self.workspace),
             env={
-                "CODEX_HOME": str(self.codex_home),
+                "MYRA_HOME": str(self.codex_home),
                 "CODEX_APP_SERVER_DISABLE_MANAGED_CONFIG": "1",
                 "RUST_LOG": "warn",
             },

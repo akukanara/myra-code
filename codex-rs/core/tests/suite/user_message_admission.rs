@@ -64,7 +64,7 @@ async fn user_message_admission_reports_started_and_steered_for_concurrent_submi
         .build_with_streaming_server(&server)
         .await
         .expect("build user-message admission session");
-    let codex = Arc::clone(&test.codex);
+    let codex = Arc::clone(&test.myra);
     let barrier = Arc::new(Barrier::new(3));
 
     let first_submission = tokio::spawn({
@@ -218,7 +218,7 @@ async fn user_message_admission_reports_invalid_settings_and_recovers() {
         .build_with_streaming_server(&server)
         .await
         .expect("build approval-constrained user-message admission session");
-    let codex = &test.codex;
+    let codex = &test.myra;
     let mut invalid_input = user_input("invalid approval policy");
     let Op::UserInput {
         thread_settings, ..
@@ -303,7 +303,7 @@ async fn user_message_admission_rejects_non_user_operations_without_waiting() {
         .build_with_streaming_server(&server)
         .await
         .expect("build user-message admission session");
-    let codex = &test.codex;
+    let codex = &test.myra;
 
     let error = timeout(
         Duration::from_secs(5),
@@ -332,7 +332,7 @@ async fn user_message_admission_fails_promptly_after_session_shutdown() {
         .build_with_streaming_server(&server)
         .await
         .expect("build user-message admission session");
-    let codex = &test.codex;
+    let codex = &test.myra;
     codex
         .shutdown_and_wait()
         .await

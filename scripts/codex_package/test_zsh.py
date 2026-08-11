@@ -33,13 +33,13 @@ class ResolveZshBinTest(unittest.TestCase):
     def test_uses_manifest_override(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            archive = root / "codex-zsh.tar.gz"
+            archive = root / "myra-zsh.tar.gz"
             source = root / "zsh"
             source.write_bytes(b"standalone zsh")
             with tarfile.open(archive, "w:gz") as tar:
-                tar.add(source, arcname="codex-zsh/bin/zsh")
+                tar.add(source, arcname="myra-zsh/bin/zsh")
 
-            manifest = root / "codex-zsh"
+            manifest = root / "myra-zsh"
             manifest.write_text(
                 json.dumps(
                     {
@@ -51,7 +51,7 @@ class ResolveZshBinTest(unittest.TestCase):
                                     archive.read_bytes()
                                 ).hexdigest(),
                                 "format": "tar.gz",
-                                "path": "codex-zsh/bin/zsh",
+                                "path": "myra-zsh/bin/zsh",
                                 "providers": [{"url": archive.as_uri()}],
                             }
                         }

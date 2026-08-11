@@ -43,23 +43,21 @@ class PackageInputs:
     rg_bin: Path
     zsh_bin: Path | None
     bwrap_bin: Path | None
-    codex_command_runner_bin: Path | None
-    codex_windows_sandbox_setup_bin: Path | None
+    myra_command_runner_bin: Path | None
+    myra_windows_sandbox_setup_bin: Path | None
 
 
 PACKAGE_VARIANTS: dict[str, PackageVariant] = {
-    "codex": PackageVariant(
-        name="codex",
-        # The CLI bin target was renamed to `myra` in codex-rs/cli/Cargo.toml.
-        # The staged executable keeps the `codex` stem because install.sh and
-        # bin/myra.js resolve `bin/codex` as a fallback.
+    "myra": PackageVariant(
+        name="myra",
+        # The CLI bin target and the staged executable use the public Myra name.
         cargo_bin="myra",
-        executable_stem="codex",
+        executable_stem="myra",
     ),
-    "codex-app-server": PackageVariant(
-        name="codex-app-server",
+    "myra-app-server": PackageVariant(
+        name="myra-app-server",
         cargo_bin="codex-app-server",
-        executable_stem="codex-app-server",
+        executable_stem="myra-app-server",
     ),
 }
 

@@ -75,7 +75,7 @@ impl CodeModeElicitationHarness {
 
     async fn finish(self) {
         wait_for_event_with_timeout(
-            &self.test.codex,
+            &self.test.myra,
             |event| match event {
                 EventMsg::TurnComplete(event) => event.turn_id == self.turn_id,
                 _ => false,
@@ -110,7 +110,7 @@ async fn mount_code_mode_responses(server: &MockServer, code: &str) -> ResponseM
 async fn submit_turn(test: &TestCodex, permission_profile: PermissionProfile) -> Result<String> {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a code-mode tool that needs user input".into(),
@@ -136,7 +136,7 @@ async fn submit_turn(test: &TestCodex, permission_profile: PermissionProfile) ->
         })
         .await?;
 
-    Ok(wait_for_event_match(&test.codex, |event| match event {
+    Ok(wait_for_event_match(&test.myra, |event| match event {
         EventMsg::TurnStarted(event) => Some(event.turn_id.clone()),
         _ => None,
     })
@@ -163,7 +163,7 @@ await tools.exec_command({
         |_| {},
     )
     .await?;
-    let approval = wait_for_event_match(&harness.test.codex, |event| match event {
+    let approval = wait_for_event_match(&harness.test.myra, |event| match event {
         EventMsg::ExecApprovalRequest(approval) => Some(approval.clone()),
         _ => None,
     })
@@ -172,7 +172,7 @@ await tools.exec_command({
     harness.assert_result_held().await;
     harness
         .test
-        .codex
+        .myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: Some(harness.turn_id.clone()),
@@ -194,7 +194,7 @@ await tools.apply_patch("*** Begin Patch\n*** Add File: code_mode_patch_approval
         |_| {},
     )
     .await?;
-    let approval = wait_for_event_match(&harness.test.codex, |event| match event {
+    let approval = wait_for_event_match(&harness.test.myra, |event| match event {
         EventMsg::ApplyPatchApprovalRequest(approval) => Some(approval.clone()),
         _ => None,
     })
@@ -203,7 +203,7 @@ await tools.apply_patch("*** Begin Patch\n*** Add File: code_mode_patch_approval
     harness.assert_result_held().await;
     harness
         .test
-        .codex
+        .myra
         .submit(Op::PatchApproval {
             id: approval.call_id,
             decision: ReviewDecision::Approved,
@@ -233,7 +233,7 @@ await tools.request_permissions({
         },
     )
     .await?;
-    let request = wait_for_event(&harness.test.codex, |event| {
+    let request = wait_for_event(&harness.test.myra, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_) | EventMsg::Error(_)
@@ -247,7 +247,7 @@ await tools.request_permissions({
     harness.assert_result_held().await;
     harness
         .test
-        .codex
+        .myra
         .submit(Op::RequestPermissionsResponse {
             id: request.call_id,
             response: RequestPermissionsResponse {

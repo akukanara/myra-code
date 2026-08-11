@@ -69,8 +69,8 @@ async fn idle_response_items_include_pending_mailbox_in_first_request() -> anyho
     .await;
     let test = test_codex().build_with_auto_env(&server).await?;
 
-    submit_queue_only_agent_mail(test.codex.as_ref(), "pending mailbox input").await;
-    test.codex
+    submit_queue_only_agent_mail(test.myra.as_ref(), "pending mailbox input").await;
+    test.myra
         .try_start_turn_if_idle(vec![TurnInput::ResponseItem(responses::user_message_item(
             "automatic response item",
         ))])
@@ -78,7 +78,7 @@ async fn idle_response_items_include_pending_mailbox_in_first_request() -> anyho
         .map_err(|error| {
             anyhow::anyhow!("idle response items were rejected: {:?}", error.reason())
         })?;
-    wait_for_turn_complete(test.codex.as_ref()).await;
+    wait_for_turn_complete(test.myra.as_ref()).await;
 
     let request = response.single_request();
     let user_messages = request.message_input_texts("user");
@@ -121,7 +121,7 @@ async fn assert_idle_user_input_reaches_the_first_model_request(
 
     if mode == ModeKind::Plan {
         core_test_support::submit_thread_settings(
-            test.codex.as_ref(),
+            test.myra.as_ref(),
             ThreadSettingsOverrides {
                 collaboration_mode: Some(CollaborationMode {
                     mode,
@@ -141,7 +141,7 @@ async fn assert_idle_user_input_reaches_the_first_model_request(
         text: "queued user input reaches the first request".to_string(),
         text_elements: Vec::new(),
     }];
-    test.codex
+    test.myra
         .try_start_turn_if_idle(vec![TurnInput::UserInput {
             content: expected_input.clone(),
             client_id: Some("queued-user-message".to_string()),
@@ -149,7 +149,7 @@ async fn assert_idle_user_input_reaches_the_first_model_request(
         .await
         .map_err(|error| anyhow::anyhow!("idle user input was rejected: {:?}", error.reason()))?;
 
-    let user_message = core_test_support::wait_for_event_match(test.codex.as_ref(), |event| {
+    let user_message = core_test_support::wait_for_event_match(test.myra.as_ref(), |event| {
         let EventMsg::ItemCompleted(event) = event else {
             return None;
         };
@@ -164,7 +164,7 @@ async fn assert_idle_user_input_reaches_the_first_model_request(
         user_message.client_id
     );
     assert_eq!(expected_input, user_message.content);
-    wait_for_turn_complete(test.codex.as_ref()).await;
+    wait_for_turn_complete(test.myra.as_ref()).await;
 
     let request = response.single_request();
     assert!(
@@ -263,7 +263,7 @@ async fn build_codex(server: &StreamingSseServer) -> Arc<CodexThread> {
         .build_with_streaming_server(server)
         .await
         .expect("build streaming Codex test session")
-        .codex
+        .myra
 }
 
 async fn submit_user_input(codex: &CodexThread, text: &str) {
@@ -285,7 +285,7 @@ async fn submit_user_input(codex: &CodexThread, text: &str) {
 async fn submit_danger_full_access_user_turn(test: &TestCodex, text: &str) {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: text.to_string(),
@@ -468,7 +468,7 @@ async fn queue_only_agent_mail_wakes_sleeping_root_and_persists_message() {
         .build_with_streaming_server(&server)
         .await
         .expect("build Codex test session")
-        .codex;
+        .myra;
 
     enqueue_queue_only_agent_mail(&codex, CHILD_MESSAGE).await;
     wait_for_turn_complete(&codex).await;
@@ -523,7 +523,7 @@ async fn steer_interrupts_wait_agent_and_is_sent_in_follow_up_request() {
         .build_with_streaming_server(&server)
         .await
         .expect("build Codex test session")
-        .codex;
+        .myra;
 
     submit_user_input(&codex, INITIAL_PROMPT).await;
     wait_for_event(&codex, |event| {
@@ -607,7 +607,7 @@ async fn any_new_input_interrupts_sleep() {
         .build_with_streaming_server(&server)
         .await
         .expect("build Codex test session")
-        .codex;
+        .myra;
 
     submit_user_input(&codex, INITIAL_PROMPT).await;
     wait_for_sleep_item_started(&codex, FIRST_SLEEP_CALL_ID, SLEEP_DURATION_MS).await;
@@ -746,7 +746,7 @@ async fn injected_user_input_triggers_follow_up_request_with_deltas() {
         .build_with_streaming_server(&server)
         .await
         .unwrap()
-        .codex;
+        .myra;
 
     codex
         .submit(Op::UserInput {
@@ -1146,7 +1146,7 @@ async fn steered_user_input_waits_for_model_continuation_after_mid_turn_compact(
         .build_with_streaming_server(&server)
         .await
         .expect("build streaming Codex test session")
-        .codex;
+        .myra;
 
     submit_user_input(&codex, "first prompt").await;
     submit_user_input(&codex, "second prompt").await;
@@ -1231,7 +1231,7 @@ async fn steered_user_input_follows_compact_when_only_the_steer_needs_follow_up(
         .build_with_streaming_server(&server)
         .await
         .expect("build streaming Codex test session")
-        .codex;
+        .myra;
 
     submit_user_input(&codex, "first prompt").await;
     wait_for_agent_message(&codex, "first answer").await;
@@ -1348,7 +1348,7 @@ async fn steered_user_input_waits_when_tool_output_triggers_compact_before_next_
         .build_with_streaming_server(&server)
         .await
         .expect("build streaming Codex test session");
-    let codex = test.codex.clone();
+    let codex = test.myra.clone();
 
     submit_danger_full_access_user_turn(&test, "first prompt").await;
     wait_for_event(&codex, |event| matches!(event, EventMsg::TurnStarted(_))).await;

@@ -577,9 +577,9 @@ fn write_plugin_app(
         .join("plugins/cache/test")
         .join(plugin_name)
         .join("local");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         serde_json::to_vec(&json!({
             "name": plugin_name,
             "interface": { "displayName": display_name },

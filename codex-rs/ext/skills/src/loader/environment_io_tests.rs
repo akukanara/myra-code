@@ -221,9 +221,9 @@ async fn loads_nearest_plugin_namespaces_without_reading_unused_sibling_manifest
         (&inner_root, "inner"),
         (&unused_root, "unused"),
     ] {
-        fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("manifest dir");
+        fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("manifest dir");
         fs::write(
-            plugin_root.join(".codex-plugin/plugin.json"),
+            plugin_root.join(".myra-plugin/plugin.json"),
             format!(r#"{{"name":"{name}"}}"#),
         )
         .expect("manifest");
@@ -291,7 +291,7 @@ async fn loads_nearest_plugin_namespaces_without_reading_unused_sibling_manifest
     let mut expected_manifest_reads = [&outer_root, &inner_root]
         .into_iter()
         .map(|plugin_root| {
-            PathUri::from_host_native_path(plugin_root.join(".codex-plugin/plugin.json")).unwrap()
+            PathUri::from_host_native_path(plugin_root.join(".myra-plugin/plugin.json")).unwrap()
         })
         .collect::<Vec<_>>();
     expected_manifest_reads.sort_by_key(ToString::to_string);
@@ -303,7 +303,7 @@ async fn reuses_walk_inventory_for_missing_skill_metadata() {
     const SKILL_COUNT: usize = 66;
 
     let root = tempdir().expect("tempdir");
-    let manifest_path = root.path().join(".codex-plugin/plugin.json");
+    let manifest_path = root.path().join(".myra-plugin/plugin.json");
     fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("manifest dir");
     fs::write(&manifest_path, r#"{"name":"inventory"}"#).expect("manifest");
 
@@ -372,7 +372,7 @@ async fn reuses_walk_inventory_for_missing_skill_metadata() {
 #[tokio::test]
 async fn reads_skill_files_while_resolving_plugin_namespaces() {
     let root = tempdir().expect("tempdir");
-    let manifest_path = root.path().join(".codex-plugin/plugin.json");
+    let manifest_path = root.path().join(".myra-plugin/plugin.json");
     fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("manifest dir");
     fs::write(&manifest_path, r#"{"name":"parallel"}"#).expect("manifest");
     let skill_path = root.path().join("demo/SKILL.md");

@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use std::time::Instant;
 
-use codex_utils_home_dir::find_codex_home;
+use codex_utils_home_dir::find_myra_home;
 
 const OAUTH_LOCK_DIR: &str = "mcp-oauth-locks";
 const STORE_LOCK_ACQUIRE_TIMEOUT: Duration = Duration::from_secs(60);
@@ -53,11 +53,11 @@ pub(super) struct OAuthStoreLock {
 impl OAuthStoreLock {
     pub(super) fn acquire(store: OAuthStore) -> Result<Self, OAuthStoreLockFailure> {
         // This lock intentionally follows the existing local File/Secrets credential-store
-        // authority. Those stores are CODEX_HOME-backed today: if CODEX_HOME is unset they use
-        // the default home (`~/.codex`), and if an embedder has no local home/filesystem authority
+        // authority. Those stores are MYRA_HOME-backed today: if MYRA_HOME is unset they use
+        // the default home (`~/.myra`), and if an embedder has no local home/filesystem authority
         // those stores already cannot operate. A future provider-backed credential store should
         // provide its own matching lock authority instead of using this local path.
-        let codex_home = find_codex_home()
+        let codex_home = find_myra_home()
             .map_err(|source| OAuthStoreLockFailure::CodexHome { store, source })?;
         Self::acquire_in(&codex_home, store, STORE_LOCK_ACQUIRE_TIMEOUT)
     }
@@ -129,7 +129,7 @@ impl OAuthStoreLock {
 /// newer credential in File while a stale Secrets entry remains preferred.
 #[derive(Debug, thiserror::Error)]
 pub(super) enum OAuthStoreLockFailure {
-    #[error("failed to resolve CODEX_HOME for MCP OAuth {store} aggregate-store lock")]
+    #[error("failed to resolve MYRA_HOME for MCP OAuth {store} aggregate-store lock")]
     CodexHome {
         store: OAuthStore,
         #[source]

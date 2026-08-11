@@ -1257,7 +1257,7 @@ pub fn load_plugin_hooks(
         Some(PluginManifestHooks::Inline(hooks_files)) => {
             let manifest_path = find_plugin_manifest_path(plugin_root.as_path())
                 .and_then(|path| AbsolutePathBuf::try_from(path).ok())
-                .unwrap_or_else(|| plugin_root.join(".codex-plugin/plugin.json"));
+                .unwrap_or_else(|| plugin_root.join(".myra-plugin/plugin.json"));
             for (index, hooks_file) in hooks_files.iter().enumerate() {
                 if hooks_file.hooks.is_empty() {
                     continue;

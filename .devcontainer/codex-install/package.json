@@ -1,7 +1,7 @@
 {
-  "name": "codex-devcontainer-install",
+  "name": "myra-devcontainer-install",
   "private": true,
-  "description": "Locked Codex CLI install boundary for the secure devcontainer.",
+  "description": "Locked Myra CLI install boundary for the secure devcontainer.",
   "dependencies": {
     "@myralith/myra": "0.121.0"
   },

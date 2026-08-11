@@ -4,18 +4,16 @@ use lazy_static::lazy_static;
 use rand::Rng;
 
 const ANNOUNCEMENT_TIP_URL: &str =
-    "https://raw.githubusercontent.com/openai/codex/main/announcement_tip.toml";
+    "https://raw.githubusercontent.com/akukanara/myra-code/main/announcement_tip.toml";
 
 const IS_MACOS: bool = cfg!(target_os = "macos");
 const IS_WINDOWS: bool = cfg!(target_os = "windows");
 
 const APP_TOOLTIP: &str = "Myralith Myra siap membantu proyek koding kamu!";
-const FAST_TOOLTIP: &str =
-    "Gunakan model Gemini 3.6 Flash untuk respon yang super cepat.";
+const FAST_TOOLTIP: &str = "Gunakan model Gemini 3.6 Flash untuk respon yang super cepat.";
 const OTHER_TOOLTIP: &str = "Myra dilengkapi dengan berbagai perkakas pemrograman canggih.";
 const OTHER_TOOLTIP_NON_MAC: &str = "Bangun proyek kamu lebih cepat bersama Myra.";
-const FREE_GO_TOOLTIP: &str =
-    "Selamat berkoding bersama Myra!";
+const FREE_GO_TOOLTIP: &str = "Selamat berkoding bersama Myra!";
 
 const RAW_TOOLTIPS: &str = include_str!("../tooltips.txt");
 
@@ -27,7 +25,7 @@ lazy_static! {
             if line.is_empty() || line.starts_with('#') {
                 return false;
             }
-            if !IS_MACOS && !IS_WINDOWS && line.contains("codex app") {
+            if !IS_MACOS && !IS_WINDOWS && line.contains("myra app") {
                 return false;
             }
             true
@@ -48,7 +46,7 @@ fn experimental_tooltips() -> Vec<&'static str> {
         .collect()
 }
 
-/// Pick a random tooltip to show to the user when starting Codex.
+/// Pick a random tooltip to show to the user when starting Myra.
 pub(crate) fn get_tooltip(plan: Option<PlanType>, fast_mode_enabled: bool) -> Option<String> {
     let mut rng = rand::rng();
 
@@ -457,7 +455,7 @@ from_date = "2000-01-01"
 # target_oses optionally restricts the announcement to operating systems like ["macos", "windows"].
 
 [[announcements]]
-content = "Welcome to MyraCode! Check out the new onboarding flow."
+content = "Welcome to Myra! Check out the new onboarding flow."
 from_date = "2024-10-01"
 to_date = "2024-10-15"
 target_app = "cli"

@@ -14,7 +14,7 @@ use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::ConfigOverrides;
 use codex_core::config::NetworkProxyAuditMetadata;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core::exec_env::create_env;
 #[cfg(target_os = "macos")]
 use codex_core::spawn::CODEX_SANDBOX_ENV_VAR;
@@ -556,7 +556,7 @@ async fn load_debug_sandbox_config(
     let cloud_config_bundle = cloud_config::bootstrap_cloud_config_bundle(
         &cli_overrides,
         &options,
-        find_codex_home,
+        find_myra_home,
         strict_config,
     )
     .await?;

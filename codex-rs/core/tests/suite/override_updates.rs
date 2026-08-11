@@ -37,7 +37,7 @@ async fn thread_settings_update_without_user_turn_does_not_record_permissions_up
     let test = builder.build(&server).await?;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             ..Default::default()
@@ -45,10 +45,10 @@ async fn thread_settings_update_without_user_turn_does_not_record_permissions_up
     )
     .await?;
 
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     assert!(
         !rollout_path.exists(),
         "did not expect a rollout before a new user turn"
@@ -67,7 +67,7 @@ async fn thread_settings_update_without_user_turn_does_not_record_environment_up
     let new_cwd = TempDir::new()?;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(new_cwd.abs())),
             ..Default::default()
@@ -75,10 +75,10 @@ async fn thread_settings_update_without_user_turn_does_not_record_environment_up
     )
     .await?;
 
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     assert!(
         !rollout_path.exists(),
         "did not expect a rollout before a new user turn"
@@ -98,7 +98,7 @@ async fn thread_settings_update_without_user_turn_does_not_record_collaboration_
     let collaboration_mode = collab_mode_with_instructions(Some(collab_text));
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             collaboration_mode: Some(collaboration_mode),
             ..Default::default()
@@ -106,10 +106,10 @@ async fn thread_settings_update_without_user_turn_does_not_record_collaboration_
     )
     .await?;
 
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     assert!(
         !rollout_path.exists(),
         "did not expect a rollout before a new user turn"

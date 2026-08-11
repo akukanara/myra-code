@@ -416,7 +416,7 @@ def test_official_diagnostics_redact_oauth_secrets() -> None:
 
 
 def test_retained_artifacts_remove_oauth_credential_store(tmp_path: Path) -> None:
-    codex_home = tmp_path / "codex-home"
+    codex_home = tmp_path / "myra-home"
     codex_home.mkdir()
     credentials = codex_home / ".credentials.json"
     credentials.write_text('{"client_secret":"do-not-retain"}', encoding="utf-8")

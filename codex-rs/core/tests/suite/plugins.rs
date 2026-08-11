@@ -93,9 +93,9 @@ fn write_sample_plugin_manifest_and_config_at_root(
     plugin_root: std::path::PathBuf,
     plugin_config_name: &str,
 ) -> std::path::PathBuf {
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create plugin manifest dir");
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         format!(
             r#"{{"name":"{SAMPLE_PLUGIN_DISPLAY_NAME}","description":"{SAMPLE_PLUGIN_DESCRIPTION}"}}"#
         ),
@@ -116,12 +116,12 @@ fn write_remote_plugin_script_and_config(home: &TempDir) -> std::path::PathBuf {
     let store = PluginStore::new(home.path().to_path_buf());
     let plugin_root = store.plugin_root(&plugin_id, "1.2.3");
     let script_path = plugin_root.join("scripts/run.sh");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))
         .expect("create remote plugin manifest dir");
     std::fs::create_dir_all(script_path.parent().expect("script parent"))
         .expect("create remote plugin scripts dir");
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"sample","version":"1.2.3"}"#,
     )
     .expect("write remote plugin manifest");
@@ -387,7 +387,7 @@ async fn persisted_remote_plugin_command_attribution_flows_through_turn_context(
         .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model("gpt-5.2");
     let test_codex = builder.build_with_auto_env(&server).await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
     let cwd = test_codex.config.cwd.clone();
     let session_model = test_codex.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
@@ -460,7 +460,7 @@ async fn agent_plugin_skills_use_shared_catalog_and_direct_child_discovery() -> 
         .await?;
 
     test_codex
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Skill {
                 name: "acme.tools:review".into(),
@@ -472,7 +472,7 @@ async fn agent_plugin_skills_use_shared_catalog_and_direct_child_discovery() -> 
             thread_settings: Default::default(),
         })
         .await?;
-    let warning = wait_for_event(&test_codex.codex, |ev| {
+    let warning = wait_for_event(&test_codex.myra, |ev| {
         matches!(
             ev,
             EventMsg::Warning(warning)
@@ -480,7 +480,7 @@ async fn agent_plugin_skills_use_shared_catalog_and_direct_child_discovery() -> 
         )
     })
     .await;
-    wait_for_event(&test_codex.codex, |ev| {
+    wait_for_event(&test_codex.myra, |ev| {
         matches!(ev, EventMsg::TurnComplete(_))
     })
     .await;
@@ -528,7 +528,7 @@ async fn legacy_plugin_skill_prompt_remains_complete() -> Result<()> {
         .await?;
 
     test_codex
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Skill {
                 name: "sample:sample-search".into(),
@@ -540,7 +540,7 @@ async fn legacy_plugin_skill_prompt_remains_complete() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test_codex.codex, |ev| {
+    wait_for_event(&test_codex.myra, |ev| {
         matches!(ev, EventMsg::TurnComplete(_))
     })
     .await;
@@ -617,7 +617,7 @@ async fn agent_plugin_root_mcp_stdio_tool_round_trip_expands_reserved_paths() ->
         .with_home(Arc::clone(&codex_home))
         .build(&server)
         .await?;
-    wait_for_mcp_server(&test_codex.codex, "agent").await?;
+    wait_for_mcp_server(&test_codex.myra, "agent").await?;
     let data_root = std::fs::read_dir(codex_home.path().join("plugins/data/agent-plugins"))?
         .next()
         .expect("Agent Plugin data root")?
@@ -630,7 +630,7 @@ async fn agent_plugin_root_mcp_stdio_tool_round_trip_expands_reserved_paths() ->
     );
 
     test_codex
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "call the Agent Plugin echo tool".into(),
@@ -642,11 +642,11 @@ async fn agent_plugin_root_mcp_stdio_tool_round_trip_expands_reserved_paths() ->
             thread_settings: Default::default(),
         })
         .await?;
-    let end = wait_for_event(&test_codex.codex, |event| {
+    let end = wait_for_event(&test_codex.myra, |event| {
         matches!(event, EventMsg::McpToolCallEnd(_))
     })
     .await;
-    wait_for_event(&test_codex.codex, |event| {
+    wait_for_event(&test_codex.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -837,9 +837,9 @@ enabled = true
                 .join(marketplace_name)
                 .join(plugin_name)
                 .join("local");
-            std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+            std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
             std::fs::write(
-                plugin_root.join(".codex-plugin/plugin.json"),
+                plugin_root.join(".myra-plugin/plugin.json"),
                 format!(r#"{{"name":"{plugin_name}","description":"{plugin_name}"}}"#),
             )?;
             let skill_dir = plugin_root.join("skills").join(skill_name);
@@ -957,7 +957,7 @@ async fn explicit_plugin_mentions_use_apps_for_chatgpt_dual_surface_plugins(
     let test_codex =
         build_apps_enabled_plugin_test_codex(&server, codex_home, apps_server.chatgpt_base_url)
             .await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
     wait_for_mcp_server(&codex, CODEX_APPS_MCP_SERVER_NAME).await?;
 
     codex
@@ -1041,7 +1041,7 @@ async fn explicit_plugin_mentions_keep_non_conflicting_mcp_for_chatgpt_auth() ->
     let test_codex =
         build_apps_enabled_plugin_test_codex(&server, codex_home, apps_server.chatgpt_base_url)
             .await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
     wait_for_mcp_server(&codex, "sample").await?;
 
     codex
@@ -1128,7 +1128,7 @@ async fn explicitly_requested_mcp_waits_for_startup(request: ExplicitMcpRequest)
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
 
     let input = match request {
         ExplicitMcpRequest::Plugin => UserInput::Mention {
@@ -1227,7 +1227,7 @@ async fn explicit_plugin_mentions_track_plugin_used_analytics() -> Result<()> {
     let codex_home = Arc::new(TempDir::new()?);
     write_plugin_skill_plugin(codex_home.as_ref());
     let test_codex = build_analytics_plugin_test_codex(&server, codex_home).await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
 
     codex
         .submit(Op::UserInput {
@@ -1282,7 +1282,7 @@ async fn explicit_plugin_skill_invocation_tracks_remote_plugin_id() -> Result<()
     let skill_path = std::fs::canonicalize(write_remote_plugin_skill_plugin(codex_home.as_ref()))?;
     persist_sample_remote_plugin_id(codex_home.as_ref());
     let test_codex = build_analytics_plugin_test_codex(&server, codex_home).await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
 
     codex
         .submit(Op::UserInput {
@@ -1365,7 +1365,7 @@ async fn implicit_plugin_skill_invocation_tracks_remote_plugin_id(
     )
     .await;
     let test_codex = build_analytics_plugin_test_codex(&server, codex_home).await?;
-    let codex = Arc::clone(&test_codex.codex);
+    let codex = Arc::clone(&test_codex.myra);
 
     codex
         .submit(Op::UserInput {

@@ -4332,7 +4332,7 @@ async fn command_execution_notifications_include_trusted_plugin_id() -> Result<(
     let script_path = plugin_root.join("scripts/run.sh");
     let synced_root = codex_home.path().join(".tmp/plugins");
     for path in [
-        plugin_root.join(".codex-plugin"),
+        plugin_root.join(".myra-plugin"),
         script_path
             .parent()
             .expect("script path should have parent")
@@ -4342,7 +4342,7 @@ async fn command_execution_notifications_include_trusted_plugin_id() -> Result<(
         std::fs::create_dir_all(path)?;
     }
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"google-calendar","version":"0.1.0"}"#,
     )?;
     std::fs::write(&script_path, "echo hi\n")?;

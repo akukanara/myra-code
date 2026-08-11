@@ -195,7 +195,7 @@ fn catalog_budget_uses_context_percentage_or_character_fallback() {
 
 #[test]
 fn path_aliases_are_not_used_without_budget_pressure() {
-    let root = "/Users/test/.codex/plugins/cache/openai-curated/example/hash/skills";
+    let root = "/Users/test/.myra/plugins/cache/openai-curated/example/hash/skills";
     let catalog = SkillCatalog {
         entries: vec![
             entry("alpha", "Alpha skill.", /*short_description*/ None)
@@ -226,7 +226,7 @@ fn path_aliases_are_not_used_without_budget_pressure() {
 
 #[test]
 fn path_aliases_retain_every_skill_under_budget_pressure() {
-    let root = "/Users/test/.codex/plugins/cache/openai-curated/example/hash1234567890/skills-with-a-very-long-shared-prefix";
+    let root = "/Users/test/.myra/plugins/cache/openai-curated/example/hash1234567890/skills-with-a-very-long-shared-prefix";
     let entries = (0..12)
         .map(|index| {
             let name = format!("shared-root-skill-{index}");
@@ -364,7 +364,7 @@ async fn host_alias_roots_follow_core_discovery_order() -> Result<(), Box<dyn st
 
 #[test]
 fn mixed_catalogs_keep_absolute_authority_aware_rendering_under_budget_pressure() {
-    let root = "/Users/test/.codex/plugins/cache/openai-curated/example/hash1234567890/skills-with-a-very-long-shared-prefix";
+    let root = "/Users/test/.myra/plugins/cache/openai-curated/example/hash1234567890/skills-with-a-very-long-shared-prefix";
     let mut entries = (0..12)
         .map(|index| {
             let name = format!("host-skill-{index}");
@@ -576,8 +576,8 @@ fn mixed_catalog_prefers_executor_inclusion_over_total_aliased_inclusion() {
 
 #[test]
 fn singleton_plugin_versions_share_the_marketplace_alias_root() {
-    let github_root = "/Users/test/.codex/plugins/cache/openai-curated/github/hash123/skills";
-    let slack_root = "/Users/test/.codex/plugins/cache/openai-curated/slack/hash456/skills";
+    let github_root = "/Users/test/.myra/plugins/cache/openai-curated/github/hash123/skills";
+    let slack_root = "/Users/test/.myra/plugins/cache/openai-curated/slack/hash456/skills";
     let entries = [
         entry("github", "GitHub skill.", /*short_description*/ None)
             .with_display_path(format!("{github_root}/github/SKILL.md"))
@@ -596,7 +596,7 @@ fn singleton_plugin_versions_share_the_marketplace_alias_root() {
 
     assert_eq!(
         plan.skill_root_lines,
-        vec!["- `r0` = `/Users/test/.codex/plugins/cache/openai-curated`".to_string()]
+        vec!["- `r0` = `/Users/test/.myra/plugins/cache/openai-curated`".to_string()]
     );
     assert_eq!(
         render_skill_path_with_aliases(&entries[0], &plan),

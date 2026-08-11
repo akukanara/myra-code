@@ -65,7 +65,7 @@ async fn new_thread_is_recorded_in_state_db() -> Result<()> {
     let test = builder.build(&server).await?;
 
     let thread_id = test.session_configured.thread_id;
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let db_path = test.config.sqlite.state_db_path();
 
     for _ in 0..100 {
@@ -75,7 +75,7 @@ async fn new_thread_is_recorded_in_state_db() -> Result<()> {
         tokio::time::sleep(Duration::from_millis(25)).await;
     }
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.myra.state_db().expect("state db enabled");
     assert!(
         !rollout_path.exists(),
         "fresh thread rollout should not be materialized before first user message"
@@ -435,7 +435,7 @@ async fn backfill_scans_existing_rollouts() -> Result<()> {
         tokio::time::sleep(Duration::from_millis(25)).await;
     }
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.myra.state_db().expect("state db enabled");
 
     let mut metadata = None;
     for _ in 0..40 {
@@ -486,7 +486,7 @@ async fn user_messages_persist_in_state_db() -> Result<()> {
     test.submit_turn("hello from sqlite").await?;
     test.submit_turn("another message").await?;
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.myra.state_db().expect("state db enabled");
     let thread_id = test.session_configured.thread_id;
 
     let mut metadata = None;
@@ -529,7 +529,7 @@ async fn web_search_marks_thread_memory_mode_polluted_when_configured() -> Resul
         config.memories.disable_on_external_context = true;
     });
     let test = builder.build(&server).await?;
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.myra.state_db().expect("state db enabled");
     let thread_id = test.session_configured.thread_id;
 
     test.submit_turn("search the web").await?;
@@ -607,7 +607,7 @@ async fn standalone_web_search_marks_thread_memory_mode_polluted_when_configured
                 .expect("web search mode should be accepted");
         });
     let test = builder.build(&server).await?;
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.myra.state_db().expect("state db enabled");
     let thread_id = test.session_configured.thread_id;
 
     test.submit_turn("search the web").await?;
@@ -702,14 +702,14 @@ async fn mcp_call_marks_thread_memory_mode_polluted_when_configured() -> Result<
             .expect("test mcp servers should accept any configuration");
     });
     let test = builder.build(&server).await?;
-    wait_for_mcp_server(&test.codex, server_name).await?;
-    let db = test.codex.state_db().expect("state db enabled");
+    wait_for_mcp_server(&test.myra, server_name).await?;
+    let db = test.myra.state_db().expect("state db enabled");
     let thread_id = test.session_configured.thread_id;
     let cwd = test.config.cwd.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), cwd.as_path());
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "call the rmcp echo tool".to_string(),
@@ -735,11 +735,11 @@ async fn mcp_call_marks_thread_memory_mode_polluted_when_configured() -> Result<
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallEnd(_))
     })
     .await;
-    wait_for_event_match(&test.codex, |event| match event {
+    wait_for_event_match(&test.myra, |event| match event {
         EventMsg::Error(err) => Some(Err(anyhow::anyhow!(err.message.clone()))),
         EventMsg::TurnComplete(_) => Some(Ok(())),
         _ => None,
@@ -789,7 +789,7 @@ async fn tool_call_logs_include_thread_id() -> Result<()> {
             .expect("test config should allow feature update");
     });
     let test = builder.build(&server).await?;
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.myra.state_db().expect("state db enabled");
     let expected_thread_id = test.session_configured.thread_id.to_string();
 
     test.submit_turn("run a shell command").await?;

@@ -102,7 +102,7 @@ async fn submit_user_turn(
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.cwd.path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: text.to_string(),
@@ -138,7 +138,7 @@ async fn wait_for_mcp_tool_call_item(
     call_id: &str,
     status: McpToolCallStatus,
 ) -> Option<bool> {
-    wait_for_event_match(&test.codex, |event| {
+    wait_for_event_match(&test.myra, |event| {
         let item = match event {
             EventMsg::ItemStarted(event) => &event.item,
             EventMsg::ItemCompleted(event) => &event.item,
@@ -209,7 +209,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
     )
     .await?;
 
-    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallBegin(_))
     })
     .await
@@ -218,7 +218,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
     };
     assert_eq!(begin.call_id, call_id);
 
-    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ElicitationRequest(_) | EventMsg::TurnComplete(_)
@@ -229,7 +229,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
         panic!("expected apps._default user to route the app approval to the user");
     };
 
-    test.codex
+    test.myra
         .submit(Op::ResolveElicitation {
             server_name: request.server_name,
             request_id: request.id,
@@ -239,7 +239,7 @@ async fn approved_mcp_tool_call_metadata_records_prior_user_input_request() -> R
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -328,7 +328,7 @@ async fn apps_default_prompt_with_auto_review_routes_actual_mcp_approval_to_guar
     )
     .await?;
 
-    let route_event = wait_for_event(&test.codex, |event| {
+    let route_event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ElicitationRequest(_) | EventMsg::TurnComplete(_)
@@ -432,7 +432,7 @@ async fn apps_default_writes_prompts_for_writes_but_not_reads() -> Result<()> {
         wait_for_mcp_tool_call_item(&test, read_call_id, McpToolCallStatus::InProgress).await,
         Some(true)
     );
-    let EventMsg::McpToolCallBegin(read_begin) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallBegin(read_begin) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallBegin(_))
     })
     .await
@@ -450,7 +450,7 @@ async fn apps_default_writes_prompts_for_writes_but_not_reads() -> Result<()> {
         wait_for_mcp_tool_call_item(&test, write_call_id, McpToolCallStatus::InProgress).await,
         Some(false)
     );
-    let next_route = wait_for_event(&test.codex, |event| {
+    let next_route = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::McpToolCallBegin(_) | EventMsg::ElicitationRequest(_)
@@ -463,7 +463,7 @@ async fn apps_default_writes_prompts_for_writes_but_not_reads() -> Result<()> {
     assert_eq!(write_begin.call_id, write_call_id);
     assert_eq!(write_begin.read_only_hint, Some(false));
 
-    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ElicitationRequest(_) | EventMsg::TurnComplete(_)
@@ -474,7 +474,7 @@ async fn apps_default_writes_prompts_for_writes_but_not_reads() -> Result<()> {
         panic!("write app action should prompt in writes mode");
     };
 
-    test.codex
+    test.myra
         .submit(Op::ResolveElicitation {
             server_name: request.server_name,
             request_id: request.id,
@@ -488,7 +488,7 @@ async fn apps_default_writes_prompts_for_writes_but_not_reads() -> Result<()> {
         wait_for_mcp_tool_call_item(&test, write_call_id, McpToolCallStatus::Completed).await,
         Some(false)
     );
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -497,9 +497,9 @@ async fn apps_default_writes_prompts_for_writes_but_not_reads() -> Result<()> {
     recorded_apps_tool_call_by_call_id(&server, read_call_id).await;
     recorded_apps_tool_call_by_call_id(&server, write_call_id).await;
 
-    test.codex.ensure_rollout_materialized().await;
-    test.codex.flush_rollout().await?;
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    test.myra.ensure_rollout_materialized().await;
+    test.myra.flush_rollout().await?;
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let persisted_hints = tokio::fs::read_to_string(rollout_path)
         .await?
         .lines()
@@ -605,14 +605,14 @@ async fn mcp_tool_call_metadata_records_prior_request_user_input_tool() -> Resul
     )
     .await?;
 
-    let request = wait_for_event_match(&test.codex, |event| match event {
+    let request = wait_for_event_match(&test.myra, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
     .await;
     assert_eq!(request.call_id, request_user_input_call_id);
 
-    test.codex
+    test.myra
         .submit(Op::UserInputAnswer {
             id: request.turn_id,
             response: RequestUserInputResponse {
@@ -626,7 +626,7 @@ async fn mcp_tool_call_metadata_records_prior_request_user_input_tool() -> Resul
         })
         .await?;
 
-    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallBegin(_))
     })
     .await
@@ -635,7 +635,7 @@ async fn mcp_tool_call_metadata_records_prior_request_user_input_tool() -> Resul
     };
     assert_eq!(begin.call_id, calendar_call_id);
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

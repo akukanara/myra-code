@@ -145,7 +145,7 @@ async fn submit_turn_with_timeout(test: &TestCodex, prompt: &str) -> Result<()> 
     let cwd = test.config.cwd.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::workspace_write(), cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -223,7 +223,7 @@ where
     let mut seen_events = Vec::new();
     tokio::time::timeout(TURN_TIMEOUT, async {
         loop {
-            let event = test.codex.next_event().await?;
+            let event = test.myra.next_event().await?;
             seen_events.push(event_summary(&event.msg));
             if predicate(&event.msg) {
                 return Ok::<EventMsg, anyhow::Error>(event.msg);

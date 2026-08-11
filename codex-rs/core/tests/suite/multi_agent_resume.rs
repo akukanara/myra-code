@@ -257,7 +257,7 @@ async fn cold_root_resume_restores_agent_identity_and_role_on_followup() -> Resu
         thread_settings.permission_profile = Some(PermissionProfile::Disabled);
     }
     initial
-        .codex
+        .myra
         .submit_with_id(Submission {
             id: "spoofed-root-turn".to_string(),
             op,
@@ -266,7 +266,7 @@ async fn cold_root_resume_restores_agent_identity_and_role_on_followup() -> Resu
             parent_turn_id: Some("spoofed-parent-turn".to_string()),
         })
         .await?;
-    wait_for_event(&initial.codex, |event| {
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -376,7 +376,7 @@ async fn cold_root_resume_restores_agent_identity_and_role_on_followup() -> Resu
     .await;
     sibling_thread.flush_rollout().await?;
     worker_thread.flush_rollout().await?;
-    initial.codex.flush_rollout().await?;
+    initial.myra.flush_rollout().await?;
     sibling_thread.shutdown_and_wait().await?;
     worker_thread.shutdown_and_wait().await?;
     drop(sibling_thread);

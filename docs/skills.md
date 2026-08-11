@@ -41,7 +41,7 @@ Where skills are read from, in order of specificity:
 | --- | --- |
 | `<project>/.agents/skills` | this repository |
 | `~/.myra/skills` | this machine |
-| `/etc/codex/skills` | this host, set by an administrator |
+| `/etc/myra/skills` | this host, set by an administrator |
 
 ## Installing from the gateway
 

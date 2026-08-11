@@ -375,7 +375,7 @@ async fn symlinked_cwd_uses_logical_parent_for_agents_discovery() -> Result<()> 
         .expect("symlink should have a parent");
 
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![
             PathUri::from_abs_path(&logical_root.join("AGENTS.md")),
             PathUri::from_abs_path(&test.config.cwd.join("AGENTS.md"))
@@ -425,7 +425,7 @@ async fn selected_environment_sources_match_model_visible_instructions() -> Resu
     let global_agents = global_agents.abs();
 
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![
             PathUri::from_abs_path(&global_agents),
             PathUri::from_abs_path(&project_agents),
@@ -562,7 +562,7 @@ async fn fresh_thread_composes_global_before_project_and_reports_sources() -> Re
     ];
 
     // Confirm the thread records both creation-time sources in composition order.
-    assert_eq!(test.codex.instruction_sources().await, creation_sources);
+    assert_eq!(test.myra.instruction_sources().await, creation_sources);
 
     // Materialize the initial snapshot, then rewrite both selected files in place before another
     // ordinary turn.
@@ -618,7 +618,7 @@ async fn fresh_thread_composes_global_before_project_and_reports_sources() -> Re
         "expected rendered instructions to contain {PROJECT_SEPARATOR:?}; observed: {rendered}"
     );
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         creation_sources,
         "ordinary turns retain the creation-time source list"
     );
@@ -774,7 +774,7 @@ async fn invalid_utf8_global_instructions_are_lossy() -> Result<()> {
         .await?;
 
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)]
     );
     let expected_fragment =
@@ -819,7 +819,7 @@ async fn cold_resume_invalidates_deleted_legacy_agents_md_once() -> Result<()> {
 
     // Assert the pre-resume thread reports the source used to create its snapshot.
     assert_eq!(
-        initial.codex.instruction_sources().await,
+        initial.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&old_source)],
         "initial thread reports the creation-time global source"
     );
@@ -829,8 +829,8 @@ async fn cold_resume_invalidates_deleted_legacy_agents_md_once() -> Result<()> {
         .rollout_path
         .clone()
         .expect("rollout path");
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |event| {
+    initial.myra.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.myra, |event| {
         matches!(event, EventMsg::ShutdownComplete)
     })
     .await;
@@ -846,7 +846,7 @@ async fn cold_resume_invalidates_deleted_legacy_agents_md_once() -> Result<()> {
 
     // Model history still contains the old fragment, but the source no longer exists.
     assert_eq!(
-        resumed.codex.instruction_sources().await,
+        resumed.myra.instruction_sources().await,
         Vec::<PathUri>::new(),
         "resume reports no deleted instruction source"
     );
@@ -912,14 +912,14 @@ async fn fork_injects_changed_agents_md_once() -> Result<()> {
 
     // Assert the parent reports the source used to create its snapshot.
     assert_eq!(
-        parent.codex.instruction_sources().await,
+        parent.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "parent reports the creation-time global source"
     );
     parent.submit_turn("persist instructions").await?;
-    parent.codex.ensure_rollout_materialized().await;
-    parent.codex.flush_rollout().await?;
-    let rollout_path = parent.codex.rollout_path().expect("rollout path");
+    parent.myra.ensure_rollout_materialized().await;
+    parent.myra.flush_rollout().await?;
+    let rollout_path = parent.myra.rollout_path().expect("rollout path");
 
     // Add a preferred override source, then fork with freshly loaded configuration.
     let new_source = write_global_file(
@@ -1064,7 +1064,7 @@ async fn run_subagent_global_instruction_case(fork_context: bool) -> Result<()> 
 
     // Assert the parent reports the creation-time source before spawning.
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "parent reports the creation-time global source before spawning"
     );
@@ -1107,7 +1107,7 @@ async fn run_subagent_global_instruction_case(fork_context: bool) -> Result<()> 
     assert_single_instruction_fragment(&spawn_request, &expected_fragment);
     assert_single_instruction_fragment(&child_request, &expected_fragment);
     assert_eq!(
-        test.codex.instruction_sources().await,
+        test.myra.instruction_sources().await,
         vec![PathUri::from_abs_path(&source)],
         "running parent retains the creation-time global source after spawning"
     );

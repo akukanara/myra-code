@@ -145,9 +145,9 @@ mod tests {
         let skill_path = plugin_root.join("skills/search/SKILL.md");
 
         fs::create_dir_all(skill_path.parent().expect("parent")).expect("mkdir");
-        fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("mkdir manifest");
+        fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("mkdir manifest");
         fs::write(
-            plugin_root.join(".codex-plugin/plugin.json"),
+            plugin_root.join(".myra-plugin/plugin.json"),
             r#"{"name":"sample"}"#,
         )
         .expect("write manifest");
@@ -219,7 +219,7 @@ mod tests {
     fn ignores_unrelated_root_plugin_manifest_before_legacy_fallback() {
         let tmp = tempdir().expect("tempdir");
         let plugin_root = tmp.path().join("plugins/sample");
-        let legacy_path = plugin_root.join(".codex-plugin/plugin.json");
+        let legacy_path = plugin_root.join(".myra-plugin/plugin.json");
         fs::create_dir_all(legacy_path.parent().expect("parent")).expect("mkdir");
         fs::write(plugin_root.join("plugin.json"), r#"{"name":"npm-package"}"#)
             .expect("write unrelated root");
@@ -232,7 +232,7 @@ mod tests {
     fn rejects_nonregular_root_plugin_manifest() {
         let tmp = tempdir().expect("tempdir");
         let plugin_root = tmp.path().join("plugins/sample");
-        let legacy_path = plugin_root.join(".codex-plugin/plugin.json");
+        let legacy_path = plugin_root.join(".myra-plugin/plugin.json");
         fs::create_dir_all(plugin_root.join("plugin.json")).expect("root manifest directory");
         fs::create_dir_all(legacy_path.parent().expect("parent")).expect("legacy parent");
         fs::write(&legacy_path, r#"{"name":"sample"}"#).expect("legacy manifest");
@@ -246,7 +246,7 @@ mod tests {
         let tmp = tempdir().expect("tempdir");
         let plugin_root = tmp.path().join("plugins/sample");
         let manifest_target = tmp.path().join("manifest.json");
-        let legacy_path = plugin_root.join(".codex-plugin/plugin.json");
+        let legacy_path = plugin_root.join(".myra-plugin/plugin.json");
         fs::create_dir_all(&plugin_root).expect("plugin root");
         fs::write(
             &manifest_target,
@@ -265,7 +265,7 @@ mod tests {
     fn preserves_codex_claude_cursor_legacy_precedence() {
         let tmp = tempdir().expect("tempdir");
         let plugin_root = tmp.path().join("plugins/sample");
-        let codex_path = plugin_root.join(".codex-plugin/plugin.json");
+        let codex_path = plugin_root.join(".myra-plugin/plugin.json");
         let claude_path = plugin_root.join(".claude-plugin/plugin.json");
         let cursor_path = plugin_root.join(".cursor-plugin/plugin.json");
         for path in [&codex_path, &claude_path, &cursor_path] {

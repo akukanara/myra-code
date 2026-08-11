@@ -29,7 +29,7 @@ use tempfile::TempDir;
 use tokio::sync::Notify;
 use tokio::sync::Semaphore;
 
-const REPO_ROOT_CONFIG_DIR_NAME: &str = ".codex";
+const REPO_ROOT_CONFIG_DIR_NAME: &str = ".myra";
 const SKILLS_DIR_NAME: &str = "skills";
 
 struct BlockingRepoSkillRootFileSystem {
@@ -228,7 +228,7 @@ fn write_skill_interface_at(skill_dir: &Path, contents: &str) -> PathBuf {
 }
 
 fn write_plugin_manifest(plugin_root: &Path, contents: &str) {
-    let manifest_path = plugin_root.join(".codex-plugin/plugin.json");
+    let manifest_path = plugin_root.join(".myra-plugin/plugin.json");
     fs::create_dir_all(manifest_path.parent().expect("manifest parent")).unwrap();
     fs::write(manifest_path, contents).unwrap();
 }
@@ -694,7 +694,7 @@ async fn does_not_loop_on_symlink_cycle_for_user_scope() {
     let codex_home = tempfile::tempdir().expect("tempdir");
 
     // Create a cycle:
-    //   $CODEX_HOME/skills/cycle/loop -> $CODEX_HOME/skills/cycle
+    //   $MYRA_HOME/skills/cycle/loop -> $MYRA_HOME/skills/cycle
     let cycle_dir = codex_home.path().join("skills/cycle");
     fs::create_dir_all(&cycle_dir).unwrap();
     symlink_dir(&cycle_dir, &cycle_dir.join("loop"));
@@ -978,9 +978,9 @@ async fn namespaces_plugin_skills_using_provided_namespace() {
         "sample-search",
         "description: search sample data",
     );
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"should-not-be-read"}"#,
     )
     .unwrap();
@@ -1154,7 +1154,7 @@ async fn invalid_nested_plugin_manifest_falls_back_to_outer_namespace() {
 #[tokio::test]
 async fn does_not_inherit_namespace_for_skills_in_symlinked_plain_dir() {
     // outer-plugin/
-    // ├── .codex-plugin/plugin.json
+    // ├── .myra-plugin/plugin.json
     // └── skills/linked-plain -> plain-root/
     // plain-root/
     // └── search/SKILL.md
@@ -1195,7 +1195,7 @@ async fn does_not_inherit_namespace_for_skills_in_symlinked_plain_dir() {
 async fn keeps_inherited_namespace_when_symlink_target_is_scan_root_ancestor() {
     // temp-root/
     // └── a/b/c/d/e/f/outer-plugin/
-    //     ├── .codex-plugin/plugin.json
+    //     ├── .myra-plugin/plugin.json
     //     └── skills/
     //         ├── root/SKILL.md
     //         └── link -> temp-root/
@@ -1231,9 +1231,9 @@ async fn plugin_skill_name_length_limit_allows_max_qualified_name() {
     let plugin_root = root.path().join("plugins").join(&plugin_name);
     let frontmatter = format!("name: {skill_name}\ndescription: search sample data");
     let skill_path = write_raw_skill_at(&plugin_root.join("skills"), "sample-search", &frontmatter);
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         format!(r#"{{"name":"{plugin_name}"}}"#),
     )
     .unwrap();
@@ -1286,9 +1286,9 @@ async fn plugin_skill_name_length_limit_rejects_overlong_qualified_name() {
     let plugin_root = root.path().join("plugins").join(&plugin_name);
     let frontmatter = format!("name: {skill_name}\ndescription: search sample data");
     write_raw_skill_at(&plugin_root.join("skills"), "sample-search", &frontmatter);
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).unwrap();
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).unwrap();
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         format!(r#"{{"name":"{plugin_name}"}}"#),
     )
     .unwrap();

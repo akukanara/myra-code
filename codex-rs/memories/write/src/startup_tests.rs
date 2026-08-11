@@ -341,7 +341,7 @@ async fn memories_startup_phase1_uses_live_thread_service_tier_and_detached_meta
     reset_git_repository(&test.config.cwd).await?;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             service_tier: Some(Some(ServiceTier::Fast.request_value().to_string())),
             ..Default::default()
@@ -360,7 +360,7 @@ async fn memories_startup_phase1_uses_live_thread_service_tier_and_detached_meta
         Arc::clone(&test.thread_manager),
         test.thread_manager.auth_manager(),
         test.session_configured.thread_id,
-        Arc::clone(&test.codex),
+        Arc::clone(&test.myra),
         &test.config,
         config_snapshot.session_source.clone(),
     );
@@ -486,7 +486,7 @@ async fn run_memory_phase_one_model_request_test(
         Some(test.thread_manager.auth_manager()),
     ));
     let db = test
-        .codex
+        .myra
         .state_db()
         .ok_or_else(|| anyhow::anyhow!("state db should be enabled for memory startup test"))?;
     seed_stage1_candidate(
@@ -527,7 +527,7 @@ async fn run_memory_phase_two_model_request_test(
         Some(test.thread_manager.auth_manager()),
     ));
     let db = test
-        .codex
+        .myra
         .state_db()
         .ok_or_else(|| anyhow::anyhow!("state db should be enabled for memory startup test"))?;
     seed_stage1_output(
@@ -571,7 +571,7 @@ async fn run_memory_phase_two_model_request_test(
             .is_none(),
         "phase-2 consolidation agent should be removed after shutdown"
     );
-    test.codex.shutdown_and_wait().await?;
+    test.myra.shutdown_and_wait().await?;
     Ok(request)
 }
 
@@ -619,7 +619,7 @@ async fn init_state_db(home: &Arc<TempDir>) -> anyhow::Result<Arc<codex_state::S
 }
 
 async fn trigger_memories_startup(test: &TestCodex) {
-    let config_snapshot = test.codex.config_snapshot().await;
+    let config_snapshot = test.myra.config_snapshot().await;
     let mut config = test.config.clone();
     config
         .features
@@ -630,7 +630,7 @@ async fn trigger_memories_startup(test: &TestCodex) {
         Arc::clone(&test.thread_manager),
         test.thread_manager.auth_manager(),
         test.session_configured.thread_id,
-        Arc::clone(&test.codex),
+        Arc::clone(&test.myra),
         Arc::new(config),
         parent_permission_profile,
         &config_snapshot.session_source,
@@ -641,7 +641,7 @@ async fn memory_startup_context_with_provider(
     test: &TestCodex,
     provider: SharedModelProvider,
 ) -> (Arc<MemoryStartupContext>, Arc<codex_core::config::Config>) {
-    let config_snapshot = test.codex.config_snapshot().await;
+    let config_snapshot = test.myra.config_snapshot().await;
     let mut config = test.config.clone();
     config
         .features
@@ -652,7 +652,7 @@ async fn memory_startup_context_with_provider(
         Arc::clone(&test.thread_manager),
         test.thread_manager.auth_manager(),
         test.session_configured.thread_id,
-        Arc::clone(&test.codex),
+        Arc::clone(&test.myra),
         config.as_ref(),
         config_snapshot.session_source,
         provider,
@@ -845,7 +845,7 @@ async fn wait_for_service_tier(
 ) -> anyhow::Result<codex_core::ThreadConfigSnapshot> {
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
-        let config_snapshot = test.codex.config_snapshot().await;
+        let config_snapshot = test.myra.config_snapshot().await;
         if config_snapshot.service_tier == expected_service_tier {
             return Ok(config_snapshot);
         }
@@ -955,7 +955,7 @@ async fn read_rollout_summary_bodies(memory_root: &Path) -> anyhow::Result<Vec<S
 }
 
 async fn shutdown_test_codex(test: &TestCodex) -> anyhow::Result<()> {
-    test.codex.submit(Op::Shutdown {}).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.myra.submit(Op::Shutdown {}).await?;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
     Ok(())
 }

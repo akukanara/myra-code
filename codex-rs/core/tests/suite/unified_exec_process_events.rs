@@ -501,7 +501,7 @@ timeout = 900
     };
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(turn_permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run a one-shot remote command".into(),
@@ -533,7 +533,7 @@ timeout = 900
     let mut saw_exec_command_begin = false;
     if !managed_network {
         loop {
-            let event = timeout(Duration::from_secs(5), test.codex.next_event())
+            let event = timeout(Duration::from_secs(5), test.myra.next_event())
                 .await
                 .context("turn should complete")??
                 .msg;

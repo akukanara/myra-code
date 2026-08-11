@@ -108,9 +108,9 @@ def _params_dict(
     raise TypeError(f"Expected generated params model or dict, got {type(params).__name__}")
 
 
-def _installed_codex_path() -> Path:
+def _installed_myra_path() -> Path:
     try:
-        from codex_cli_bin import bundled_codex_path
+        from codex_cli_bin import bundled_myra_path
     except ImportError as exc:
         raise FileNotFoundError(
             "Unable to locate the pinned Codex runtime. Install the published SDK build "
@@ -118,10 +118,10 @@ def _installed_codex_path() -> Path:
             "explicitly."
         ) from exc
 
-    return bundled_codex_path()
+    return bundled_myra_path()
 
 
-def _installed_codex_path_dirs() -> tuple[Path, ...]:
+def _installed_myra_path_dirs() -> tuple[Path, ...]:
     try:
         from codex_cli_bin import bundled_path_dir
     except (ImportError, AttributeError):
@@ -162,32 +162,32 @@ def _path_env_key(env: dict[str, str]) -> str:
 
 @dataclass(frozen=True)
 class CodexBinResolverOps:
-    installed_codex_path: Callable[[], Path]
+    installed_myra_path: Callable[[], Path]
     path_exists: Callable[[Path], bool]
 
 
 def _default_codex_bin_resolver_ops() -> CodexBinResolverOps:
     return CodexBinResolverOps(
-        installed_codex_path=_installed_codex_path,
+        installed_myra_path=_installed_myra_path,
         path_exists=lambda path: path.exists(),
     )
 
 
-def resolve_codex_bin(config: "CodexConfig", ops: CodexBinResolverOps) -> Path:
+def resolve_myra_bin(config: "CodexConfig", ops: CodexBinResolverOps) -> Path:
     if config.codex_bin is not None:
         codex_bin = Path(config.codex_bin)
         if not ops.path_exists(codex_bin):
             raise FileNotFoundError(
-                f"Codex binary not found at {codex_bin}. Set CodexConfig.codex_bin "
+                f"Myra binary not found at {codex_bin}. Set CodexConfig.codex_bin "
                 "to a valid binary path."
             )
         return codex_bin
 
-    return ops.installed_codex_path()
+    return ops.installed_myra_path()
 
 
-def _resolve_codex_bin(config: "CodexConfig") -> Path:
-    return resolve_codex_bin(config, _default_codex_bin_resolver_ops())
+def _resolve_myra_bin(config: "CodexConfig") -> Path:
+    return resolve_myra_bin(config, _default_codex_bin_resolver_ops())
 
 
 @dataclass(slots=True)
@@ -243,9 +243,9 @@ class CodexClient:
         if self.config.launch_args_override is not None:
             args = list(self.config.launch_args_override)
         else:
-            codex_bin = _resolve_codex_bin(self.config)
+            codex_bin = _resolve_myra_bin(self.config)
             if self.config.codex_bin is None:
-                path_dirs = _installed_codex_path_dirs()
+                path_dirs = _installed_myra_path_dirs()
             args = [str(codex_bin)]
             for kv in self.config.config_overrides:
                 args.extend(["--config", kv])
@@ -861,4 +861,4 @@ class CodexClient:
 
 
 def default_codex_home() -> str:
-    return str(Path.home() / ".codex")
+    return str(Path.home() / ".myra")

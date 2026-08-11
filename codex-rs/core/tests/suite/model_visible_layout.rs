@@ -115,7 +115,7 @@ async fn model_visible_environment_context_preserves_foreign_workspace_roots() -
     let test = test_codex().build(&server).await?;
     let foreign_root = PathUri::parse("file:///C:/workspace")?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "inspect the workspace".into(),
@@ -137,7 +137,7 @@ async fn model_visible_environment_context_preserves_foreign_workspace_roots() -
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -196,7 +196,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
     let (first_sandbox_policy, first_permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), first_turn_cwd.as_path());
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".into(),
@@ -222,7 +222,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -231,7 +231,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
         PermissionProfile::read_only(),
         preturn_context_diff_cwd.as_path(),
     );
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second turn with context updates".into(),
@@ -258,7 +258,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -322,7 +322,7 @@ async fn snapshot_model_visible_layout_cwd_change_refreshes_agents() -> Result<(
     let (first_sandbox_policy, first_permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), cwd_one.as_path());
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn in agents_one".into(),
@@ -348,14 +348,14 @@ async fn snapshot_model_visible_layout_cwd_change_refreshes_agents() -> Result<(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
     let (second_sandbox_policy, second_permission_profile) =
         turn_permission_fields(PermissionProfile::read_only(), cwd_two.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second turn in agents_two".into(),
@@ -381,7 +381,7 @@ async fn snapshot_model_visible_layout_cwd_change_refreshes_agents() -> Result<(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -423,7 +423,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
             config.model = Some("gpt-5.2".to_string());
         });
     let initial = initial_builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let codex = Arc::clone(&initial.myra);
 
     let initial_mock = mount_sse_once(
         &server,
@@ -478,7 +478,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
         resume_override_cwd.as_path(),
     );
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "resume and change personality".into(),
@@ -505,7 +505,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
             },
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -536,7 +536,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
             config.model = Some("gpt-5.2".to_string());
         });
     let initial = initial_builder.build(&server).await?;
-    let codex = Arc::clone(&initial.codex);
+    let codex = Arc::clone(&initial.myra);
 
     let initial_mock = mount_sse_once(
         &server,
@@ -582,7 +582,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
     fs::create_dir_all(&resume_override_cwd)?;
     let resume_override_cwd = resume_override_cwd.abs();
     core_test_support::submit_thread_settings(
-        &resumed.codex,
+        &resumed.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(local_selections(resume_override_cwd)),
             model: Some("gpt-5.2".to_string()),
@@ -591,7 +591,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
     )
     .await?;
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first resumed turn after model override".into(),
@@ -603,7 +603,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

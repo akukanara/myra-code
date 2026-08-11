@@ -243,7 +243,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
 
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(base_permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "request access and edit the image".to_string(),
@@ -270,7 +270,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             },
         })
         .await?;
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::RequestPermissions(_) | EventMsg::TurnComplete(_)
@@ -281,7 +281,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
         panic!("expected request_permissions before turn completion");
     };
     assert_eq!(request.call_id, permissions_call_id);
-    test.codex
+    test.myra
         .submit(Op::RequestPermissionsResponse {
             id: permissions_call_id.to_string(),
             response: RequestPermissionsResponse {
@@ -291,7 +291,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             },
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

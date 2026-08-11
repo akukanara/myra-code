@@ -309,7 +309,7 @@ async fn resumed_history_only_emits_resize_notices_for_new_images() -> anyhow::R
         .rollout_path
         .clone()
         .context("initial rollout path")?;
-    initial.codex.shutdown_and_wait().await?;
+    initial.myra.shutdown_and_wait().await?;
 
     let image_path = initial.cwd.path().join("large-image.png");
     ImageBuffer::from_pixel(
@@ -368,7 +368,7 @@ async fn resumed_history_only_emits_resize_notices_for_new_images() -> anyhow::R
     )
     .await;
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Image {
                 image_url: original_image_url,
@@ -380,7 +380,7 @@ async fn resumed_history_only_emits_resize_notices_for_new_images() -> anyhow::R
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -443,7 +443,7 @@ async fn resumed_history_only_emits_resize_notices_for_new_images() -> anyhow::R
         Some(expected_notice)
     );
 
-    resumed.codex.shutdown_and_wait().await?;
+    resumed.myra.shutdown_and_wait().await?;
     let replayed = resume_builder
         .resume(&server, resumed.home.clone(), rollout_path)
         .await?;

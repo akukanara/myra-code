@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Unified entry point for the Codex CLI.
+// Unified entry point for the Myra CLI.
 
 import { spawn } from "node:child_process";
 import { existsSync, realpathSync } from "fs";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
-const codexPackageRoot = realpathSync(path.join(__dirname, ".."));
+const myraPackageRoot = realpathSync(path.join(__dirname, ".."));
 
 const PLATFORM_PACKAGE_BY_TARGET = {
   "x86_64-unknown-linux-musl": "@myralith/myra-linux-x64",
@@ -76,7 +76,7 @@ if (!platformPackage) {
   throw new Error(`Unsupported target triple: ${targetTriple}`);
 }
 
-function findCodexExecutable() {
+function findMyraExecutable() {
   let vendorRoot;
   try {
     const packageJsonPath = require.resolve(`${platformPackage}/package.json`);
@@ -85,16 +85,11 @@ function findCodexExecutable() {
     vendorRoot = path.join(__dirname, "..", "vendor");
   }
 
-  const primaryBinaryName = process.platform === "win32" ? "myra.exe" : "myra";
-  const fallbackBinaryName = process.platform === "win32" ? "codex.exe" : "codex";
+  const binaryName = process.platform === "win32" ? "myra.exe" : "myra";
+  const myraExecutable = path.join(vendorRoot, targetTriple, "bin", binaryName);
 
-  let codexExecutable = path.join(vendorRoot, targetTriple, "bin", primaryBinaryName);
-  if (!existsSync(codexExecutable)) {
-    codexExecutable = path.join(vendorRoot, targetTriple, "bin", fallbackBinaryName);
-  }
-
-  if (existsSync(codexExecutable)) {
-    return codexExecutable;
+  if (existsSync(myraExecutable)) {
+    return myraExecutable;
   }
 
   const packageManager = detectPackageManager();
@@ -109,7 +104,7 @@ function findCodexExecutable() {
   );
 }
 
-const binaryPath = findCodexExecutable();
+const binaryPath = findMyraExecutable();
 
 // Use an asynchronous spawn instead of spawnSync so that Node is able to
 // respond to signals (e.g. Ctrl-C / SIGINT) while the native binary is
@@ -117,28 +112,21 @@ const binaryPath = findCodexExecutable();
 // and guarantees that when either the child terminates or the parent
 // receives a fatal signal, both processes exit in a predictable manner.
 
-function isPnpmOwnedCodexInstall(nodeModulesDir) {
+function isPnpmOwnedMyraInstall(nodeModulesDir) {
   if (!existsSync(path.join(nodeModulesDir, ".modules.yaml"))) {
     return false;
   }
 
   try {
     const canonicalMyraPath = realpathSync(path.join(nodeModulesDir, "@myralith", "myra"));
-    return canonicalMyraPath === codexPackageRoot;
+    return canonicalMyraPath === myraPackageRoot;
   } catch {
-    try {
-      return (
-        realpathSync(path.join(nodeModulesDir, "@openai", "codex")) ===
-        codexPackageRoot
-      );
-    } catch {
-      return false;
-    }
+    return false;
   }
 }
 
 /**
- * Use heuristics to detect the package manager that was used to install Codex
+ * Use heuristics to detect the package manager that was used to install Myra
  * in order to give the user a hint about how to update it.
  */
 function detectPackageManager() {
@@ -146,19 +134,19 @@ function detectPackageManager() {
   // package in isolated global layouts. Search ancestors of both the canonical
   // package root and lexical entrypoint because pnpm may link either path.
   const entrypointDir = path.dirname(path.resolve(process.argv[1]));
-  for (const startDir of new Set([codexPackageRoot, entrypointDir])) {
+  for (const startDir of new Set([myraPackageRoot, entrypointDir])) {
     const filesystemRoot = path.parse(startDir).root;
     for (
       let currentDir = startDir;
       currentDir !== filesystemRoot;
       currentDir = path.dirname(currentDir)
     ) {
-      if (isPnpmOwnedCodexInstall(path.join(currentDir, "node_modules"))) {
+      if (isPnpmOwnedMyraInstall(path.join(currentDir, "node_modules"))) {
         return "pnpm";
       }
     }
 
-    if (isPnpmOwnedCodexInstall(path.join(filesystemRoot, "node_modules"))) {
+    if (isPnpmOwnedMyraInstall(path.join(filesystemRoot, "node_modules"))) {
       return "pnpm";
     }
   }
@@ -192,20 +180,12 @@ const packageManagerEnvVar =
       : "MYRA_MANAGED_BY_NPM";
 const env = {
   ...process.env,
-  MYRA_MANAGED_PACKAGE_ROOT: codexPackageRoot,
-  CODEX_MANAGED_PACKAGE_ROOT: codexPackageRoot,
+  MYRA_MANAGED_PACKAGE_ROOT: myraPackageRoot,
 };
 delete env.MYRA_MANAGED_BY_NPM;
 delete env.MYRA_MANAGED_BY_BUN;
 delete env.MYRA_MANAGED_BY_PNPM;
 env[packageManagerEnvVar] = "1";
-env[
-  packageManager === "bun"
-    ? "CODEX_MANAGED_BY_BUN"
-    : packageManager === "pnpm"
-      ? "CODEX_MANAGED_BY_PNPM"
-      : "CODEX_MANAGED_BY_NPM"
-] = "1";
 
 const child = spawn(binaryPath, process.argv.slice(2), {
   stdio: "inherit",

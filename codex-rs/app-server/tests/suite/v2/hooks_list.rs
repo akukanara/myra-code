@@ -89,10 +89,10 @@ additionalContextLimit = 4096
 
 fn write_plugin_hook_config(codex_home: &std::path::Path, hooks_json: &str) -> Result<()> {
     let plugin_root = codex_home.join("plugins/cache/test/demo/local");
-    std::fs::create_dir_all(plugin_root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(plugin_root.join(".myra-plugin"))?;
     std::fs::create_dir_all(plugin_root.join("hooks"))?;
     std::fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"demo"}"#,
     )?;
     std::fs::write(plugin_root.join("hooks/hooks.json"), hooks_json)?;
@@ -381,9 +381,9 @@ hooks = false
 "#,
     )?;
     std::fs::create_dir_all(workspace.path().join(".git"))?;
-    std::fs::create_dir_all(workspace.path().join(".codex"))?;
+    std::fs::create_dir_all(workspace.path().join(".myra"))?;
     std::fs::write(
-        workspace.path().join(".codex/config.toml"),
+        workspace.path().join(".myra/config.toml"),
         r#"[features]
 hooks = true
 
@@ -417,7 +417,7 @@ timeout = 5
     let HooksListResponse { data } =
         timeout(DEFAULT_TIMEOUT, mcp.read_response(request_id)).await??;
     let project_config_path =
-        AbsolutePathBuf::try_from(workspace.path().join(".codex/config.toml"))?;
+        AbsolutePathBuf::try_from(workspace.path().join(".myra/config.toml"))?;
     assert_eq!(
         data,
         vec![
@@ -479,8 +479,8 @@ async fn hooks_list_uses_root_repo_hooks_for_linked_worktrees() -> Result<()> {
         worktree_root.join(".git"),
         format!("gitdir: {}\n", worktree_git_dir.display()),
     )?;
-    write_project_hook_config(&repo_root.join(".codex"), "echo root hook")?;
-    write_project_hook_config(&worktree_root.join(".codex"), "echo worktree hook")?;
+    write_project_hook_config(&repo_root.join(".myra"), "echo root hook")?;
+    write_project_hook_config(&worktree_root.join(".myra"), "echo worktree hook")?;
     set_project_trust_level(codex_home.path(), &repo_root, TrustLevel::Trusted)?;
 
     let mut mcp = TestAppServer::builder()
@@ -498,7 +498,7 @@ async fn hooks_list_uses_root_repo_hooks_for_linked_worktrees() -> Result<()> {
     let repo_hook = data[0].hooks[0].clone();
     let worktree_hook = data[1].hooks[0].clone();
     let repo_config_path =
-        AbsolutePathBuf::from_absolute_path(repo_root.join(".codex/config.toml"))?;
+        AbsolutePathBuf::from_absolute_path(repo_root.join(".myra/config.toml"))?;
 
     assert_eq!(repo_hook.command.as_deref(), Some("echo root hook"));
     assert_eq!(worktree_hook.command.as_deref(), Some("echo root hook"));

@@ -10,7 +10,7 @@ use codex_exec_server::CODEX_ARG0_EXEC_HELPER_ARG1;
 use codex_exec_server::CODEX_FS_HELPER_ARG1;
 use codex_install_context::InstallContext;
 use codex_sandboxing::landlock::CODEX_LINUX_SANDBOX_ARG0;
-use codex_utils_home_dir::find_codex_home;
+use codex_utils_home_dir::find_myra_home;
 #[cfg(target_os = "windows")]
 use codex_windows_sandbox::CODEX_WINDOWS_SANDBOX_ARG1;
 #[cfg(unix)]
@@ -197,7 +197,7 @@ fn prepare_path_env_var_with_aliases(
 /// `codex-linux-sandbox` we *directly* execute
 /// [`codex_linux_sandbox::run_main`] (which never returns). Otherwise we:
 ///
-/// 1.  Load `.env` values from `~/.codex/.env` before creating any threads.
+/// 1.  Load `.env` values from `~/.myra/.env` before creating any threads.
 /// 2.  Spawn a main runtime thread with a controlled stack size.
 /// 3.  Construct a Tokio multi-thread runtime.
 /// 4.  Capture the current executable path and derive the
@@ -291,12 +291,12 @@ fn build_runtime() -> anyhow::Result<tokio::runtime::Runtime> {
 
 const ILLEGAL_ENV_VAR_PREFIX: &str = "CODEX_";
 
-/// Load env vars from ~/.codex/.env.
+/// Load env vars from ~/.myra/.env.
 ///
 /// Security: Do not allow `.env` files to create or modify any variables
 /// with names starting with `CODEX_`.
 fn load_dotenv() {
-    if let Ok(codex_home) = find_codex_home()
+    if let Ok(codex_home) = find_myra_home()
         && let Ok(iter) = dotenvy::from_path_iter(codex_home.join(".env"))
     {
         set_filtered(iter);
@@ -333,7 +333,7 @@ where
 fn prepare_path_entry_for_codex_aliases(
     existing_path: Option<OsString>,
 ) -> std::io::Result<(Arg0PathEntryGuard, OsString)> {
-    let codex_home = find_codex_home()?;
+    let codex_home = find_myra_home()?;
     #[cfg(not(debug_assertions))]
     {
         // Guard against placing helpers in system temp directories outside debug builds.
@@ -349,7 +349,7 @@ fn prepare_path_entry_for_codex_aliases(
     }
 
     std::fs::create_dir_all(&codex_home)?;
-    // Use a CODEX_HOME-scoped temp root to avoid cluttering the top-level directory.
+    // Use a MYRA_HOME-scoped temp root to avoid cluttering the top-level directory.
     let temp_root = codex_home.join("tmp").join("arg0");
     std::fs::create_dir_all(&temp_root)?;
     #[cfg(unix)]
@@ -562,7 +562,7 @@ mod tests {
         let arg0_dir = temp_dir.path().join("arg0");
         let package_dir = temp_dir.path().join("package");
         let bin_dir = package_dir.join("bin");
-        let path_dir = package_dir.join("codex-path");
+        let path_dir = package_dir.join("myra-path");
         let existing_dir = temp_dir.path().join("existing-bin");
         fs::create_dir_all(&arg0_dir)?;
         fs::create_dir_all(&bin_dir)?;

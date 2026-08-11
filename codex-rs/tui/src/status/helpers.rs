@@ -100,8 +100,13 @@ pub(crate) fn plan_type_display_name(plan_type: PlanType) -> String {
     match plan_type {
         PlanType::Free | PlanType::Plus => "Cryolith".to_string(),
         PlanType::Pro | PlanType::ProLite => "Xenolith".to_string(),
-        PlanType::Team | PlanType::Business | PlanType::SelfServeBusinessProLite | PlanType::SelfServeBusinessUsageBased => "Monolith".to_string(),
-        PlanType::Enterprise | PlanType::EnterpriseCbpAutomation | PlanType::EnterpriseCbpUsageBased => "Myralith".to_string(),
+        PlanType::Team
+        | PlanType::Business
+        | PlanType::SelfServeBusinessProLite
+        | PlanType::SelfServeBusinessUsageBased => "Monolith".to_string(),
+        PlanType::Enterprise
+        | PlanType::EnterpriseCbpAutomation
+        | PlanType::EnterpriseCbpUsageBased => "Myralith".to_string(),
         _ => title_case(format!("{plan_type:?}").as_str()),
     }
 }

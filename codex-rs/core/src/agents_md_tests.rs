@@ -1330,7 +1330,7 @@ async fn concatenates_root_and_cwd_docs() {
 #[tokio::test]
 async fn project_root_markers_are_honored_for_agents_discovery() {
     let root = tempfile::tempdir().expect("tempdir");
-    fs::write(root.path().join(".codex-root"), "").unwrap();
+    fs::write(root.path().join(".myra-root"), "").unwrap();
     fs::write(root.path().join("AGENTS.md"), "parent doc").unwrap();
 
     let nested = root.path().join("dir1");
@@ -1341,7 +1341,7 @@ async fn project_root_markers_are_honored_for_agents_discovery() {
         &root,
         /*limit*/ 4096,
         /*instructions*/ None,
-        &[".codex-root"],
+        &[".myra-root"],
     )
     .await;
     cfg.cwd = nested.abs();
@@ -1383,8 +1383,8 @@ async fn project_layers_do_not_override_project_root_markers() {
     };
     config.config_layer_stack = ConfigLayerStack::new(
         vec![
-            project_layer(root.path().join(".codex").abs(), ".ignored-root-marker"),
-            project_layer(config.cwd.join(".codex"), ".ignored-nested-marker"),
+            project_layer(root.path().join(".myra").abs(), ".ignored-root-marker"),
+            project_layer(config.cwd.join(".myra"), ".ignored-nested-marker"),
         ],
         ConfigRequirements::default(),
         ConfigRequirementsToml::default(),

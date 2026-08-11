@@ -60,7 +60,7 @@ use codex_core_api::WebSearchMode;
 use codex_core_api::arg0_dispatch_or_else;
 use codex_core_api::build_models_manager;
 use codex_core_api::built_in_model_providers;
-use codex_core_api::find_codex_home;
+use codex_core_api::find_myra_home;
 use codex_core_api::init_state_db;
 use codex_core_api::install_image_generation_extension;
 use codex_core_api::item_event_to_server_notification;
@@ -174,7 +174,7 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
 }
 
 fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::Result<Config> {
-    let codex_home = find_codex_home().context("find Codex home")?;
+    let codex_home = find_myra_home().context("find Codex home")?;
     let cwd = AbsolutePathBuf::current_dir().context("resolve current directory")?;
     let model_provider_id = OPENAI_PROVIDER_ID.to_string();
     let model_providers = built_in_model_providers(/*openai_base_url*/ None);

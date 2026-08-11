@@ -83,7 +83,7 @@ async fn submit_text_turn(
     test: &core_test_support::test_codex::TestCodex,
     text: &str,
 ) -> Result<()> {
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: text.to_string(),
@@ -95,7 +95,7 @@ async fn submit_text_turn(
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     Ok(())
 }
 
@@ -170,7 +170,7 @@ async fn model_change_appends_new_catalog_approval_message() -> Result<()> {
     submit_text_turn(&test, "first").await?;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             model: Some(second_slug.to_string()),
             ..Default::default()
@@ -303,7 +303,7 @@ async fn catalog_permission_message_is_sent_initially_and_after_model_change() -
     submit_text_turn(&test, "first").await?;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             model: Some(second_slug.to_string()),
             ..Default::default()
@@ -392,7 +392,7 @@ async fn permissions_message_sent_once_on_start() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -404,7 +404,7 @@ async fn permissions_message_sent_once_on_start() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(permissions_texts(&req.single_request()).len(), 1);
 
@@ -432,7 +432,7 @@ async fn permissions_message_added_on_override_change() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -444,10 +444,10 @@ async fn permissions_message_added_on_override_change() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             ..Default::default()
@@ -455,7 +455,7 @@ async fn permissions_message_added_on_override_change() -> Result<()> {
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -467,7 +467,7 @@ async fn permissions_message_added_on_override_change() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let permissions_1 = permissions_texts(&req1.single_request());
     let permissions_2 = permissions_texts(&req2.single_request());
@@ -501,7 +501,7 @@ async fn permissions_message_not_added_when_no_change() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -513,9 +513,9 @@ async fn permissions_message_not_added_when_no_change() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -527,7 +527,7 @@ async fn permissions_message_not_added_when_no_change() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let permissions_1 = permissions_texts(&req1.single_request());
     let permissions_2 = permissions_texts(&req2.single_request());
@@ -561,7 +561,7 @@ async fn permissions_message_omitted_when_disabled() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -573,10 +573,10 @@ async fn permissions_message_omitted_when_disabled() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             ..Default::default()
@@ -584,7 +584,7 @@ async fn permissions_message_omitted_when_disabled() -> Result<()> {
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -596,7 +596,7 @@ async fn permissions_message_omitted_when_disabled() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         permissions_texts(&req1.single_request()),
@@ -637,7 +637,7 @@ async fn resume_replays_permissions_messages() -> Result<()> {
     let initial = builder.build(&server).await?;
 
     initial
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -649,10 +649,10 @@ async fn resume_replays_permissions_messages() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &initial.codex,
+        &initial.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             ..Default::default()
@@ -661,7 +661,7 @@ async fn resume_replays_permissions_messages() -> Result<()> {
     .await?;
 
     initial
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -673,11 +673,11 @@ async fn resume_replays_permissions_messages() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let resumed = builder.restart(&server, &initial).await?;
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after resume".into(),
@@ -689,7 +689,7 @@ async fn resume_replays_permissions_messages() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let permissions = permissions_texts(&req3.single_request());
     assert_eq!(permissions.len(), 3);
@@ -736,7 +736,7 @@ async fn resume_and_fork_append_permissions_messages() -> Result<()> {
         .expect("rollout path");
 
     initial
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -748,10 +748,10 @@ async fn resume_and_fork_append_permissions_messages() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     core_test_support::submit_thread_settings(
-        &initial.codex,
+        &initial.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             approval_policy: Some(AskForApproval::Never),
             ..Default::default()
@@ -760,7 +760,7 @@ async fn resume_and_fork_append_permissions_messages() -> Result<()> {
     .await?;
 
     initial
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -772,7 +772,7 @@ async fn resume_and_fork_append_permissions_messages() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let permissions_base = permissions_texts(&req2.single_request());
     assert_eq!(permissions_base.len(), 2);
@@ -782,7 +782,7 @@ async fn resume_and_fork_append_permissions_messages() -> Result<()> {
     });
     let resumed = builder.restart(&server, &initial).await?;
     resumed
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after resume".into(),
@@ -794,7 +794,7 @@ async fn resume_and_fork_append_permissions_messages() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let permissions_resume = permissions_texts(&req3.single_request());
     assert_eq!(permissions_resume.len(), permissions_base.len() + 1);
@@ -878,7 +878,7 @@ async fn permissions_message_includes_writable_roots() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -890,7 +890,7 @@ async fn permissions_message_includes_writable_roots() -> Result<()> {
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let permissions = permissions_texts(&req.single_request());
     let normalize_line_endings = |s: &str| s.replace("\r\n", "\n");

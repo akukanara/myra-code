@@ -97,7 +97,7 @@ async fn import_plugins_supports_external_agent_plugin_marketplace_layout() {
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create plugin manifest dir");
     fs::create_dir_all(&codex_home).expect("create codex home");
 
     fs::write(
@@ -132,7 +132,7 @@ async fn import_plugins_supports_external_agent_plugin_marketplace_layout() {
     )
     .expect("write marketplace manifest");
     fs::write(
-        plugin_root.join(".codex-plugin").join("plugin.json"),
+        plugin_root.join(".myra-plugin").join("plugin.json"),
         r#"{"name":"cloudflare","version":"0.1.0"}"#,
     )
     .expect("write plugin manifest");
@@ -175,11 +175,11 @@ async fn import_plugins_reuses_configured_marketplace_with_different_source() {
     let source_plugin_root = source_marketplace_root.join("plugins/cloudflare");
     fs::create_dir_all(configured_marketplace_root.join(".agents/plugins"))
         .expect("create configured marketplace manifest dir");
-    fs::create_dir_all(configured_plugin_root.join(".codex-plugin"))
+    fs::create_dir_all(configured_plugin_root.join(".myra-plugin"))
         .expect("create configured plugin manifest dir");
     fs::create_dir_all(source_marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create source marketplace manifest dir");
-    fs::create_dir_all(source_plugin_root.join(".codex-plugin"))
+    fs::create_dir_all(source_plugin_root.join(".myra-plugin"))
         .expect("create source plugin manifest dir");
     fs::create_dir_all(&codex_home).expect("create codex home");
 
@@ -231,12 +231,12 @@ source = {configured_marketplace_root:?}
     )
     .expect("write source marketplace manifest");
     fs::write(
-        configured_plugin_root.join(".codex-plugin/plugin.json"),
+        configured_plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"cloudflare","version":"0.1.0"}"#,
     )
     .expect("write configured plugin manifest");
     fs::write(
-        source_plugin_root.join(".codex-plugin/plugin.json"),
+        source_plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"cloudflare","version":"0.2.0"}"#,
     )
     .expect("write source plugin manifest");
@@ -288,7 +288,7 @@ async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() 
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create plugin manifest dir");
     fs::create_dir_all(&codex_home).expect("create codex home");
 
     fs::write(
@@ -322,7 +322,7 @@ async fn detect_home_supports_relative_external_agent_plugin_marketplace_path() 
     )
     .expect("write marketplace manifest");
     fs::write(
-        plugin_root.join(".codex-plugin").join("plugin.json"),
+        plugin_root.join(".myra-plugin").join("plugin.json"),
         r#"{"name":"cloudflare","version":"0.1.0"}"#,
     )
     .expect("write plugin manifest");
@@ -410,7 +410,7 @@ async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create plugin manifest dir");
     fs::create_dir_all(&codex_home).expect("create codex home");
 
     fs::write(
@@ -444,7 +444,7 @@ async fn import_plugins_supports_relative_external_agent_plugin_marketplace_path
     )
     .expect("write marketplace manifest");
     fs::write(
-        plugin_root.join(".codex-plugin").join("plugin.json"),
+        plugin_root.join(".myra-plugin").join("plugin.json"),
         r#"{"name":"cloudflare","version":"0.1.0"}"#,
     )
     .expect("write plugin manifest");
@@ -532,7 +532,7 @@ async fn import_plugins_infers_external_official_marketplace_when_missing_from_s
 async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace_path() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".codex");
+    let codex_home = root.path().join(".myra");
     let repo_root = root.path().join("repo");
     let marketplace_root = repo_root.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
@@ -540,7 +540,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create plugin manifest dir");
     fs::create_dir_all(&codex_home).expect("create codex home");
 
     fs::write(
@@ -574,7 +574,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
     )
     .expect("write marketplace manifest");
     fs::write(
-        plugin_root.join(".codex-plugin").join("plugin.json"),
+        plugin_root.join(".myra-plugin").join("plugin.json"),
         r#"{"name":"cloudflare","version":"0.1.0"}"#,
     )
     .expect("write plugin manifest");
@@ -615,7 +615,7 @@ async fn detect_repo_supports_project_relative_external_agent_plugin_marketplace
 async fn import_plugins_supports_project_relative_external_agent_plugin_marketplace_path() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(EXTERNAL_AGENT_DIR);
-    let codex_home = root.path().join(".codex");
+    let codex_home = root.path().join(".myra");
     let repo_root = root.path().join("repo");
     let marketplace_root = repo_root.join("my-marketplace");
     let plugin_root = marketplace_root.join("plugins").join("cloudflare");
@@ -623,7 +623,7 @@ async fn import_plugins_supports_project_relative_external_agent_plugin_marketpl
     fs::create_dir_all(repo_root.join(EXTERNAL_AGENT_DIR)).expect("create repo external agent dir");
     fs::create_dir_all(marketplace_root.join(EXTERNAL_AGENT_PLUGIN_MANIFEST_DIR))
         .expect("create marketplace manifest dir");
-    fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create plugin manifest dir");
+    fs::create_dir_all(plugin_root.join(".myra-plugin")).expect("create plugin manifest dir");
     fs::create_dir_all(&codex_home).expect("create codex home");
 
     fs::write(
@@ -657,7 +657,7 @@ async fn import_plugins_supports_project_relative_external_agent_plugin_marketpl
     )
     .expect("write marketplace manifest");
     fs::write(
-        plugin_root.join(".codex-plugin").join("plugin.json"),
+        plugin_root.join(".myra-plugin").join("plugin.json"),
         r#"{"name":"cloudflare","version":"0.1.0"}"#,
     )
     .expect("write plugin manifest");
@@ -715,7 +715,7 @@ fn import_skills_returns_only_new_skill_directory_names() {
 fn import_cursor_skills_reads_user_and_managed_directories() {
     let root = TempDir::new().expect("create tempdir");
     let external_agent_home = root.path().join(".cursor");
-    let codex_home = root.path().join(".codex");
+    let codex_home = root.path().join(".myra");
     let user_skill = external_agent_home.join("skills").join("user-skill");
     let managed_skill = external_agent_home
         .join("skills-cursor")

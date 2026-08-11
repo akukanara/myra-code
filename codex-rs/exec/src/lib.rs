@@ -64,7 +64,7 @@ use codex_core::config::ConfigBuilder;
 use codex_core::config::ConfigOverrides;
 use codex_core::config::ConfigTomlLoadResult;
 use codex_core::config::bootstrap_auth_config;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_core::config::load_config_toml_with_layer_stack;
 use codex_core::config::resolve_oss_provider;
 use codex_core::config::resolve_profile_v2_config_path;
@@ -312,10 +312,10 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
 
     // we load config.toml here to determine project state.
     #[allow(clippy::print_stderr)]
-    let codex_home = match find_codex_home() {
+    let codex_home = match find_myra_home() {
         Ok(codex_home) => codex_home,
         Err(err) => {
-            eprintln!("Error finding MyraCode home: {err}");
+            eprintln!("Error finding Myra home: {err}");
             std::process::exit(1);
         }
     };
@@ -845,7 +845,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         event_processor.process_warning(message);
     }
 
-    info!("MyraCode initialized with event: {session_configured:?}");
+    info!("Myra initialized with event: {session_configured:?}");
 
     let (interrupt_tx, mut interrupt_rx) = mpsc::unbounded_channel::<()>();
     tokio::spawn(async move {

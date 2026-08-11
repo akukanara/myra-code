@@ -2,21 +2,21 @@
 
 set -eu
 
-RELEASE="${CODEX_RELEASE:-latest}"
-NON_INTERACTIVE="${CODEX_NON_INTERACTIVE:-false}"
-DEFAULT_PREFER_RELEASES_OPENAI_COM="true"
-PREFER_RELEASES_OPENAI_COM="${CODEX_INSTALLER_USE_RELEASES_OPENAI_COM:-$DEFAULT_PREFER_RELEASES_OPENAI_COM}"
-RELEASES_BASE_URL="https://releases.openai.com/codex"
+RELEASE="${MYRA_RELEASE:-latest}"
+NON_INTERACTIVE="${MYRA_NON_INTERACTIVE:-false}"
+DEFAULT_PREFER_RELEASES_MYRALITH_COM="true"
+PREFER_RELEASES_MYRALITH_COM="${MYRA_INSTALLER_USE_RELEASES_MYRALITH_COM:-$DEFAULT_PREFER_RELEASES_MYRALITH_COM}"
+RELEASES_BASE_URL="https://releases.myralith.com/myra"
 RELEASES_CONNECT_TIMEOUT=10
 RELEASES_METADATA_TIMEOUT=30
 RELEASES_ASSET_TIMEOUT=300
 release_source="github"
 
-BIN_DIR="${CODEX_INSTALL_DIR:-$HOME/.local/bin}"
-BIN_PATH="$BIN_DIR/codex"
-CODE_MODE_HOST_BIN_PATH="$BIN_DIR/codex-code-mode-host"
-CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
-STANDALONE_ROOT="$CODEX_HOME_DIR/packages/standalone"
+BIN_DIR="${MYRA_INSTALL_DIR:-$HOME/.local/bin}"
+BIN_PATH="$BIN_DIR/myra"
+CODE_MODE_HOST_BIN_PATH="$BIN_DIR/myra-code-mode-host"
+MYRA_HOME_DIR="${MYRA_HOME:-$HOME/.myra}"
+STANDALONE_ROOT="$MYRA_HOME_DIR/packages/standalone"
 RELEASES_DIR="$STANDALONE_ROOT/releases"
 CURRENT_LINK="$STANDALONE_ROOT/current"
 LOCK_FILE="$STANDALONE_ROOT/install.lock"
@@ -63,7 +63,7 @@ validate_version() {
   fi
 
   if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-alpha(\.[0-9]+){0,2}|-beta(\.[0-9]+)?)?$'; then
-    echo "Invalid Codex release version: $version. Expected latest or x.y.z[-alpha[.N[.M]]|-beta[.N]]." >&2
+    echo "Invalid Myra release version: $version. Expected latest or x.y.z[-alpha[.N[.M]]|-beta[.N]]." >&2
     return 1
   fi
 }
@@ -84,9 +84,9 @@ parse_args() {
 Usage: install.sh [--release VERSION]
 
 Environment:
-  CODEX_RELEASE          Version to install; overridden by --release.
-  CODEX_NON_INTERACTIVE  Set to 1, true, or yes to skip prompts.
-  CODEX_INSTALLER_USE_RELEASES_OPENAI_COM
+  MYRA_RELEASE          Version to install; overridden by --release.
+  MYRA_NON_INTERACTIVE  Set to 1, true, or yes to skip prompts.
+  MYRA_INSTALLER_USE_RELEASES_MYRALITH_COM
                          Set to 0, false, or no to use GitHub Releases.
 EOF
         exit 0
@@ -128,7 +128,7 @@ download_file() {
     return
   fi
 
-  echo "curl or wget is required to install Codex." >&2
+  echo "curl or wget is required to install Myra." >&2
   exit 1
 }
 
@@ -159,7 +159,7 @@ download_text() {
     return
   fi
 
-  echo "curl or wget is required to install Codex." >&2
+  echo "curl or wget is required to install Myra." >&2
   exit 1
 }
 
@@ -307,7 +307,7 @@ release_url_for_asset() {
   asset="$1"
   resolved_version="$2"
 
-  printf 'https://github.com/openai/codex/releases/download/rust-v%s/%s\n' "$resolved_version" "$asset"
+  printf 'https://github.com/akukanara/myra-code/releases/download/rust-v%s/%s\n' "$resolved_version" "$asset"
 }
 
 releases_url_for_asset() {
@@ -320,14 +320,14 @@ releases_url_for_asset() {
 release_metadata_url() {
   resolved_version="$1"
 
-  printf 'https://api.github.com/repos/openai/codex/releases/tags/rust-v%s\n' "$resolved_version"
+  printf 'https://api.github.com/repos/akukanara/myra-code/releases/tags/rust-v%s\n' "$resolved_version"
 }
 
 parse_downloaded_release_metadata() {
   requested_release="$1"
   source_name="$2"
   if ! release_metadata="$(printf '%s\n' "$release_json" | parse_release_metadata)"; then
-    echo "Could not parse $source_name release metadata for Codex $requested_release." >&2
+    echo "Could not parse $source_name release metadata for Myra $requested_release." >&2
     return 1
   fi
 }
@@ -339,7 +339,7 @@ resolve_metadata_version() {
     *) metadata_version="" ;;
   esac
   if [ -z "$metadata_version" ]; then
-    echo "Failed to resolve the latest Codex release version." >&2
+    echo "Failed to resolve the latest Myra release version." >&2
     return 1
   fi
   validate_version "$metadata_version"
@@ -349,7 +349,7 @@ resolve_release_from_github() {
   normalized_version="$1"
   if [ "$normalized_version" = "latest" ]; then
     requested_release="latest"
-    metadata_url="https://api.github.com/repos/openai/codex/releases/latest"
+    metadata_url="https://api.github.com/repos/akukanara/myra-code/releases/latest"
   else
     resolved_version="$normalized_version"
     requested_release="$resolved_version"
@@ -357,7 +357,7 @@ resolve_release_from_github() {
   fi
 
   if ! release_json="$(download_text "$metadata_url")"; then
-    echo "Could not fetch GitHub release metadata for Codex $requested_release. GitHub API may be unavailable or rate limited." >&2
+    echo "Could not fetch GitHub release metadata for Myra $requested_release. GitHub API may be unavailable or rate limited." >&2
     exit 1
   fi
 
@@ -386,31 +386,31 @@ resolve_release_from_releases() {
     return 1
   fi
 
-  if ! parse_downloaded_release_metadata "$requested_release" "releases.openai.com"; then
+  if ! parse_downloaded_release_metadata "$requested_release" "releases.myralith.com"; then
     return 1
   fi
   if ! resolve_metadata_version; then
     return 1
   fi
   if [ "$normalized_version" != "latest" ] && [ "$metadata_version" != "$normalized_version" ]; then
-    echo "Release metadata version did not match requested Codex version $normalized_version." >&2
+    echo "Release metadata version did not match requested Myra version $normalized_version." >&2
     return 1
   fi
   resolved_version="$metadata_version"
-  release_source="releases.openai.com"
+  release_source="releases.myralith.com"
 }
 
 resolve_release() {
   normalized_version="$(normalize_version "$RELEASE")"
   validate_version "$normalized_version"
 
-  case "$PREFER_RELEASES_OPENAI_COM" in
+  case "$PREFER_RELEASES_MYRALITH_COM" in
     1 | [Tt][Rr][Uu][Ee] | [Yy][Ee][Ss])
       if resolve_release_from_releases "$normalized_version" &&
         select_release_assets; then
         return
       fi
-      warn "releases.openai.com is unavailable; falling back to GitHub Releases."
+      warn "releases.myralith.com is unavailable; falling back to GitHub Releases."
       ;;
   esac
 
@@ -461,8 +461,8 @@ release_asset_digest() {
 }
 
 select_release_assets() {
-  package_asset="codex-package-$vendor_target.tar.gz"
-  checksum_asset="codex-package_SHA256SUMS"
+  package_asset="myra-package-$vendor_target.tar.gz"
+  checksum_asset="myra-package_SHA256SUMS"
   download_fallback_url=""
   checksum_fallback_url=""
 
@@ -470,15 +470,15 @@ select_release_assets() {
     release_asset_exists "$checksum_asset"; then
     install_layout="package"
     asset="$package_asset"
-  elif release_asset_exists "codex-npm-$npm_tag-$resolved_version.tgz"; then
+  elif release_asset_exists "myra-npm-$npm_tag-$resolved_version.tgz"; then
     install_layout="legacy-platform-npm"
-    asset="codex-npm-$npm_tag-$resolved_version.tgz"
+    asset="myra-npm-$npm_tag-$resolved_version.tgz"
   else
-    echo "Could not find Codex package or platform npm release assets for Codex $resolved_version." >&2
+    echo "Could not find Myra package or platform npm release assets for Myra $resolved_version." >&2
     return 1
   fi
 
-  if [ "$release_source" = "releases.openai.com" ]; then
+  if [ "$release_source" = "releases.myralith.com" ]; then
     download_url="$(releases_url_for_asset "$asset" "$resolved_version")"
     download_fallback_url="$(release_url_for_asset "$asset" "$resolved_version")"
     if [ "$install_layout" = "package" ]; then
@@ -511,7 +511,7 @@ package_archive_digest() {
   ' "$manifest_path" 2>/dev/null || true)"
 
   if [ -z "$digest" ]; then
-    echo "Could not find SHA-256 digest for $asset in codex-package_SHA256SUMS." >&2
+    echo "Could not find SHA-256 digest for $asset in myra-package_SHA256SUMS." >&2
     return 1
   fi
 
@@ -536,7 +536,7 @@ file_sha256() {
     return
   fi
 
-  echo "sha256sum, shasum, or openssl is required to verify the Codex download." >&2
+  echo "sha256sum, shasum, or openssl is required to verify the Myra download." >&2
   exit 1
 }
 
@@ -546,7 +546,7 @@ verify_archive_digest() {
   actual_digest="$(file_sha256 "$archive_path")"
 
   if [ "$actual_digest" != "$expected_digest" ]; then
-    echo "Downloaded Codex archive checksum did not match expected digest." >&2
+    echo "Downloaded Myra archive checksum did not match expected digest." >&2
     echo "expected: $expected_digest" >&2
     echo "actual:   $actual_digest" >&2
     return 1
@@ -555,7 +555,7 @@ verify_archive_digest() {
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "$1 is required to install Codex." >&2
+    echo "$1 is required to install Myra." >&2
     exit 1
   fi
 }
@@ -596,8 +596,8 @@ add_to_path() {
 
   profile="$(pick_profile)"
   path_profile="$profile"
-  begin_marker="# >>> Codex installer >>>"
-  end_marker="# <<< Codex installer <<<"
+  begin_marker="# >>> Myra installer >>>"
+  end_marker="# <<< Myra installer <<<"
   path_line="export PATH=\"$BIN_DIR:\$PATH\""
 
   if [ -f "$profile" ] && grep -F "$begin_marker" "$profile" >/dev/null 2>&1; then
@@ -742,7 +742,7 @@ cleanup_stale_install_artifacts() {
   find "$STANDALONE_ROOT" -mindepth 1 -maxdepth 1 -name '.current.*' -exec rm -f {} +
 
   if [ -d "$BIN_DIR" ]; then
-    find "$BIN_DIR" -mindepth 1 -maxdepth 1 -name '.codex.*' -exec rm -f {} +
+    find "$BIN_DIR" -mindepth 1 -maxdepth 1 -name '.myra.*' -exec rm -f {} +
   fi
 }
 
@@ -767,23 +767,23 @@ replace_path_with_symlink() {
 }
 
 version_from_binary() {
-  codex_path="$1"
+  myra_path="$1"
 
-  if [ ! -x "$codex_path" ]; then
+  if [ ! -x "$myra_path" ]; then
     return 1
   fi
 
-  "$codex_path" --version 2>/dev/null | sed -n 's/.* \([0-9][0-9A-Za-z.+-]*\)$/\1/p' | head -n 1
+  "$myra_path" --version 2>/dev/null | sed -n 's/.* \([0-9][0-9A-Za-z.+-]*\)$/\1/p' | head -n 1
 }
 
 current_installed_version() {
-  version="$(version_from_binary "$CURRENT_LINK/bin/codex" || true)"
+  version="$(version_from_binary "$CURRENT_LINK/bin/myra" || true)"
   if [ -n "$version" ]; then
     printf '%s\n' "$version"
     return 0
   fi
 
-  version="$(version_from_binary "$CURRENT_LINK/codex" || true)"
+  version="$(version_from_binary "$CURRENT_LINK/myra" || true)"
   if [ -n "$version" ]; then
     printf '%s\n' "$version"
     return 0
@@ -792,11 +792,11 @@ current_installed_version() {
   return 0
 }
 
-resolve_existing_codex() {
-  command -v codex 2>/dev/null || true
+resolve_existing_myra() {
+  command -v myra 2>/dev/null || true
 }
 
-classify_existing_codex() {
+classify_existing_myra() {
   existing_path="$1"
 
   if [ -z "$existing_path" ] || [ "$existing_path" = "$BIN_PATH" ]; then
@@ -863,37 +863,37 @@ prompt_yes_no() {
 print_launch_instructions() {
   case "$path_action" in
     added)
-      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && myra"
+      step "Future terminals: open a new terminal and run: myra"
       step "PATH was added to $path_profile"
       ;;
     updated)
-      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && myra"
+      step "Future terminals: open a new terminal and run: myra"
       step "PATH was updated in $path_profile"
       ;;
     configured)
-      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: export PATH=\"$BIN_DIR:\$PATH\" && myra"
+      step "Future terminals: open a new terminal and run: myra"
       step "PATH is already configured in $path_profile"
       ;;
     *)
-      step "Current terminal: codex"
-      step "Future terminals: open a new terminal and run: codex"
+      step "Current terminal: myra"
+      step "Future terminals: open a new terminal and run: myra"
       ;;
   esac
 }
 
-maybe_launch_codex_now() {
-  if prompt_yes_no "Start Codex now?"; then
-    step "Launching Codex"
+maybe_launch_myra_now() {
+  if prompt_yes_no "Start Myra now?"; then
+    step "Launching Myra"
     "$BIN_PATH"
   fi
 }
 
 detect_conflicting_install() {
-  existing_path="$(resolve_existing_codex)"
-  manager="$(classify_existing_codex "$existing_path" || true)"
+  existing_path="$(resolve_existing_myra)"
+  manager="$(classify_existing_myra "$existing_path" || true)"
 
   if [ -z "$manager" ]; then
     return
@@ -901,8 +901,8 @@ detect_conflicting_install() {
 
   conflict_manager="$manager"
   conflict_path="$existing_path"
-  step "Detected existing $manager-managed Codex at $existing_path"
-  warn "Multiple managed Codex installs can be ambiguous because PATH order decides which one runs."
+  step "Detected existing $manager-managed Myra at $existing_path"
+  warn "Multiple managed Myra installs can be ambiguous because PATH order decides which one runs."
 }
 
 handle_conflicting_install() {
@@ -912,23 +912,23 @@ handle_conflicting_install() {
 
   case "$conflict_manager" in
     brew)
-      uninstall_cmd="brew uninstall --cask codex"
+      uninstall_cmd="brew uninstall --cask myra"
       ;;
     bun)
-      uninstall_cmd="bun remove -g @openai/codex"
+      uninstall_cmd="bun remove -g @myralith/myra"
       ;;
     *)
-      uninstall_cmd="npm uninstall -g @openai/codex"
+      uninstall_cmd="npm uninstall -g @myralith/myra"
       ;;
   esac
 
-  if prompt_yes_no "Uninstall the existing $conflict_manager-managed Codex now?"; then
+  if prompt_yes_no "Uninstall the existing $conflict_manager-managed Myra now?"; then
     step "Running: $uninstall_cmd"
     if ! sh -c "$uninstall_cmd"; then
-      warn "Failed to uninstall the existing $conflict_manager-managed Codex. Continuing with the standalone install."
+      warn "Failed to uninstall the existing $conflict_manager-managed Myra. Continuing with the standalone install."
     fi
   else
-    warn "Leaving the existing $conflict_manager-managed Codex installed. PATH order will determine which codex runs."
+    warn "Leaving the existing $conflict_manager-managed Myra installed. PATH order will determine which myra runs."
   fi
 }
 
@@ -942,13 +942,13 @@ install_package_release() {
   mkdir -p "$stage_release"
   tar -xzf "$archive_path" -C "$stage_release"
   chmod 0755 \
-    "$stage_release/bin/codex" \
-    "$stage_release/bin/codex-code-mode-host" \
-    "$stage_release/codex-path/rg"
-  if [ -f "$stage_release/codex-resources/bwrap" ]; then
-    chmod 0755 "$stage_release/codex-resources/bwrap"
+    "$stage_release/bin/myra" \
+    "$stage_release/bin/myra-code-mode-host" \
+    "$stage_release/myra-path/rg"
+  if [ -f "$stage_release/myra-resources/bwrap" ]; then
+    chmod 0755 "$stage_release/myra-resources/bwrap"
   fi
-  ln -sf "bin/codex" "$stage_release/codex"
+  ln -sf "bin/myra" "$stage_release/myra"
 
   if [ -e "$release_dir" ] || [ -L "$release_dir" ]; then
     rm -rf "$release_dir"
@@ -966,15 +966,15 @@ install_legacy_platform_npm_release() {
 
   mkdir -p "$RELEASES_DIR"
   rm -rf "$stage_release" "$extract_dir"
-  mkdir -p "$stage_release/codex-resources" "$extract_dir"
+  mkdir -p "$stage_release/myra-resources" "$extract_dir"
   tar -xzf "$archive_path" -C "$extract_dir"
 
-  cp "$vendor_root/codex/codex" "$stage_release/codex"
-  cp "$vendor_root/path/rg" "$stage_release/codex-resources/rg"
-  chmod 0755 "$stage_release/codex" "$stage_release/codex-resources/rg"
-  if [ -f "$vendor_root/codex-resources/bwrap" ]; then
-    cp "$vendor_root/codex-resources/bwrap" "$stage_release/codex-resources/bwrap"
-    chmod 0755 "$stage_release/codex-resources/bwrap"
+  cp "$vendor_root/myra/myra" "$stage_release/myra"
+  cp "$vendor_root/path/rg" "$stage_release/myra-resources/rg"
+  chmod 0755 "$stage_release/myra" "$stage_release/myra-resources/rg"
+  if [ -f "$vendor_root/myra-resources/bwrap" ]; then
+    cp "$vendor_root/myra-resources/bwrap" "$stage_release/myra-resources/bwrap"
+    chmod 0755 "$stage_release/myra-resources/bwrap"
   fi
 
   if [ -e "$release_dir" ] || [ -L "$release_dir" ]; then
@@ -995,16 +995,16 @@ release_dir_is_complete() {
 
   case "$layout" in
     package)
-      [ -f "$release_dir/codex-package.json" ] &&
-        [ -x "$release_dir/bin/codex" ] &&
-        [ -x "$release_dir/bin/codex-code-mode-host" ] &&
-        [ -x "$release_dir/codex" ] &&
-        [ -x "$release_dir/codex-path/rg" ] ||
+      [ -f "$release_dir/myra-package.json" ] &&
+        [ -x "$release_dir/bin/myra" ] &&
+        [ -x "$release_dir/bin/myra-code-mode-host" ] &&
+        [ -x "$release_dir/myra" ] &&
+        [ -x "$release_dir/myra-path/rg" ] ||
         return 1
       ;;
     legacy-platform-npm)
-      [ -x "$release_dir/codex" ] &&
-        [ -x "$release_dir/codex-resources/rg" ] ||
+      [ -x "$release_dir/myra" ] &&
+        [ -x "$release_dir/myra-resources/rg" ] ||
         return 1
       ;;
     *)
@@ -1014,11 +1014,11 @@ release_dir_is_complete() {
 
   case "$layout:$expected_target" in
     package:*linux* | legacy-platform-npm:*linux*)
-      [ -x "$release_dir/codex-resources/bwrap" ] || return 1
+      [ -x "$release_dir/myra-resources/bwrap" ] || return 1
       ;;
   esac
 
-  installed_version="$(version_from_binary "$release_dir/bin/codex" || version_from_binary "$release_dir/codex" || true)"
+  installed_version="$(version_from_binary "$release_dir/bin/myra" || version_from_binary "$release_dir/myra" || true)"
   [ "$installed_version" = "$expected_version" ]
 }
 
@@ -1029,31 +1029,31 @@ update_current_link() {
   replace_path_with_symlink "$CURRENT_LINK" "$release_dir" "$tmp_link"
 }
 
-release_codex_relative_path() {
+release_myra_relative_path() {
   release_dir="$1"
 
-  if [ -x "$release_dir/bin/codex" ]; then
-    printf 'bin/codex\n'
+  if [ -x "$release_dir/bin/myra" ]; then
+    printf 'bin/myra\n'
   else
-    printf 'codex\n'
+    printf 'myra\n'
   fi
 }
 
 update_visible_command() {
   release_dir="$1"
   mkdir -p "$BIN_DIR"
-  tmp_link="$BIN_DIR/.codex.$$"
-  codex_relative_path="$(release_codex_relative_path "$release_dir")"
+  tmp_link="$BIN_DIR/.myra.$$"
+  myra_relative_path="$(release_myra_relative_path "$release_dir")"
 
-  replace_path_with_symlink "$BIN_PATH" "$CURRENT_LINK/$codex_relative_path" "$tmp_link"
+  replace_path_with_symlink "$BIN_PATH" "$CURRENT_LINK/$myra_relative_path" "$tmp_link"
 
-  if [ "$os" = "darwin" ] && [ -x "$release_dir/bin/codex-code-mode-host" ]; then
+  if [ "$os" = "darwin" ] && [ -x "$release_dir/bin/myra-code-mode-host" ]; then
     replace_path_with_symlink \
       "$CODE_MODE_HOST_BIN_PATH" \
-      "$CURRENT_LINK/bin/codex-code-mode-host" \
+      "$CURRENT_LINK/bin/myra-code-mode-host" \
       "$tmp_link"
   elif [ "$(readlink "$CODE_MODE_HOST_BIN_PATH" 2>/dev/null || true)" = \
-    "$CURRENT_LINK/bin/codex-code-mode-host" ]; then
+    "$CURRENT_LINK/bin/myra-code-mode-host" ]; then
     rm -f "$CODE_MODE_HOST_BIN_PATH"
   fi
 }
@@ -1130,11 +1130,11 @@ release_dir="$RELEASES_DIR/$release_name"
 current_version="$(current_installed_version)"
 
 if [ -n "$current_version" ] && [ "$current_version" != "$resolved_version" ]; then
-  step "Updating Codex CLI from $current_version to $resolved_version"
+  step "Updating Myra CLI from $current_version to $resolved_version"
 elif [ -n "$current_version" ]; then
-  step "Updating Codex CLI"
+  step "Updating Myra CLI"
 else
-  step "Installing Codex CLI"
+  step "Installing Myra CLI"
 fi
 step "Detected platform: $platform_label"
 step "Resolved version: $resolved_version"
@@ -1161,7 +1161,7 @@ if ! release_dir_is_complete "$release_dir" "$resolved_version" "$vendor_target"
   archive_path="$tmp_dir/$asset"
   checksum_path="$tmp_dir/$checksum_asset"
 
-  step "Downloading Codex CLI"
+  step "Downloading Myra CLI"
   if [ "$install_layout" = "package" ]; then
     checksum_digest="$(release_asset_digest "$checksum_asset")"
     download_file_with_fallback "$checksum_url" "$checksum_fallback_url" "$checksum_path" "$checksum_digest" "$checksum_asset" "$asset"
@@ -1179,7 +1179,7 @@ if ! release_dir_is_complete "$release_dir" "$resolved_version" "$vendor_target"
   fi
 fi
 if ! release_dir_is_complete "$release_dir" "$resolved_version" "$vendor_target" "$install_layout"; then
-  echo "Installed Codex command did not report expected version $resolved_version." >&2
+  echo "Installed Myra command did not report expected version $resolved_version." >&2
   exit 1
 fi
 update_current_link "$release_dir"
@@ -1205,5 +1205,5 @@ case "$path_action" in
     ;;
 esac
 
-printf 'Codex CLI %s installed successfully.\n' "$resolved_version"
-maybe_launch_codex_now
+printf 'Myra CLI %s installed successfully.\n' "$resolved_version"
+maybe_launch_myra_now

@@ -603,7 +603,7 @@ async fn exec_windows_sandbox(
     windows_sandbox_workspace_roots: &[AbsolutePathBuf],
     windows_sandbox_filesystem_overrides: Option<&WindowsSandboxFilesystemOverrides>,
 ) -> Result<RawExecToolCallOutput> {
-    use crate::config::find_codex_home;
+    use crate::config::find_myra_home;
     use codex_windows_sandbox::run_windows_sandbox_capture_for_permission_profile_elevated;
     use codex_windows_sandbox::run_windows_sandbox_capture_with_filesystem_overrides;
 
@@ -657,7 +657,7 @@ async fn exec_windows_sandbox(
         windows_sandbox_workspace_roots.to_vec()
     };
     let permission_profile = permission_profile.clone();
-    let codex_home = find_codex_home().map_err(|err| {
+    let codex_home = find_myra_home().map_err(|err| {
         CodexErr::Io(io::Error::other(format!(
             "windows sandbox: failed to resolve codex_home: {err}"
         )))

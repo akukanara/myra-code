@@ -300,9 +300,9 @@ fn write_plugin(
     server_name: &str,
     mcp_server_url: &str,
 ) -> Result<()> {
-    std::fs::create_dir_all(root.join(".codex-plugin"))?;
+    std::fs::create_dir_all(root.join(".myra-plugin"))?;
     std::fs::write(
-        root.join(".codex-plugin/plugin.json"),
+        root.join(".myra-plugin/plugin.json"),
         serde_json::to_vec_pretty(&json!({"name": plugin_name}))?,
     )?;
     std::fs::write(

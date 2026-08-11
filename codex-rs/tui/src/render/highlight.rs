@@ -10,7 +10,7 @@
 //! | `THEME` | `OnceLock<RwLock<Theme>>` | Active color theme, swappable at runtime |
 //! | `THEME_REVISION` | `AtomicU64` | Invalidates rendered-content caches after theme swaps |
 //! | `THEME_OVERRIDE` | `OnceLock<Option<String>>` | Persisted user preference (write-once) |
-//! | `CODEX_HOME` | `OnceLock<Option<PathBuf>>` | Root for custom `.tmTheme` discovery |
+//! | `MYRA_HOME` | `OnceLock<Option<PathBuf>>` | Root for custom `.tmTheme` discovery |
 //!
 //! **Lifecycle:** call [`set_theme_override`] once at startup (after the final
 //! config is resolved) to persist the user preference and seed the `THEME`
@@ -53,7 +53,7 @@ static SYNTAX_SET: OnceLock<SyntaxSet> = OnceLock::new();
 static THEME: OnceLock<RwLock<Theme>> = OnceLock::new();
 static THEME_REVISION: AtomicU64 = AtomicU64::new(0);
 static THEME_OVERRIDE: OnceLock<Option<String>> = OnceLock::new();
-static CODEX_HOME: OnceLock<Option<PathBuf>> = OnceLock::new();
+static MYRA_HOME: OnceLock<Option<PathBuf>> = OnceLock::new();
 
 // Syntect/bat encode ANSI palette semantics in alpha:
 // `a=0` => indexed ANSI palette via RGB payload, `a=1` => terminal default.
@@ -89,7 +89,7 @@ pub(crate) fn set_theme_override(
 ) -> Option<String> {
     let warning = validate_theme_name(name.as_deref(), codex_home.as_deref());
     let override_set_ok = THEME_OVERRIDE.set(name.clone()).is_ok();
-    let codex_home_set_ok = CODEX_HOME.set(codex_home.clone()).is_ok();
+    let codex_home_set_ok = MYRA_HOME.set(codex_home.clone()).is_ok();
     if THEME.get().is_some() {
         set_syntax_theme(resolve_theme_with_override(
             name.as_deref(),
@@ -111,7 +111,7 @@ pub(crate) fn validate_theme_name(name: Option<&str>, codex_home: Option<&Path>)
     let name = name?;
     let custom_theme_path_display = codex_home
         .map(|home| custom_theme_path(name, home).display().to_string())
-        .unwrap_or_else(|| format!("$CODEX_HOME/themes/{name}.tmTheme"));
+        .unwrap_or_else(|| format!("$MYRA_HOME/themes/{name}.tmTheme"));
     // Bundled themes always resolve.
     if parse_theme_name(name).is_some() {
         return None;
@@ -216,7 +216,7 @@ fn resolve_theme_with_override(name: Option<&str>, codex_home: Option<&Path>) ->
         if let Some(theme_name) = parse_theme_name(name) {
             return ts.get(theme_name).clone();
         }
-        // 2. Try loading {CODEX_HOME}/themes/{name}.tmTheme from disk.
+        // 2. Try loading {MYRA_HOME}/themes/{name}.tmTheme from disk.
         if let Some(home) = codex_home
             && let Some(theme) = load_custom_theme(name, home)
         {
@@ -232,9 +232,7 @@ fn resolve_theme_with_override(name: Option<&str>, codex_home: Option<&Path>) ->
 /// Extracted from the old `theme()` init closure so it can be reused.
 fn build_default_theme() -> Theme {
     let name = THEME_OVERRIDE.get().and_then(|name| name.as_deref());
-    let codex_home = CODEX_HOME
-        .get()
-        .and_then(|codex_home| codex_home.as_deref());
+    let codex_home = MYRA_HOME.get().and_then(|codex_home| codex_home.as_deref());
     resolve_theme_with_override(name, codex_home)
 }
 
@@ -336,7 +334,7 @@ pub(crate) fn configured_theme_name() -> String {
         if parse_theme_name(name).is_some() {
             return name.clone();
         }
-        if let Some(Some(home)) = CODEX_HOME.get()
+        if let Some(Some(home)) = MYRA_HOME.get()
             && load_custom_theme(name, home).is_some()
         {
             return name.clone();
@@ -363,7 +361,7 @@ pub(crate) fn resolve_theme_by_name(name: &str, codex_home: Option<&Path>) -> Op
 }
 
 /// A theme available in the picker, either bundled or loaded from a custom
-/// `.tmTheme` file under `{CODEX_HOME}/themes/`.
+/// `.tmTheme` file under `{MYRA_HOME}/themes/`.
 pub(crate) struct ThemeEntry {
     /// Kebab-case identifier used for config persistence and theme resolution.
     pub name: String,

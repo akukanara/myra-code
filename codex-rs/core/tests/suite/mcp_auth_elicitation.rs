@@ -134,7 +134,7 @@ default_tools_approval_mode = "auto"
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Use [$calendar](app://calendar) to create a calendar event.".to_string(),
@@ -147,7 +147,7 @@ default_tools_approval_mode = "auto"
         })
         .await?;
 
-    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::ElicitationRequest(request) = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ElicitationRequest(_) | EventMsg::TurnComplete(_)
@@ -188,7 +188,7 @@ default_tools_approval_mode = "auto"
         }
     );
 
-    test.codex
+    test.myra
         .submit(Op::ResolveElicitation {
             server_name: request.server_name,
             request_id: request.id,
@@ -197,7 +197,7 @@ default_tools_approval_mode = "auto"
             meta: None,
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

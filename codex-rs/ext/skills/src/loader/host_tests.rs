@@ -347,7 +347,7 @@ async fn skips_hidden_host_skills() {
 #[tokio::test]
 async fn discovers_nested_plugin_namespace_without_plugin_identity() {
     let root = TempDir::new().expect("temp dir");
-    let plugin_manifest = root.path().join("nested/.codex-plugin/plugin.json");
+    let plugin_manifest = root.path().join("nested/.myra-plugin/plugin.json");
     fs::create_dir_all(plugin_manifest.parent().expect("plugin manifest parent"))
         .expect("create plugin manifest directory");
     fs::write(&plugin_manifest, r#"{"name":"plugin-name"}"#).expect("write plugin manifest");

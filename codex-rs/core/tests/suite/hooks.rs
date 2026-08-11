@@ -1306,7 +1306,7 @@ async fn stop_hook_can_block_multiple_times_in_same_turn() -> Result<()> {
         vec![false, true, true],
     );
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let rollout_text = fs::read_to_string(&rollout_path)?;
     let hook_prompt_texts = rollout_hook_prompt_texts(&rollout_text)?;
     assert!(
@@ -1410,7 +1410,7 @@ async fn session_end_flushes_transcript_and_ignores_control_output() -> Result<(
     let test = builder.build(&server).await?;
 
     test.submit_turn("persist this before shutdown").await?;
-    test.codex.shutdown_and_wait().await?;
+    test.myra.shutdown_and_wait().await?;
 
     let inputs = read_hook_inputs_from_log(
         test.codex_home_path()
@@ -1713,8 +1713,8 @@ async fn compact_session_start_hook_records_additional_context_for_next_turn() -
     let test = builder.build(&server).await?;
 
     test.submit_turn("hello before compact").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2199,7 +2199,7 @@ async fn multiple_blocking_stop_hooks_persist_multiple_hook_prompt_fragments() -
         "second request should receive one user hook prompt message with both fragments",
     );
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.myra.rollout_path().expect("rollout path");
     let rollout_text = fs::read_to_string(&rollout_path)?;
     assert_eq!(
         rollout_hook_prompt_texts(&rollout_text)?,
@@ -2335,7 +2335,7 @@ async fn blocked_queued_prompt_does_not_strand_earlier_accepted_prompt() -> Resu
         .with_config(trust_discovered_hooks);
     let test = builder.build_with_streaming_server(&server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "initial prompt".to_string(),
@@ -2348,13 +2348,13 @@ async fn blocked_queued_prompt_does_not_strand_earlier_accepted_prompt() -> Resu
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::AgentMessageContentDelta(_))
     })
     .await;
 
     for text in ["accepted queued prompt", "blocked queued prompt"] {
-        test.codex
+        test.myra
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: text.to_string(),
@@ -2604,7 +2604,7 @@ async fn permission_request_hook_allow_bypasses_strict_auto_review() -> Result<(
         .context("create strict auto-review marker")?;
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "request strict review, then run the shell command".into(),
@@ -2622,7 +2622,7 @@ async fn permission_request_hook_allow_bypasses_strict_auto_review() -> Result<(
         })
         .await?;
 
-    let request = wait_for_event(&test.codex, |event| {
+    let request = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::RequestPermissions(_))
     })
     .await;
@@ -2630,7 +2630,7 @@ async fn permission_request_hook_allow_bypasses_strict_auto_review() -> Result<(
         panic!("expected request permissions event");
     };
     assert_eq!(request.call_id, permission_call_id);
-    test.codex
+    test.myra
         .submit(Op::RequestPermissionsResponse {
             id: permission_call_id.to_string(),
             response: RequestPermissionsResponse {
@@ -2641,7 +2641,7 @@ async fn permission_request_hook_allow_bypasses_strict_auto_review() -> Result<(
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -2934,7 +2934,7 @@ allow_local_binding = true
         assert!(
             timeout(
                 Duration::from_secs(2),
-                wait_for_event(&test.codex, |event| matches!(
+                wait_for_event(&test.myra, |event| matches!(
                     event,
                     EventMsg::ExecApprovalRequest(_)
                 ))
@@ -2968,8 +2968,8 @@ allow_local_binding = true
             .expect("expected denied tool output");
         assert!(tool_output.contains(expected_denial));
     } else {
-        test.codex.submit(Op::Shutdown {}).await?;
-        wait_for_event(&test.codex, |event| {
+        test.myra.submit(Op::Shutdown {}).await?;
+        wait_for_event(&test.myra, |event| {
             matches!(event, EventMsg::ShutdownComplete)
         })
         .await;
@@ -3626,11 +3626,11 @@ async fn plugin_pre_tool_use_blocks_shell_command_before_execution() -> Result<(
     let home = Arc::new(TempDir::new()?);
     let plugin_root = home.path().join("plugins/cache/test/sample/local");
     let hooks_dir = plugin_root.join("hooks");
-    fs::create_dir_all(plugin_root.join(".codex-plugin"))
+    fs::create_dir_all(plugin_root.join(".myra-plugin"))
         .context("create plugin manifest directory")?;
     fs::create_dir_all(&hooks_dir).context("create plugin hooks directory")?;
     fs::write(
-        plugin_root.join(".codex-plugin/plugin.json"),
+        plugin_root.join(".myra-plugin/plugin.json"),
         r#"{"name":"sample"}"#,
     )
     .context("write plugin manifest")?;

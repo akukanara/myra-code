@@ -56,7 +56,7 @@ async fn user_shell_cmd_ls_and_cat_in_temp_dir() {
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .myra;
 
     // 1) shell command should list the file
     let list_cmd = "ls".to_string();
@@ -106,7 +106,7 @@ async fn user_shell_command_without_local_environment_emits_error() -> anyhow::R
     let mut builder = test_codex();
     let test = builder.build(&server).await?;
     submit_thread_settings(
-        &test.codex,
+        &test.myra,
         codex_protocol::protocol::ThreadSettingsOverrides {
             environments: Some(codex_protocol::protocol::TurnEnvironmentSelections::new(
                 test.config.cwd.clone(),
@@ -117,14 +117,14 @@ async fn user_shell_command_without_local_environment_emits_error() -> anyhow::R
     )
     .await?;
 
-    test.codex
+    test.myra
         .submit(Op::RunUserShellCommand {
             command: "echo shell".to_string(),
         })
         .await?;
 
     let EventMsg::Error(error) =
-        wait_for_event(&test.codex, |event| matches!(event, EventMsg::Error(_))).await
+        wait_for_event(&test.myra, |event| matches!(event, EventMsg::Error(_))).await
     else {
         unreachable!()
     };
@@ -143,7 +143,7 @@ async fn user_shell_cmd_can_be_interrupted() {
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = &fixture.codex;
+    let codex = &fixture.myra;
 
     // Start a long-running command and then interrupt it.
     let sleep_cmd = "sleep 5".to_string();
@@ -209,7 +209,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
         turn_permission_fields(PermissionProfile::Disabled, cwd.as_path());
 
     fixture
-        .codex
+        .myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run model shell command".to_string(),
@@ -236,7 +236,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
         })
         .await?;
 
-    let _ = wait_for_event_match(&fixture.codex, |ev| match ev {
+    let _ = wait_for_event_match(&fixture.myra, |ev| match ev {
         EventMsg::ExecCommandBegin(event) if event.source == ExecCommandSource::Agent => {
             Some(event.clone())
         }
@@ -249,7 +249,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
     #[cfg(not(windows))]
     let user_shell_command = "printf user-shell".to_string();
     fixture
-        .codex
+        .myra
         .submit(Op::RunUserShellCommand {
             command: user_shell_command,
         })
@@ -259,7 +259,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
     let mut saw_user_shell_end = false;
     let mut saw_turn_complete = false;
     for _ in 0..200 {
-        let event = timeout(Duration::from_secs(20), fixture.codex.next_event())
+        let event = timeout(Duration::from_secs(20), fixture.myra.next_event())
             .await
             .context("timed out waiting for event")?
             .context("event stream ended unexpectedly")?;
@@ -314,13 +314,13 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
     #[cfg(not(windows))]
     let command = r#"sh -c "printf '%s' \"${CODEX_SANDBOX:-not-set}\"""#.to_string();
 
-    test.codex
+    test.myra
         .submit(Op::RunUserShellCommand {
             command: command.clone(),
         })
         .await?;
 
-    let begin_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let begin_event = wait_for_event_match(&test.myra, |ev| match ev {
         EventMsg::ExecCommandBegin(event) => Some(event.clone()),
         _ => None,
     })
@@ -334,7 +334,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
         begin_event.command
     );
 
-    let delta_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let delta_event = wait_for_event_match(&test.myra, |ev| match ev {
         EventMsg::ExecCommandOutputDelta(event) => Some(event.clone()),
         _ => None,
     })
@@ -344,7 +344,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
         String::from_utf8(delta_event.chunk.clone()).expect("user command chunk is valid utf-8");
     assert_eq!(chunk_text.trim(), "not-set");
 
-    let end_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let end_event = wait_for_event_match(&test.myra, |ev| match ev {
         EventMsg::ExecCommandEnd(event) => Some(event.clone()),
         _ => None,
     })
@@ -352,7 +352,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
     assert_eq!(end_event.exit_code, 0);
     assert_eq!(end_event.stdout.trim(), "not-set");
 
-    let _ = wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let responses = vec![responses::sse(vec![
         responses::ev_response_created("resp-1"),
@@ -401,7 +401,7 @@ async fn user_shell_command_does_not_set_network_sandbox_env_var() -> anyhow::Re
     let command =
         r#"sh -c "printf '%s' \"${CODEX_SANDBOX_NETWORK_DISABLED:-not-set}\"""#.to_string();
 
-    test.codex
+    test.myra
         .submit(Op::RunUserShellCommand { command })
         .await?;
 
@@ -410,7 +410,7 @@ async fn user_shell_command_does_not_set_network_sandbox_env_var() -> anyhow::Re
         stdout,
         stderr,
         ..
-    } = wait_for_event_match(&test.codex, |ev| match ev {
+    } = wait_for_event_match(&test.myra, |ev| match ev {
         EventMsg::ExecCommandEnd(event) => Some(event.clone()),
         _ => None,
     })
@@ -442,20 +442,20 @@ async fn user_shell_command_output_is_truncated_in_history() -> anyhow::Result<(
     #[cfg(not(windows))]
     let command = "seq 1 400".to_string();
 
-    test.codex
+    test.myra
         .submit(Op::RunUserShellCommand {
             command: command.clone(),
         })
         .await?;
 
-    let end_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let end_event = wait_for_event_match(&test.myra, |ev| match ev {
         EventMsg::ExecCommandEnd(event) => Some(event.clone()),
         _ => None,
     })
     .await;
     assert_eq!(end_event.exit_code, 0);
 
-    let _ = wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&test.myra, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let responses = vec![responses::sse(vec![
         responses::ev_response_created("resp-1"),

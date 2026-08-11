@@ -74,14 +74,14 @@ async fn catalog_permission_message_loaded_from_remote_models_is_sent() -> Resul
         .await;
 
     core_test_support::submit_thread_settings(
-        &test.codex,
+        &test.myra,
         ThreadSettingsOverrides {
             model: Some(model_slug.to_string()),
             ..Default::default()
         },
     )
     .await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".to_string(),
@@ -93,7 +93,7 @@ async fn catalog_permission_message_loaded_from_remote_models_is_sent() -> Resul
             thread_settings: Default::default(),
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

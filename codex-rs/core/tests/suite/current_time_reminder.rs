@@ -387,8 +387,8 @@ async fn current_time_reminder_is_refreshed_after_compaction() -> Result<()> {
         .await?;
 
     test.submit_turn("before compact").await?;
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |event| {
+    test.myra.submit(Op::Compact).await?;
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -427,7 +427,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         .build_with_auto_env(&server)
         .await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "fail before inference".into(),
@@ -441,7 +441,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         .await?;
 
     let EventMsg::Error(error) =
-        wait_for_event(&test.codex, |event| matches!(event, EventMsg::Error(_))).await
+        wait_for_event(&test.myra, |event| matches!(event, EventMsg::Error(_))).await
     else {
         unreachable!();
     };
@@ -451,7 +451,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
     );
     assert_eq!(error.codex_error_info, Some(CodexErrorInfo::Other));
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

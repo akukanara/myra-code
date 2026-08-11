@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
-  "name": "Codex (Secure)",
+  "name": "Myra (Secure)",
   "build": {
     "dockerfile": "Dockerfile.secure",
     "context": "..",
@@ -8,7 +8,7 @@
       "TZ": "${localEnv:TZ:UTC}",
       "NODE_MAJOR": "22",
       "RUST_TOOLCHAIN": "1.95.0",
-      "CODEX_NPM_VERSION": "0.121.0"
+      "MYRA_NPM_VERSION": "0.121.0"
     }
   },
   "runArgs": [
@@ -31,8 +31,8 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
   "mounts": [
-    "source=codex-commandhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=codex-home-${devcontainerId},target=/home/vscode/.codex,type=volume",
+    "source=myra-commandhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=myra-home-${devcontainerId},target=/home/vscode/.myra,type=volume",
     "source=codex-gh-${devcontainerId},target=/home/vscode/.config/gh,type=volume",
     "source=codex-cargo-registry-${devcontainerId},target=/home/vscode/.cargo/registry,type=volume",
     "source=codex-cargo-git-${devcontainerId},target=/home/vscode/.cargo/git,type=volume",

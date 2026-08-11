@@ -595,7 +595,7 @@ async fn tool_search_returns_deferred_tools_without_follow_up_tool_injection() -
 
     let mut builder = configured_builder(apps_server.chatgpt_base_url.clone());
     let test = builder.build(&server).await?;
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Find the calendar create tool".to_string(),
@@ -608,7 +608,7 @@ async fn tool_search_returns_deferred_tools_without_follow_up_tool_injection() -
         })
         .await?;
 
-    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallBegin(begin) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallBegin(_))
     })
     .await
@@ -623,7 +623,7 @@ async fn tool_search_returns_deferred_tools_without_follow_up_tool_injection() -
         Some(CALENDAR_CREATE_EVENT_MCP_APP_RESOURCE_URI)
     );
 
-    let EventMsg::McpToolCallEnd(end) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallEnd(end) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallEnd(_))
     })
     .await
@@ -665,7 +665,7 @@ async fn tool_search_returns_deferred_tools_without_follow_up_tool_injection() -
         }))
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1151,10 +1151,10 @@ async fn tool_search_returns_deferred_dynamic_tool_and_routes_follow_up_call() -
         })
         .await?;
     let mut test = base_test;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Use the automation tool".to_string(),
@@ -1167,7 +1167,7 @@ async fn tool_search_returns_deferred_dynamic_tool_and_routes_follow_up_call() -
         })
         .await?;
 
-    let EventMsg::DynamicToolCallRequest(request) = wait_for_event(&test.codex, |event| {
+    let EventMsg::DynamicToolCallRequest(request) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::DynamicToolCallRequest(_))
     })
     .await
@@ -1179,7 +1179,7 @@ async fn tool_search_returns_deferred_dynamic_tool_and_routes_follow_up_call() -
     assert_eq!(request.tool, tool_name);
     assert_eq!(request.arguments, tool_args);
 
-    test.codex
+    test.myra
         .submit(Op::DynamicToolResponse {
             id: request.call_id,
             response: DynamicToolResponse {
@@ -1191,7 +1191,7 @@ async fn tool_search_returns_deferred_dynamic_tool_and_routes_follow_up_call() -
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1346,7 +1346,7 @@ async fn tool_search_indexes_only_enabled_non_app_mcp_tools() -> Result<()> {
                 .expect("test mcp servers should accept any configuration");
         });
     let test = builder.build(&server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
     test.submit_turn_with_approval_and_permission_profile(
         "Find the rmcp echo and image tools.",
@@ -1474,9 +1474,9 @@ async fn tool_search_surfaced_mcp_tool_errors_are_returned_to_model() -> Result<
                 .expect("test mcp servers should accept any configuration");
         });
     let test = builder.build(&server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Find the rmcp echo tool and call it.".to_string(),
@@ -1489,7 +1489,7 @@ async fn tool_search_surfaced_mcp_tool_errors_are_returned_to_model() -> Result<
         })
         .await?;
 
-    let EventMsg::McpToolCallEnd(end) = wait_for_event(&test.codex, |event| {
+    let EventMsg::McpToolCallEnd(end) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::McpToolCallEnd(_))
     })
     .await
@@ -1509,7 +1509,7 @@ async fn tool_search_surfaced_mcp_tool_errors_are_returned_to_model() -> Result<
         "MCP invocation should report the execution failure: {tool_error}"
     );
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1624,7 +1624,7 @@ async fn tool_search_uses_non_app_mcp_server_instructions_as_namespace_descripti
                 .expect("test mcp servers should accept any configuration");
         });
     let test = builder.build(&server).await?;
-    wait_for_mcp_server(&test.codex, "rmcp").await?;
+    wait_for_mcp_server(&test.myra, "rmcp").await?;
 
     test.submit_turn_with_approval_and_permission_profile(
         "Find the rmcp echo tool.",
@@ -1801,10 +1801,10 @@ async fn tool_search_matches_dynamic_tools_by_name_description_namespace_and_sch
         })
         .await?;
     let mut test = base_test;
-    test.codex = new_thread.thread;
+    test.myra = new_thread.thread;
     test.session_configured = new_thread.session_configured;
 
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "Search for the dynamic tool".to_string(),
@@ -1817,7 +1817,7 @@ async fn tool_search_matches_dynamic_tools_by_name_description_namespace_and_sch
         })
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

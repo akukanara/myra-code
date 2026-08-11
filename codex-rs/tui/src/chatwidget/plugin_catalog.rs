@@ -330,7 +330,7 @@ impl ChatWidget {
             format!("Remove {marketplace_display_name} marketplace?").dim(),
         ));
         header.push(Line::from(
-            "This removes the configured marketplace from MyraCode.".dim(),
+            "This removes the configured marketplace from Myra.".dim(),
         ));
 
         let cwd_for_remove = self.config.cwd.to_path_buf();

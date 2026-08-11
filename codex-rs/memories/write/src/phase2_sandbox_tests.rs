@@ -62,6 +62,6 @@ async fn consolidation_uses_canonical_parent_enforcement() -> anyhow::Result<()>
         );
     }
 
-    test.codex.shutdown_and_wait().await?;
+    test.myra.shutdown_and_wait().await?;
     Ok(())
 }

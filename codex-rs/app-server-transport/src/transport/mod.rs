@@ -7,7 +7,7 @@ use crate::outgoing_message::QueuedOutgoingMessage;
 use codex_app_server_protocol::JSONRPCErrorError;
 use codex_app_server_protocol::JSONRPCMessage;
 use codex_app_server_protocol::RequestId;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use std::net::SocketAddr;
 use std::path::Path;
@@ -120,10 +120,10 @@ impl AppServerTransport {
 
         if let Some(raw_socket_path) = listen_url.strip_prefix("unix://") {
             let socket_path = if raw_socket_path.is_empty() {
-                let codex_home = find_codex_home().map_err(|err| {
+                let codex_home = find_myra_home().map_err(|err| {
                     AppServerTransportParseError::InvalidUnixSocketPath {
                         listen_url: listen_url.to_string(),
-                        message: format!("failed to resolve CODEX_HOME: {err}"),
+                        message: format!("failed to resolve MYRA_HOME: {err}"),
                     }
                 })?;
                 app_server_control_socket_path(&codex_home).map_err(|err| {

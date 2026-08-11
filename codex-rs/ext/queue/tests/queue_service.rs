@@ -144,7 +144,7 @@ async fn test_queue() -> anyhow::Result<(Arc<dyn QueueStore>, TempDir)> {
 }
 
 fn loaded_thread_queue(test: &TestCodex) -> anyhow::Result<Arc<dyn QueueStore>> {
-    let runtime = test.codex.state_db().context("state runtime unavailable")?;
+    let runtime = test.myra.state_db().context("state runtime unavailable")?;
     Ok(Arc::new(LocalQueueStore::new(runtime)))
 }
 
@@ -292,12 +292,12 @@ async fn starting_a_selected_item_preserves_the_remaining_queue() -> anyhow::Res
         .await?;
 
     let admission = service
-        .start(test.codex.as_ref(), second.id.clone(), /*trace*/ None)
+        .start(test.myra.as_ref(), second.id.clone(), /*trace*/ None)
         .await?;
 
     assert!(matches!(admission, UserMessageAdmission::Started { .. }));
     assert_eq!(vec![first], service.list(thread_id).await?);
-    wait_for_event_match(test.codex.as_ref(), |event| match event {
+    wait_for_event_match(test.myra.as_ref(), |event| match event {
         EventMsg::TurnComplete(_) => Some(()),
         _ => None,
     })
@@ -367,7 +367,7 @@ async fn registered_queue_lifecycle_starts_messages_in_fifo_order() -> anyhow::R
     tokio::time::timeout(Duration::from_secs(10), async {
         test.submit_text_turn("A").await?;
         for _ in 0..2 {
-            wait_for_event_match(test.codex.as_ref(), |event| {
+            wait_for_event_match(test.myra.as_ref(), |event| {
                 matches!(event, EventMsg::TurnComplete(_)).then_some(())
             })
             .await;
@@ -425,7 +425,7 @@ async fn rejected_queue_messages_are_consumed_without_retrying_or_blocking_follo
     tokio::time::timeout(Duration::from_secs(10), async {
         test.submit_text_turn("A").await?;
         for _ in 0..2 {
-            wait_for_event_match(test.codex.as_ref(), |event| {
+            wait_for_event_match(test.myra.as_ref(), |event| {
                 matches!(event, EventMsg::TurnComplete(_)).then_some(())
             })
             .await;
@@ -455,7 +455,7 @@ async fn rejected_queue_messages_are_consumed_without_retrying_or_blocking_follo
     let rejected = staging.enqueue(thread_id, user_input("blocked")).await?;
     let error = tokio::time::timeout(
         Duration::from_secs(10),
-        queue.start(test.codex.as_ref(), rejected.id, /*trace*/ None),
+        queue.start(test.myra.as_ref(), rejected.id, /*trace*/ None),
     )
     .await?
     .expect_err("explicitly started blocked input should be rejected");
@@ -708,7 +708,7 @@ async fn invalid_head_is_skipped_and_a_live_user_turn_is_accepted() -> anyhow::R
         .enqueue(thread_id, structured_user_input("durable follow-up"))
         .await?;
     emit_idle(&service, thread_id).await;
-    let client_id = wait_for_event_match(test.codex.as_ref(), |event| match event {
+    let client_id = wait_for_event_match(test.myra.as_ref(), |event| match event {
         EventMsg::ItemCompleted(event) => match &event.item {
             TurnItem::UserMessage(item) => Some(item.client_id.clone()),
             _ => None,
@@ -717,7 +717,7 @@ async fn invalid_head_is_skipped_and_a_live_user_turn_is_accepted() -> anyhow::R
     })
     .await;
     assert_eq!(Some("stable-client-message".to_string()), client_id);
-    wait_for_event_match(test.codex.as_ref(), |event| match event {
+    wait_for_event_match(test.myra.as_ref(), |event| match event {
         EventMsg::TurnComplete(_) => Some(()),
         _ => None,
     })

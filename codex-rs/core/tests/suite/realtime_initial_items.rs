@@ -41,13 +41,13 @@ async fn frameless_v3_sends_initial_items_in_session_bootstrap() -> Result<()> {
     });
     let test = builder.build_with_auto_env(&api_server).await?;
 
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(start_params(
             RealtimeConversationVersion::V3,
         )))
         .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::RealtimeConversationStarted(_))
     })
     .await;
@@ -179,10 +179,10 @@ async fn realtime_end_instructions_enforce_token_limit() -> Result<()> {
 async fn assert_start_error(params: ConversationStartParams, expected_error: &str) -> Result<()> {
     let api_server = start_mock_server().await;
     let test = test_codex().build_with_auto_env(&api_server).await?;
-    test.codex
+    test.myra
         .submit(Op::RealtimeConversationStart(params))
         .await?;
-    let error = wait_for_event_match(&test.codex, |msg| match msg {
+    let error = wait_for_event_match(&test.myra, |msg| match msg {
         EventMsg::RealtimeConversationRealtime(RealtimeConversationRealtimeEvent {
             payload: RealtimeEvent::Error(message),
         }) => Some(message.clone()),

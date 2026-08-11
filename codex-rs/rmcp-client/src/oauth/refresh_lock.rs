@@ -7,7 +7,7 @@
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_utils_home_dir::find_codex_home;
+use codex_utils_home_dir::find_myra_home;
 use sha2::Digest;
 use sha2::Sha256;
 use std::fs;
@@ -32,7 +32,7 @@ pub(super) struct RefreshCredentialLock {
 impl RefreshCredentialLock {
     pub(super) async fn acquire_for_server(server_name: &str, url: &str) -> Result<Self> {
         let store_key = super::compute_store_key(server_name, url)?;
-        let codex_home = find_codex_home()?;
+        let codex_home = find_myra_home()?;
         Self::acquire_in(&codex_home, &store_key, REFRESH_LOCK_ACQUIRE_TIMEOUT)
             .await
             .with_context(|| format!("failed to acquire OAuth credential lock for {server_name}"))
@@ -43,7 +43,7 @@ impl RefreshCredentialLock {
         store_key: &str,
         acquire_timeout: Duration,
     ) -> Result<Self> {
-        // Scope coordination to CODEX_HOME alongside File and Secrets state. Direct keyring
+        // Scope coordination to MYRA_HOME alongside File and Secrets state. Direct keyring
         // coordination across homes needs a separate cross-platform rendezvous.
         // TODO(stevenlee): define that rendezvous before expanding this lock's scope.
         let mut hasher = Sha256::new();

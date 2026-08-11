@@ -6,7 +6,7 @@ use clap::ArgGroup;
 use clap::Parser;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config::find_codex_home;
+use codex_core::config::find_myra_home;
 use codex_utils_cli::ProfileV2Name;
 use toml::Value as TomlValue;
 
@@ -38,7 +38,7 @@ pub(crate) struct SandboxSetupCommand {
     )]
     current_user: bool,
 
-    /// CODEX_HOME for the Codex user. Required with --user.
+    /// MYRA_HOME for the Codex user. Required with --user.
     #[arg(long = "codex-home", value_name = "DIR")]
     codex_home: Option<PathBuf>,
 }
@@ -99,7 +99,7 @@ async fn run_elevated(
         .cli_overrides(cli_overrides)
         .build()
         .await
-        .context("failed to load target user's MyraCode config for sandbox provisioning")?;
+        .context("failed to load target user's Myra config for sandbox provisioning")?;
 
     codex_core::windows_sandbox::run_elevated_provisioning_setup(
         identity.codex_home.as_path(),
@@ -140,7 +140,7 @@ fn resolve_sandbox_setup_identity(
             })?;
         let codex_home = match cmd.codex_home.clone() {
             Some(codex_home) => codex_home,
-            None => find_codex_home()?.to_path_buf(),
+            None => find_myra_home()?.to_path_buf(),
         };
         return Ok(SandboxSetupIdentity {
             real_user,
@@ -155,7 +155,7 @@ fn resolve_sandbox_setup_identity(
     let codex_home = cmd
         .codex_home
         .clone()
-        .ok_or_else(|| anyhow::anyhow!("--codex-home is required with --user"))?;
+        .ok_or_else(|| anyhow::anyhow!("--myra-home is required with --user"))?;
     Ok(SandboxSetupIdentity {
         real_user,
         codex_home,
@@ -173,8 +173,8 @@ mod tests {
             "--elevated",
             "--user",
             "DOMAIN\\alice",
-            "--codex-home",
-            r"C:\Users\alice\.codex",
+            "--myra-home",
+            r"C:\Users\alice\.myra",
         ])
         .expect("parse");
 
@@ -183,7 +183,7 @@ mod tests {
         assert!(!command.current_user);
         assert_eq!(
             command.codex_home.as_deref(),
-            Some(std::path::Path::new(r"C:\Users\alice\.codex"))
+            Some(std::path::Path::new(r"C:\Users\alice\.myra"))
         );
     }
 
@@ -211,8 +211,8 @@ mod tests {
             "--elevated".to_string(),
             "--user".to_string(),
             r"DOMAIN\alice".to_string(),
-            "--codex-home".to_string(),
-            r"C:\Users\alice\.codex".to_string(),
+            "--myra-home".to_string(),
+            r"C:\Users\alice\.myra".to_string(),
         ])
         .expect("parse")
         .expect("setup command");

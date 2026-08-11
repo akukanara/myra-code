@@ -52,7 +52,7 @@ async fn submit_user_turn(
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(permission_profile, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -189,7 +189,7 @@ async fn granular_complex_forced_rm_denial_explains_why_the_command_was_rejected
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -253,7 +253,7 @@ async fn granular_complex_forced_rm_requests_approval_when_allowed() -> Result<(
     )
     .await?;
 
-    let approval_event = wait_for_event(&test.codex, |event| {
+    let approval_event = wait_for_event(&test.myra, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -268,14 +268,14 @@ async fn granular_complex_forced_rm_requests_approval_when_allowed() -> Result<(
         Some(COMPLEX_FORCED_RM_COMMAND)
     );
 
-    test.codex
+    test.myra
         .submit(Op::ExecApproval {
             id: approval.effective_approval_id(),
             turn_id: None,
             decision: ReviewDecision::denied("rejected by user"),
         })
         .await?;
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -337,7 +337,7 @@ async fn unified_exec_disabled_windows_sandbox_rejects_managed_read_only_command
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -401,7 +401,7 @@ async fn execpolicy_blocks_shell_invocation() -> Result<()> {
     let session_model = test.session_configured.model.clone();
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
-    test.codex
+    test.myra
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "run shell command".into(),
@@ -428,14 +428,14 @@ async fn execpolicy_blocks_shell_invocation() -> Result<()> {
         })
         .await?;
 
-    let EventMsg::ExecCommandEnd(end) = wait_for_event(&test.codex, |event| {
+    let EventMsg::ExecCommandEnd(end) = wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::ExecCommandEnd(_))
     })
     .await
     else {
         unreachable!()
     };
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -572,7 +572,7 @@ async fn shell_command_empty_script_with_collaboration_mode_does_not_panic() -> 
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -631,7 +631,7 @@ async fn unified_exec_empty_script_with_collaboration_mode_does_not_panic() -> R
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -686,7 +686,7 @@ async fn shell_command_whitespace_script_with_collaboration_mode_does_not_panic(
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -745,7 +745,7 @@ async fn unified_exec_whitespace_script_with_collaboration_mode_does_not_panic()
     )
     .await?;
 
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.myra, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

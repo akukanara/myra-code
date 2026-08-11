@@ -13,8 +13,8 @@ Usage: build-codex-package-archive.sh \
   [--rg-bin <path>] \
   [--zsh-bin <path>] \
   [--zsh-manifest <path>] \
-  [--codex-command-runner-bin <path>] \
-  [--codex-windows-sandbox-setup-bin <path>] \
+  [--myra-command-runner-bin <path>] \
+  [--myra-windows-sandbox-setup-bin <path>] \
   [--target-suffixed-entrypoint]
 EOF
 }
@@ -70,18 +70,18 @@ while [[ $# -gt 0 ]]; do
       resource_args+=(--zsh-manifest "${2:?--zsh-manifest requires a value}")
       shift 2
       ;;
-    --codex-command-runner-bin)
+    --myra-command-runner-bin)
       resource_args+=(
-        --codex-command-runner-bin
-        "${2:?--codex-command-runner-bin requires a value}"
+        --myra-command-runner-bin
+        "${2:?--myra-command-runner-bin requires a value}"
       )
       command_runner_bin_provided="true"
       shift 2
       ;;
-    --codex-windows-sandbox-setup-bin)
+    --myra-windows-sandbox-setup-bin)
       resource_args+=(
-        --codex-windows-sandbox-setup-bin
-        "${2:?--codex-windows-sandbox-setup-bin requires a value}"
+        --myra-windows-sandbox-setup-bin
+        "${2:?--myra-windows-sandbox-setup-bin requires a value}"
       )
       sandbox_setup_bin_provided="true"
       shift 2
@@ -109,17 +109,17 @@ fi
 
 case "$bundle" in
   primary)
-    variant="codex"
-    entrypoint="codex"
-    archive_stem="codex-package"
+    variant="myra"
+    entrypoint="myra"
+    archive_stem="myra-package"
     ;;
   app-server)
-    variant="codex-app-server"
+    variant="myra-app-server"
     entrypoint="codex-app-server"
-    archive_stem="codex-app-server-package"
+    archive_stem="myra-app-server-package"
     ;;
   *)
-    echo "No Codex package variant for bundle: $bundle" >&2
+    echo "No Myra package variant for bundle: $bundle" >&2
     exit 1
     ;;
 esac
@@ -152,10 +152,10 @@ case "$target" in
     command_runner_bin="${entrypoint_dir%/}/codex-command-runner.exe"
     sandbox_setup_bin="${entrypoint_dir%/}/codex-windows-sandbox-setup.exe"
     if [[ "$command_runner_bin_provided" == "false" && -f "$command_runner_bin" ]]; then
-      resource_args+=(--codex-command-runner-bin "$command_runner_bin")
+      resource_args+=(--myra-command-runner-bin "$command_runner_bin")
     fi
     if [[ "$sandbox_setup_bin_provided" == "false" && -f "$sandbox_setup_bin" ]]; then
-      resource_args+=(--codex-windows-sandbox-setup-bin "$sandbox_setup_bin")
+      resource_args+=(--myra-windows-sandbox-setup-bin "$sandbox_setup_bin")
     fi
     ;;
 esac
