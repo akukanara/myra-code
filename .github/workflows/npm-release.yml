@@ -84,6 +84,14 @@ jobs:
           rustup toolchain install "$toolchain"
           rustup target add --toolchain "$toolchain" "${{ matrix.target }}"
 
+      # The v8 crate needs both the target-specific static library and its
+      # generated bindings. The package builder forwards these overrides to
+      # Cargo, so fetch and verify them before compiling the CLI.
+      - name: Set up rusty_v8
+        uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: "${{ matrix.target }}"
+
       # GitHub-hosted runners are ephemeral. Without a Rust cache, every
       # release recompiles the same vendored OpenSSL and third-party crates from
       # scratch on every target. Keep a separate cache per target because Cargo
