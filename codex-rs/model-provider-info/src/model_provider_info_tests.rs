@@ -146,6 +146,13 @@ fn test_personal_access_token_uses_chatgpt_codex_base_url() {
 }
 
 #[test]
+fn test_openai_provider_defaults_to_staging_base_url() {
+    let provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None);
+
+    assert_eq!(provider.base_url.as_deref(), Some(STAGING_OPENAI_BASE_URL));
+}
+
+#[test]
 fn test_header_auth_uses_chatgpt_codex_base_url() {
     let api_provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None)
         .to_api_provider(Some(AuthMode::Headers))

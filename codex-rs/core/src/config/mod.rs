@@ -210,6 +210,7 @@ impl Default for GhostSnapshotConfig {
 /// the context window.
 pub(crate) const AGENTS_MD_MAX_BYTES: usize = DEFAULT_PROJECT_DOC_MAX_BYTES; // 32 KiB
 pub(crate) const DEFAULT_AGENT_MAX_THREADS: Option<usize> = Some(6);
+const STAGING_DEFAULT_MODEL: &str = "gemini-3.6-flash";
 pub(crate) const DEFAULT_MULTI_AGENT_V2_MAX_CONCURRENT_THREADS_PER_SESSION: usize = 4;
 pub(crate) const DEFAULT_MULTI_AGENT_V2_MIN_WAIT_TIMEOUT_MS: i64 = 10_000;
 pub(crate) const DEFAULT_MULTI_AGENT_V2_MAX_WAIT_TIMEOUT_MS: i64 = 3600 * 1000;
@@ -3865,7 +3866,7 @@ impl Config {
 
         let forced_login_method = cfg.forced_login_method;
 
-        let model = model.or(cfg.model);
+        let model = model.or(cfg.model).or(Some(STAGING_DEFAULT_MODEL.to_string()));
         let notices = cfg.notice.unwrap_or_default();
         let service_tier = match service_tier_override {
             Some(Some(service_tier)) => Some(service_tier),

@@ -34,7 +34,8 @@ const MAX_REQUEST_MAX_RETRIES: u64 = 100;
 const OPENAI_PROVIDER_NAME: &str = "OpenAI";
 const OPENAI_ACTOR_AUTHORIZATION_HEADER: &str = "x-openai-actor-authorization";
 pub const OPENAI_PROVIDER_ID: &str = "openai";
-pub const CHATGPT_CODEX_BASE_URL: &str = "https://ai.int.myralith.dev/v1";
+pub const STAGING_OPENAI_BASE_URL: &str = "https://staging-rt.myralith.dev/v1";
+pub const CHATGPT_CODEX_BASE_URL: &str = STAGING_OPENAI_BASE_URL;
 const AMAZON_BEDROCK_PROVIDER_NAME: &str = "Amazon Bedrock";
 pub const AMAZON_BEDROCK_PROVIDER_ID: &str = "amazon-bedrock";
 pub const AMAZON_BEDROCK_GPT_5_5_MODEL_ID: &str = "openai.gpt-5.5";
@@ -331,7 +332,7 @@ impl ModelProviderInfo {
     pub fn create_openai_provider(base_url: Option<String>) -> ModelProviderInfo {
         ModelProviderInfo {
             name: OPENAI_PROVIDER_NAME.into(),
-            base_url,
+            base_url: base_url.or(Some(STAGING_OPENAI_BASE_URL.to_string())),
             env_key: None,
             env_key_instructions: None,
             experimental_bearer_token: None,

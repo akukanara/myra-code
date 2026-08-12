@@ -6027,7 +6027,7 @@ model = "gpt-project-local"
         .build()
         .await?;
 
-    assert_eq!(config.model, None);
+    assert_eq!(config.model.as_deref(), Some("gemini-3.6-flash"));
     assert!(
         config.startup_warnings.iter().any(|warning| {
             warning.contains("profile")
