@@ -111,7 +111,7 @@ jobs:
       # each fresh runner so Cargo links the archive downloaded above.
       - name: Refresh rusty_v8 build output
         working-directory: codex-rs
-        run: cargo clean -p v8
+        run: cargo clean -p v8 --target "${{ matrix.target }}"
 
       - name: Install Zig
         if: runner.os == 'Linux'
