@@ -102,7 +102,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: "codex-rs -> target"
-          shared-key: "myra-npm-${{ matrix.target }}"
+          # Bump this namespace when cache contents change; older entries also
+          # contain target output whose V8 link paths are runner-specific.
+          shared-key: "myra-npm-registry-v2-${{ matrix.target }}"
           add-job-id-key: "false"
           cache-workspace-crates: "true"
           cache-targets: "false"
