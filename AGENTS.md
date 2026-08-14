@@ -1,5 +1,16 @@
 # Rust/codex-rs
 
+## Git workflow
+
+- Create a dedicated `feat/*`, `fix/*`, or `chore/*` branch before changing
+  code, configuration, or GitHub Actions workflows. Do not commit directly to
+  `main`.
+- When the work is ready, push the branch and merge it into `main` through a
+  reviewable pull request. GitHub Actions that produce MyraCode test artifacts
+  run only after that merge reaches `main`.
+- Repository instructions guide contributors; protect `main` in GitHub with
+  required pull requests and blocked direct pushes to enforce this rule.
+
 In the codex-rs folder where the rust code lives:
 
 - Crate names are prefixed with `codex-`. For example, the `core` folder's crate is named `codex-core`
