@@ -95,9 +95,9 @@ jobs:
       # GitHub-hosted runners are ephemeral. Without a Rust cache, every
       # release recompiles the same vendored OpenSSL and third-party crates from
       # scratch on every target. Keep a separate cache per target because Cargo
-      # artifacts are not portable across OSes or architectures. The cache
-      # action keeps dependency artifacts and can reuse unchanged workspace
-      # crates while Cargo still recompiles anything whose source changed.
+      # artifacts are not portable across OSes or architectures. Windows V8
+      # build output embeds a runner-local native library path, so cache only
+      # its registry there and regenerate its target output on every runner.
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@v2
         with:
@@ -105,13 +105,7 @@ jobs:
           shared-key: "myra-npm-${{ matrix.target }}"
           add-job-id-key: "false"
           cache-workspace-crates: "true"
-
-      # The v8 build script records the downloaded archive's runner-local path.
-      # Restore the dependency cache, but regenerate this build-script output on
-      # each fresh runner so Cargo links the archive downloaded above.
-      - name: Refresh rusty_v8 build output
-        working-directory: codex-rs
-        run: cargo clean -p v8 --target "${{ matrix.target }}"
+          cache-targets: ${{ runner.os != 'Windows' }}
 
       - name: Install Zig
         if: runner.os == 'Linux'
