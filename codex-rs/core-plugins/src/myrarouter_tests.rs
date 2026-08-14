@@ -36,7 +36,7 @@ fn required_catalog_item_maps_to_installed_plugin() {
 fn required_marketplace_always_contains_all_core_tools() {
     let marketplace = required_marketplace();
     assert_eq!(marketplace.display_name, "MyraTools");
-    assert_eq!(marketplace.plugins.len(), 3);
+    assert_eq!(marketplace.plugins.len(), 4);
     assert_eq!(
         marketplace
             .plugins

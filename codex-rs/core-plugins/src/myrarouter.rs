@@ -16,10 +16,11 @@ use std::time::Duration;
 pub const MYRAROUTER_MARKETPLACE_NAME: &str = "myrarouter";
 pub const MYRAROUTER_MARKETPLACE_DISPLAY_NAME: &str = "MyraTools";
 
-const REQUIRED_MYRA_TOOL_NAMES: [&str; 3] = [
+const REQUIRED_MYRA_TOOL_NAMES: [&str; 4] = [
     "myrarouter-image",
     "myrarouter-web-fetch",
     "myrarouter-web-search",
+    "myrarouter-myractx",
 ];
 
 fn is_required_myra_tool_name(name: &str) -> bool {
@@ -189,6 +190,13 @@ pub fn required_marketplace() -> RemoteMarketplace {
             "Search the live web with provider routing and automatic fallback.",
             "POST /v1/search",
             "/dashboard/providers?kind=webSearch",
+        ),
+        required_tool(
+            "myrarouter-myractx",
+            "MyraCtx",
+            "Find current, version-aware coding documentation through MyraCode.",
+            "POST /v1/myractx/search",
+            "/dashboard/myractx",
         ),
     ]
     .into_iter()

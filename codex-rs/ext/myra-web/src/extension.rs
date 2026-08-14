@@ -13,6 +13,7 @@ use codex_login::AuthManager;
 use codex_login::CodexAuth;
 
 use crate::tool::GatewayWeb;
+use crate::tool::MyraCtxTool;
 use crate::tool::WebFetchTool;
 use crate::tool::WebSearchTool;
 
@@ -92,9 +93,10 @@ impl ToolContributor for MyraWebExtension {
                 default_model: DEFAULT_SEARCH_MODEL.to_string(),
             }),
             Arc::new(WebFetchTool {
-                gateway,
+                gateway: gateway.clone(),
                 default_model: DEFAULT_FETCH_MODEL.to_string(),
             }),
+            Arc::new(MyraCtxTool { gateway }),
         ]
     }
 }

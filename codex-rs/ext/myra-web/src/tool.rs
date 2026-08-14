@@ -17,6 +17,7 @@ use serde_json::json;
 
 pub(crate) const SEARCH_TOOL: &str = "web_search";
 pub(crate) const FETCH_TOOL: &str = "web_fetch";
+pub(crate) const MYRACTX_TOOL: &str = "myractx_search";
 
 /// Long enough for a federated search to poll several engines, short enough
 /// that a wedged upstream does not hold a turn open indefinitely.
@@ -312,6 +313,81 @@ impl ToolExecutor<ToolCall> for WebFetchTool {
             if let Some(warnings) = response.get("warnings").filter(|v| v.is_array()) {
                 output["warnings"] = warnings.clone();
             }
+            Ok(
+                Box::new(JsonToolOutput::new(output).with_external_context())
+                    as Box<dyn ToolOutput>,
+            )
+        })
+    }
+}
+
+// ── myractx_search ─────────────────────────────────────────────────────────
+
+/// Version-aware coding knowledge collected by MyraRouter. This is separate
+/// from web search: it prefers already-indexed documentation and refreshes it
+/// only when the gateway has no relevant knowledge yet.
+pub(crate) struct MyraCtxTool {
+    pub(crate) gateway: GatewayWeb,
+}
+
+fn myractx_schema() -> JsonValue {
+    json!({
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "The implementation question or API behavior to look up."
+            },
+            "library": {
+                "type": "string",
+                "description": "Library name or MyraCtx library id, for example `next.js`, `react`, or `/vercel/next.js`."
+            }
+        },
+        "required": ["query", "library"],
+        "additionalProperties": false
+    })
+}
+
+impl ToolExecutor<ToolCall> for MyraCtxTool {
+    fn tool_name(&self) -> ToolName {
+        ToolName::plain(MYRACTX_TOOL)
+    }
+
+    fn spec(&self) -> ToolSpec {
+        let parameters = parse_tool_input_schema_without_compaction(&myractx_schema())
+            .expect("myractx_search schema should parse");
+        ToolSpec::Function(ResponsesApiTool {
+            name: MYRACTX_TOOL.to_string(),
+            description: "Look up current, version-aware coding documentation from MyraCtx. Use this before web search when the task concerns a library, framework, SDK, API, CLI, or cloud service. Provide the library name or its MyraCtx id and a focused implementation question.".to_string(),
+            strict: false,
+            defer_loading: None,
+            output_schema: None,
+            parameters,
+        })
+    }
+
+    fn exposure(&self) -> ToolExposure {
+        ToolExposure::Direct
+    }
+
+    fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
+        Box::pin(async move {
+            let args = arguments(&call)?;
+            let response = self
+                .gateway
+                .post(
+                    "myractx/search",
+                    json!({
+                        "query": required_str(&args, "query")?,
+                        "libraryId": required_str(&args, "library")?,
+                    }),
+                )
+                .await?;
+            let output = json!({
+                "status": response.get("status").cloned().unwrap_or(JsonValue::Null),
+                "answer": response.get("answer").cloned().unwrap_or(JsonValue::Null),
+                "references": response.get("references").cloned().unwrap_or(JsonValue::Array(vec![])),
+            });
             Ok(
                 Box::new(JsonToolOutput::new(output).with_external_context())
                     as Box<dyn ToolOutput>,
