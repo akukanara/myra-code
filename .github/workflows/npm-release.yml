@@ -106,6 +106,13 @@ jobs:
           add-job-id-key: "false"
           cache-workspace-crates: "true"
 
+      # The v8 build script records the downloaded archive's runner-local path.
+      # Restore the dependency cache, but regenerate this build-script output on
+      # each fresh runner so Cargo links the archive downloaded above.
+      - name: Refresh rusty_v8 build output
+        working-directory: codex-rs
+        run: cargo clean -p v8
+
       - name: Install Zig
         if: runner.os == 'Linux'
         uses: mlugg/setup-zig@v2
