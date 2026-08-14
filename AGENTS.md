@@ -1,5 +1,32 @@
 # Rust/codex-rs
 
+## Git workflow
+
+- Create a dedicated `feat/*`, `fix/*`, or `chore/*` branch before changing
+  code, configuration, or GitHub Actions workflows. Do not commit directly to
+  `main`.
+- When the work is ready, push the branch and merge it into `main` through a
+  reviewable pull request. GitHub Actions that produce MyraCode test artifacts
+  run only after that merge reaches `main`.
+- Repository instructions guide contributors; protect `main` in GitHub with
+  required pull requests and blocked direct pushes to enforce this rule.
+
+## Versioning and releases
+
+- Use Semantic Versioning: `MAJOR.MINOR.PATCH`. Breaking changes increment
+  MAJOR, backward-compatible features increment MINOR, and fixes increment
+  PATCH.
+- Create release tags only from an already-merged `main` commit. The Rust
+  release workflow requires an annotated `rust-vMAJOR.MINOR.PATCH` tag whose
+  version exactly matches `codex-rs/Cargo.toml`.
+- Use numbered prereleases only when needed: `rust-vX.Y.Z-alpha.N` or
+  `rust-vX.Y.Z-beta.N`. Never move, reuse, or delete a published release tag.
+- Keep the Rust package version and npm release version aligned. Stable
+  versions publish to `latest`; prereleases publish to their matching dist-tag.
+- Before creating a tag, require a successful `main` build artifact, review
+  release notes, and verify the intended version has not already been
+  published.
+
 In the codex-rs folder where the rust code lives:
 
 - Crate names are prefixed with `codex-`. For example, the `core` folder's crate is named `codex-core`

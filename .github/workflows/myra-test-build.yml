@@ -1,7 +1,20 @@
 name: myra-test-build
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "codex-rs/**"
+      - "scripts/build_codex_package.py"
+      - "scripts/codex_package/**"
+      - ".github/actions/setup-rusty-v8/**"
+      - ".github/scripts/install-musl-build-tools.sh"
+      - ".github/workflows/myra-test-build.yml"
   workflow_dispatch:
+
+concurrency:
+  group: myra-main-build-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -15,11 +28,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Restore exact package cache
+        id: package-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vendor/x86_64-unknown-linux-musl
+          key: myra-linux-x64-package-v1-${{ hashFiles('codex-rs/**/*.rs', 'codex-rs/Cargo.toml', 'codex-rs/Cargo.lock', 'codex-rs/**/Cargo.toml', 'scripts/build_codex_package.py', 'scripts/codex_package/**', '.github/actions/setup-rusty-v8/**', '.github/scripts/install-musl-build-tools.sh') }}
+
       - uses: actions/setup-python@v5
+        if: steps.package-cache.outputs.cache-hit != 'true'
         with:
           python-version: "3.11"
 
       - name: Install Rust target
+        if: steps.package-cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           toolchain="$(python -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("codex-rs/rust-toolchain.toml").read_text())["toolchain"]["channel"])')"
@@ -27,6 +49,7 @@ jobs:
           rustup target add --toolchain "$toolchain" x86_64-unknown-linux-musl
 
       - name: Restore Rust build cache
+        if: steps.package-cache.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: "codex-rs -> target"
@@ -35,17 +58,20 @@ jobs:
           cache-workspace-crates: "true"
 
       - name: Set up prebuilt V8
+        if: steps.package-cache.outputs.cache-hit != 'true'
         uses: ./.github/actions/setup-rusty-v8
         with:
           target: x86_64-unknown-linux-musl
 
       - name: Install Zig
+        if: steps.package-cache.outputs.cache-hit != 'true'
         uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
           use-cache: true
 
       - name: Install Linux build tools
+        if: steps.package-cache.outputs.cache-hit != 'true'
         env:
           TARGET: x86_64-unknown-linux-musl
         run: |
@@ -54,6 +80,7 @@ jobs:
           echo "AWS_LC_SYS_NO_JITTER_ENTROPY=1" >> "$GITHUB_ENV"
 
       - name: Build test package
+        if: steps.package-cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           python scripts/build_codex_package.py \
@@ -61,6 +88,13 @@ jobs:
             --cargo-profile release \
             --package-dir vendor/x86_64-unknown-linux-musl \
             --force
+
+      - name: Save exact package cache
+        if: steps.package-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: vendor/x86_64-unknown-linux-musl
+          key: ${{ steps.package-cache.outputs.cache-primary-key }}
 
       - name: Upload MyraCode Linux package
         uses: actions/upload-artifact@v4
