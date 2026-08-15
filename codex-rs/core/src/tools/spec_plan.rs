@@ -156,13 +156,13 @@ pub(crate) fn build_tool_router(
             &mut registry,
         );
         apply_mcp_tool_exposure_policy(turn_context, mcp, &registered_mcp_tools, &mut registry);
-        let standalone_web_search_tool = append_extension_tool_executors(
+        let registered_extension_tool_names = append_extension_tool_executors(
             turn_context,
             extension_tool_executors(session, step_store),
             &mut registry,
         );
         append_dynamic_tool_runtimes(&turn_context.dynamic_tools, &mut registry);
-        hosted_model_tool_specs(turn_context, standalone_web_search_tool.as_slice())
+        hosted_model_tool_specs(turn_context, &registered_extension_tool_names)
     };
 
     finalize_tool_router(
@@ -287,10 +287,10 @@ pub(crate) fn append_source_tools(
     for tool in mcp_tools {
         registry.register_external_with_exposure(tool.runtime, tool.exposure);
     }
-    let standalone_web_search_tool =
+    let registered_extension_tool_names =
         append_extension_tool_executors(turn_context, extension_tool_executors, registry);
     append_dynamic_tool_runtimes(dynamic_tools, registry);
-    hosted_model_tool_specs(turn_context, standalone_web_search_tool.as_slice())
+    hosted_model_tool_specs(turn_context, &registered_extension_tool_names)
 }
 
 #[instrument(level = "trace", skip_all)]
@@ -494,9 +494,15 @@ fn hosted_model_tool_specs(
     let mut specs = Vec::new();
     let standalone_web_search_available = standalone_web_search_enabled(turn_context)
         && registered_extension_tool_names.contains(&ToolName::namespaced("web", "run"));
+    // MyraRouter serves this client-executed tool from the configured gateway.
+    // Its presence means the native hosted Responses web search must not be
+    // offered too, which would otherwise route a duplicate tool to OpenAI.
+    let gateway_web_search_available =
+        registered_extension_tool_names.contains(&ToolName::plain("web_search"));
     // `Some(Cached/Live/Disabled)` are the options for mode when standalone search is unavailable
     // and the provider supports hosted search. `None` prevents emitting a hosted search tool.
     let web_search_mode = (!standalone_web_search_available
+        && !gateway_web_search_available
         && turn_context.provider.capabilities().web_search)
         .then_some(turn_context.config.web_search_mode.value());
     let web_search_config = web_search_mode
@@ -1203,10 +1209,10 @@ fn append_extension_tool_executors(
     turn_context: &TurnContext,
     executors: impl IntoIterator<Item = Arc<dyn ToolExecutor<ExtensionToolCall>>>,
     registry: &mut ToolRegistry,
-) -> Option<ToolName> {
+) -> Vec<ToolName> {
     let standalone_web_search_enabled = standalone_web_search_enabled(turn_context);
     let web_search_mode_on = turn_context.config.web_search_mode.value() != WebSearchMode::Disabled;
-    let mut standalone_web_search_tool = None;
+    let mut registered_tool_names = Vec::new();
 
     for executor in executors {
         let tool_name = executor.tool_name();
@@ -1220,12 +1226,12 @@ fn append_extension_tool_executors(
             continue;
         }
         let runtime = Arc::new(ExtensionToolAdapter::new(executor));
-        if registry.register_external(runtime) && is_standalone_web_search {
-            standalone_web_search_tool = Some(tool_name);
+        if registry.register_external(runtime) {
+            registered_tool_names.push(tool_name);
         }
     }
 
-    standalone_web_search_tool
+    registered_tool_names
 }
 
 fn multi_agent_v2_handler(

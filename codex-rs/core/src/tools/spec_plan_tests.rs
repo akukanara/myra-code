@@ -365,6 +365,29 @@ impl ToolExecutor<ExtensionToolCall> for DeferredExtensionTool {
     }
 }
 
+struct GatewayWebSearchExtensionTool;
+
+impl ToolExecutor<ExtensionToolCall> for GatewayWebSearchExtensionTool {
+    fn tool_name(&self) -> ToolName {
+        ToolName::plain("web_search")
+    }
+
+    fn spec(&self) -> ToolSpec {
+        ToolSpec::Function(ResponsesApiTool {
+            name: "web_search".to_string(),
+            description: "Search through the configured gateway.".to_string(),
+            strict: true,
+            defer_loading: None,
+            parameters: codex_tools::JsonSchema::default(),
+            output_schema: None,
+        })
+    }
+
+    fn handle(&self, _call: ExtensionToolCall) -> codex_tools::ToolExecutorFuture<'_> {
+        Box::pin(async { panic!("spec planning should not execute extension tools") })
+    }
+}
+
 fn duplicate_primary_environment(turn: &mut TurnContext) {
     let mut second_environment = turn
         .environments
@@ -2700,6 +2723,27 @@ async fn hosted_web_search_and_standalone_image_generation_follow_runtime_gates(
     )
     .await;
     standalone_web_search.assert_visible_lacks(&["web_search"]);
+
+    let gateway_web_search = probe_with(
+        |turn| set_web_search_mode(turn, WebSearchMode::Live),
+        ToolPlanInputs {
+            extension_tool_executors: vec![Arc::new(GatewayWebSearchExtensionTool)],
+            ..ToolPlanInputs::default()
+        },
+    )
+    .await;
+    assert_eq!(
+        gateway_web_search
+            .visible_names
+            .iter()
+            .filter(|name| name.as_str() == "web_search")
+            .count(),
+        1
+    );
+    assert!(matches!(
+        gateway_web_search.visible_spec("web_search"),
+        ToolSpec::Function(_)
+    ));
 
     let bedrock_cached_web_search = probe(|turn| {
         use_bedrock_provider(turn);
