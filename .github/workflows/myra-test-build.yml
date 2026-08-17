@@ -56,6 +56,11 @@ jobs:
           shared-key: "myra-test-linux-x64-v1"
           add-job-id-key: "false"
           cache-workspace-crates: "true"
+          # The V8 build script expands a large static archive into target/.
+          # Restoring Cargo target output without that archive leaves fresh
+          # runners with a fingerprint that skips V8's build script but fails
+          # to link. Cache dependencies only and rebuild target output.
+          cache-targets: "false"
 
       - name: Set up prebuilt V8
         if: steps.package-cache.outputs.cache-hit != 'true'
