@@ -443,6 +443,7 @@ impl TurnToolCounts {
             }
             ThreadItem::WebSearch(_) => self.web_search += 1,
             ThreadItem::ImageGeneration(_) => self.image_generation += 1,
+            ThreadItem::MyraCtx(_) => return,
             ThreadItem::UserMessage { .. }
             | ThreadItem::HookPrompt { .. }
             | ThreadItem::AgentMessage { .. }
@@ -2139,6 +2140,7 @@ fn tracked_tool_item_id(item: &ThreadItem) -> Option<&str> {
         | ThreadItem::CollabAgentToolCall { id, .. } => Some(id),
         ThreadItem::WebSearch(item) => Some(&item.id),
         ThreadItem::ImageGeneration(item) => Some(&item.id),
+        ThreadItem::MyraCtx(_) => None,
         ThreadItem::UserMessage { .. }
         | ThreadItem::HookPrompt { .. }
         | ThreadItem::AgentMessage { .. }
