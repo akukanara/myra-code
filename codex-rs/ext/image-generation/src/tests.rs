@@ -28,6 +28,8 @@ use crate::IMAGEGEN_TOOL_NAME;
 use crate::artifact::image_generation_artifact_path;
 use crate::artifact::image_generation_output_hint;
 
+const IMAGE_MODEL: &str = "gpt-image-2";
+
 const RESULT: &str = "cG5n";
 
 #[test]
@@ -66,6 +68,7 @@ async fn omitted_references_generate_with_fixed_defaults() {
             },
             &[],
             &[],
+            IMAGE_MODEL,
         )
         .await
         .expect("generation request should build"),
@@ -73,6 +76,32 @@ async fn omitted_references_generate_with_fixed_defaults() {
             prompt: "paint a moonlit lake".to_string(),
             background: Some(ImageBackground::Auto),
             model: "gpt-image-2".to_string(),
+            n: None,
+            quality: Some(ImageQuality::Auto),
+            size: Some("auto".to_string()),
+        })
+    );
+}
+
+#[tokio::test]
+async fn omitted_references_use_the_plan_selected_image_model() {
+    assert_eq!(
+        request_for_call_args(
+            &ImagegenArgs {
+                prompt: "paint a moonlit lake".to_string(),
+                referenced_image_paths: None,
+                num_last_images_to_include: None,
+            },
+            &[],
+            &[],
+            "gemini/gemini-3-pro-image-preview",
+        )
+        .await
+        .expect("generation request should build"),
+        ImageRequest::Generate(ImageGenerationRequest {
+            prompt: "paint a moonlit lake".to_string(),
+            background: Some(ImageBackground::Auto),
+            model: "gemini/gemini-3-pro-image-preview".to_string(),
             n: None,
             quality: Some(ImageQuality::Auto),
             size: Some("auto".to_string()),
@@ -151,6 +180,7 @@ async fn recent_image_fallback_selects_newest_images_in_chronological_order() {
             },
             &history,
             &[],
+            IMAGE_MODEL,
         )
         .await
         .expect("history-backed edit request should build"),
@@ -175,6 +205,7 @@ async fn conflicting_image_selectors_return_tool_error() {
         },
         &[],
         &[],
+        IMAGE_MODEL,
     )
     .await
     .expect_err("conflicting selectors should fail");
@@ -203,6 +234,7 @@ async fn too_many_referenced_image_paths_return_tool_error() {
         },
         &[],
         &[],
+        IMAGE_MODEL,
     )
     .await
     .expect_err("too many paths should fail before reading files");
@@ -229,6 +261,7 @@ async fn recent_image_fallback_requires_requested_count() {
             internal_chat_message_metadata_passthrough: None,
         }],
         &[],
+        IMAGE_MODEL,
     )
     .await
     .expect_err("history-backed edit should require the requested image count");
