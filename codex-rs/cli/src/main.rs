@@ -108,7 +108,7 @@ use codex_terminal_detection::TerminalName;
     override_usage = "myra [OPTIONS] [PROMPT]\n       myra [OPTIONS] <COMMAND> [ARGS]"
 )]
 struct MultitoolCli {
-    /// Enable process-only PSP routing for first-party ChatGPT requests.
+    /// Enable process-only PSP routing for first-party account requests.
     #[arg(long, global = true, hide = true)]
     psp: bool,
 
@@ -474,13 +474,13 @@ struct LoginCommand {
 
     #[arg(
         long = "with-api-key",
-        help = "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | myra login --with-api-key`)"
+        help = "Read the API key from stdin (e.g. `printenv MY_API_KEY | myra login --with-api-key`)"
     )]
     with_api_key: bool,
 
     #[arg(
         long = "with-access-token",
-        help = "Read the access token from stdin (e.g. `printenv CODEX_ACCESS_TOKEN | myra login --with-access-token`)"
+        help = "Read the access token from stdin (e.g. `printenv MY_ACCESS_TOKEN | myra login --with-access-token`)"
     )]
     with_access_token: bool,
 
@@ -566,7 +566,7 @@ struct AppServerCommand {
     /// enabled = false
     /// ```
     ///
-    /// See https://developers.openai.com/codex/config-advanced/#metrics for more details.
+    /// Configure this in the MyraRouter dashboard.
     #[arg(long = "analytics-default-enabled")]
     analytics_default_enabled: bool,
 
@@ -604,7 +604,7 @@ struct ExecServerCommand {
     #[arg(long = "name", value_name = "NAME")]
     name: Option<String>,
 
-    /// Use Agent Identity auth from CODEX_ACCESS_TOKEN for remote registration.
+    /// Use Agent Identity auth from an access-token environment variable for remote registration.
     #[arg(long = "use-agent-identity-auth", requires = "remote")]
     use_agent_identity_auth: bool,
 
@@ -838,7 +838,7 @@ fn run_update_command() -> anyhow::Result<()> {
     {
         let Some(action) = codex_tui::get_update_action() else {
             anyhow::bail!(
-                "Could not detect the Myra installation method. Please update manually: https://developers.openai.com/codex/cli/"
+                "Could not detect the Myra installation method. Please update manually from the MyraRouter dashboard: https://staging-rt.myralith.dev/dashboard"
             );
         };
         run_update_action(action)
@@ -1076,7 +1076,7 @@ async fn cli_main(
                 root_remote_auth_token_env.as_deref(),
                 "review",
             )?;
-            let mut exec_cli = ExecCli::try_parse_from(["codex", "exec"])?;
+            let mut exec_cli = ExecCli::try_parse_from(["myra", "exec"])?;
             exec_cli
                 .shared
                 .inherit_exec_root_options(&interactive.shared);
@@ -1883,13 +1883,13 @@ async fn load_exec_server_remote_auth_provider(
 
     let auth = load_exec_server_remote_auth(
         config,
-        "remote exec-server registration requires ChatGPT authentication or API key authentication; run `myra login` or set CODEX_API_KEY",
+        "remote exec-server registration requires account authentication or API key authentication; run `myra login` or set an API-key environment variable",
     )
     .await?;
 
     if !is_supported_exec_server_remote_auth(&auth) {
         anyhow::bail!(
-            "remote exec-server registration requires ChatGPT authentication or API key authentication; Agent Identity auth requires --use-agent-identity-auth"
+            "remote exec-server registration requires account authentication or API key authentication; Agent Identity auth requires --use-agent-identity-auth"
         );
     }
 
@@ -1916,22 +1916,22 @@ fn validate_api_key_remote_host(base_url: &str) -> anyhow::Result<()> {
         url::Host::Ipv4(ip) => ip.is_loopback(),
         url::Host::Ipv6(ip) => ip.is_loopback(),
     };
-    let is_openai_host = match &host {
-        url::Host::Domain(host) => ["openai.com", "openai.org"].into_iter().any(|domain| {
+    let is_myralith_host = match &host {
+        url::Host::Domain(host) => ["myralith.dev"].into_iter().any(|domain| {
             host.eq_ignore_ascii_case(domain)
                 || host.to_ascii_lowercase().ends_with(&format!(".{domain}"))
         }),
         _ => false,
     };
     let is_allowed = match url.scheme() {
-        "https" => is_loopback || is_openai_host,
+        "https" => is_loopback || is_myralith_host,
         "http" => is_loopback,
         _ => false,
     };
 
     if !is_allowed {
         anyhow::bail!(
-            "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
+            "remote exec-server API-key authentication is restricted to HTTPS myralith.dev hosts and subdomains or loopback hosts"
         );
     }
 
@@ -2675,7 +2675,7 @@ fn merge_interactive_cli_flags(interactive: &mut TuiCli, subcommand_cli: TuiCli)
 
 fn print_completion(cmd: CompletionCommand) {
     let mut app = MultitoolCli::command();
-    let name = "codex";
+    let name = "myra";
     generate(cmd.shell, &mut app, name, &mut std::io::stdout());
 }
 
@@ -2723,12 +2723,11 @@ mod tests {
     }
 
     #[test]
-    fn exec_server_remote_api_key_auth_accepts_https_openai_domains() {
+    fn exec_server_remote_api_key_auth_accepts_https_myralith_domains() {
         for base_url in [
-            "https://openai.com/api",
-            "https://service.openai.com/api",
-            "https://openai.org/api",
-            "https://service.openai.org/api",
+            "https://myralith.dev/api",
+            "https://staging-rt.myralith.dev/api",
+            "https://staging-ai.myralith.dev/api",
         ] {
             assert!(validate_api_key_remote_host(base_url).is_ok());
         }
@@ -2746,29 +2745,29 @@ mod tests {
     }
 
     #[test]
-    fn exec_server_remote_api_key_auth_rejects_http_openai_domain() {
+    fn exec_server_remote_api_key_auth_rejects_http_myralith_domain() {
         for base_url in [
-            "http://service.openai.com/api",
-            "http://service.openai.org/api",
+            "http://staging-rt.myralith.dev/api",
+            "http://staging-ai.myralith.dev/api",
         ] {
             let error = validate_api_key_remote_host(base_url)
-                .expect_err("reject plaintext OpenAI destination");
+                .expect_err("reject plaintext MyraRouter destination");
 
             assert_eq!(
                 error.to_string(),
-                "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
+                "remote exec-server API-key authentication is restricted to HTTPS myralith.dev hosts and subdomains or loopback hosts"
             );
         }
     }
 
     #[test]
     fn exec_server_remote_api_key_auth_rejects_suffix_spoof() {
-        let error = validate_api_key_remote_host("https://service.openai.org.evil.example/api")
+        let error = validate_api_key_remote_host("https://staging-rt.myralith.dev.evil.example/api")
             .expect_err("reject suffix spoof");
 
         assert_eq!(
             error.to_string(),
-            "remote exec-server API-key authentication is restricted to HTTPS openai.com and openai.org hosts and subdomains or loopback hosts"
+            "remote exec-server API-key authentication is restricted to HTTPS myralith.dev hosts and subdomains or loopback hosts"
         );
     }
 

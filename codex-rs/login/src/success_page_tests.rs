@@ -11,7 +11,7 @@ fn compose_success_url_uses_local_page_by_default() {
         DEFAULT_ISSUER,
         "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
         "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
-        /*codex_streamlined_login*/ false,
+            /*myra_streamlined_login*/ false,
         &LoginSuccessPage::default(),
     ) else {
         panic!("expected local success redirect");
@@ -20,9 +20,17 @@ fn compose_success_url_uses_local_page_by_default() {
 
     assert_eq!(url.host_str(), Some("localhost"));
     assert_eq!(url.path(), "/success");
+    for key in ["id_token", "org_id", "project_id", "plan_type"] {
+        assert_eq!(
+            url.query_pairs()
+                .find(|(query_key, _)| query_key == key),
+            None,
+            "{key} must not be exposed in the browser callback URL"
+        );
+    }
     assert_eq!(
         url.query_pairs()
-            .find(|(key, _)| key == "codex_streamlined_login"),
+            .find(|(key, _)| key == "myra_streamlined_login"),
         None
     );
 }
@@ -34,7 +42,7 @@ fn compose_success_url_uses_streamlined_local_page_when_requested() {
         DEFAULT_ISSUER,
         "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
         "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
-        /*codex_streamlined_login*/ true,
+        /*myra_streamlined_login*/ true,
         &LoginSuccessPage::default(),
     ) else {
         panic!("expected local success redirect");
@@ -43,7 +51,7 @@ fn compose_success_url_uses_streamlined_local_page_when_requested() {
 
     assert_eq!(
         url.query_pairs()
-            .find(|(key, _)| key == "codex_streamlined_login")
+            .find(|(key, _)| key == "myra_streamlined_login")
             .map(|(_, value)| value.into_owned()),
         Some("true".to_string())
     );
@@ -57,15 +65,14 @@ fn compose_success_url_uses_hosted_page_when_requested() {
             DEFAULT_ISSUER,
             "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
             "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
-            /*codex_streamlined_login*/ false,
+        /*myra_streamlined_login*/ false,
             &LoginSuccessPage::Hosted {
-                url: Url::parse(CODEX_OPEN_APP_URL).expect("open app URL should parse"),
+                url: Url::parse(MYRAROUTER_DASHBOARD_URL)
+                    .expect("MyraRouter dashboard URL should parse"),
                 app_brand: LoginSuccessPageBrand::Chatgpt,
             },
         ),
-        LoginSuccessRedirect::Hosted(
-            "https://chatgpt.com/codex/open-app?source=login&app_brand=chatgpt".to_string()
-        )
+        LoginSuccessRedirect::Hosted(MYRAROUTER_DASHBOARD_URL.to_string())
     );
 }
 
@@ -99,9 +106,10 @@ fn compose_success_url_keeps_setup_on_local_page() {
         DEFAULT_ISSUER,
         &id_token,
         &format!("e30.{access_payload}.sig"),
-        /*codex_streamlined_login*/ true,
+        /*myra_streamlined_login*/ true,
         &LoginSuccessPage::Hosted {
-            url: Url::parse(CODEX_OPEN_APP_URL).expect("open app URL should parse"),
+            url: Url::parse(MYRAROUTER_DASHBOARD_URL)
+                .expect("MyraRouter dashboard URL should parse"),
             app_brand: LoginSuccessPageBrand::Codex,
         },
     ) else {
@@ -111,6 +119,12 @@ fn compose_success_url_keeps_setup_on_local_page() {
 
     assert_eq!(url.host_str(), Some("localhost"));
     assert_eq!(url.path(), "/success");
+    assert_eq!(
+        url.query_pairs()
+            .find(|(key, _)| key == "platform_url")
+            .map(|(_, value)| value.into_owned()),
+        Some(MYRAROUTER_DASHBOARD_URL.to_string())
+    );
     assert_eq!(
         url.query_pairs()
             .find(|(key, _)| key == "needs_setup")

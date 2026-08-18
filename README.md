@@ -49,9 +49,7 @@ npm install @myralith/myra-sdk
 
 ## About this project
 
-Myra CLI is derived from [OpenAI Codex CLI](https://github.com/openai/codex) and
-carries its Apache-2.0 licence and attribution; see [NOTICE](NOTICE). It is not
-affiliated with or endorsed by OpenAI, and it does not install or update
-anything from OpenAI's distribution channels.
+Myra CLI carries the Apache-2.0 licence and required attribution; see
+[NOTICE](NOTICE).
 
 This repository is licensed under the [Apache-2.0 License](LICENSE).

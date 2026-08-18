@@ -298,8 +298,8 @@ impl AccountRequestProcessor {
                         LoginAppBrand::Chatgpt => LoginSuccessPageBrand::Chatgpt,
                     };
                     LoginSuccessPage::Hosted {
-                        url: CODEX_OPEN_APP_URL.parse().map_err(|err| {
-                            internal_error(format!("invalid Codex open app URL: {err}"))
+                        url: MYRAROUTER_DASHBOARD_URL.parse().map_err(|err| {
+                            internal_error(format!("invalid MyraRouter dashboard URL: {err}"))
                         })?,
                         app_brand,
                     }

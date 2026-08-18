@@ -1216,7 +1216,7 @@ fn auth_check(config: &Config) -> DoctorCheck {
         Ok(Some(auth)) => {
             details.push(format!("stored auth mode: {}", stored_auth_mode(&auth)));
             details.push(format!("stored API key: {}", auth.openai_api_key.is_some()));
-            details.push(format!("stored ChatGPT tokens: {}", auth.tokens.is_some()));
+            details.push(format!("stored account tokens: {}", auth.tokens.is_some()));
             details.push(format!(
                 "stored agent identity: {}",
                 auth.agent_identity.is_some()
@@ -1286,7 +1286,7 @@ fn provider_specific_auth_check(
     env_var_present: impl Fn(&str) -> bool,
 ) -> Option<DoctorCheck> {
     details.push(format!(
-        "model provider requires OpenAI auth: {requires_openai_auth}"
+        "model provider requires gateway auth: {requires_openai_auth}"
     ));
     if requires_openai_auth {
         return None;
@@ -1326,7 +1326,7 @@ fn provider_specific_auth_check(
                 "auth.credentials",
                 "auth",
                 CheckStatus::Ok,
-                "OpenAI auth is not required for the active model provider",
+                "gateway auth is not required for the active model provider",
             )
             .details(details),
         ),
@@ -1336,8 +1336,8 @@ fn provider_specific_auth_check(
 fn stored_auth_mode(auth: &codex_login::AuthDotJson) -> &'static str {
     match stored_auth_mode_value(auth) {
         AuthMode::ApiKey => "api_key",
-        AuthMode::Chatgpt => "chatgpt",
-        AuthMode::ChatgptAuthTokens => "chatgpt_auth_tokens",
+        AuthMode::Chatgpt => "account",
+        AuthMode::ChatgptAuthTokens => "account_tokens",
         AuthMode::Headers => "headers",
         AuthMode::AgentIdentity => "agent_identity",
         AuthMode::PersonalAccessToken => "personal_access_token",
@@ -1381,32 +1381,32 @@ fn stored_auth_issues(
             match auth.tokens.as_ref() {
                 Some(tokens) => {
                     if tokens.access_token.trim().is_empty() {
-                        issues.push("ChatGPT auth is missing an access token");
+                        issues.push("account auth is missing an access token");
                     }
                     if tokens.refresh_token.trim().is_empty() {
-                        issues.push("ChatGPT auth is missing a refresh token");
+                        issues.push("account auth is missing a refresh token");
                     }
                 }
-                None => issues.push("ChatGPT auth is missing token data"),
+                None => issues.push("account auth is missing token data"),
             }
             if auth.last_refresh.is_none() {
-                issues.push("ChatGPT auth is missing refresh metadata");
+                issues.push("account auth is missing refresh metadata");
             }
         }
         AuthMode::ChatgptAuthTokens => {
             match auth.tokens.as_ref() {
                 Some(tokens) => {
                     if tokens.access_token.trim().is_empty() {
-                        issues.push("external ChatGPT auth is missing an access token");
+                        issues.push("external account auth is missing an access token");
                     }
                     if tokens.account_id.is_none() && tokens.id_token.chatgpt_account_id.is_none() {
-                        issues.push("external ChatGPT auth is missing a ChatGPT account id");
+                        issues.push("external account auth is missing an account id");
                     }
                 }
-                None => issues.push("external ChatGPT auth is missing token data"),
+                None => issues.push("external account auth is missing token data"),
             }
             if auth.last_refresh.is_none() {
-                issues.push("external ChatGPT auth is missing refresh metadata");
+                issues.push("external account auth is missing refresh metadata");
             }
         }
         AuthMode::Headers => {
@@ -1676,7 +1676,7 @@ fn sandbox_check(config: &Config, arg0_paths: &Arg0DispatchPaths) -> DoctorCheck
     ));
     push_path_detail(
         &mut details,
-        "codex-linux-sandbox helper",
+        "Myra sandbox helper",
         arg0_paths.codex_linux_sandbox_exe.as_deref(),
     );
     push_path_detail(
@@ -2489,8 +2489,8 @@ fn websocket_error_detail(err: &ApiError) -> String {
 fn auth_mode_name(auth: &CodexAuth) -> &'static str {
     match auth.auth_mode() {
         AuthMode::ApiKey => "api_key",
-        AuthMode::Chatgpt => "chatgpt",
-        AuthMode::ChatgptAuthTokens => "chatgpt_auth_tokens",
+        AuthMode::Chatgpt => "account",
+        AuthMode::ChatgptAuthTokens => "account_tokens",
         AuthMode::Headers => "headers",
         AuthMode::AgentIdentity => "agent_identity",
         AuthMode::PersonalAccessToken => "personal_access_token",
@@ -2571,7 +2571,7 @@ impl ProviderAuthReachabilityMode {
         match self {
             Self::NotRequired => "provider auth",
             Self::ApiKey => "API key auth",
-            Self::Chatgpt => "ChatGPT auth",
+            Self::Chatgpt => "account auth",
         }
     }
 }
@@ -2603,12 +2603,12 @@ fn provider_reachability_plan(config: &Config) -> ReachabilityPlan {
 fn default_reachability_plan() -> ReachabilityPlan {
     provider_reachability_plan_from_parts(
         ProviderAuthReachabilityMode::Chatgpt,
-        "openai",
-        "OpenAI",
+        "myrarouter",
+        "MyraRouter",
         /*provider_base_url*/ None,
         /*provider_query_params*/ None,
         /*is_amazon_bedrock*/ false,
-        "https://chatgpt.com/backend-api/",
+        "https://staging-rt.myralith.dev/",
     )
 }
 
@@ -2650,7 +2650,8 @@ fn provider_reachability_plan_from_parts(
 ) -> ReachabilityPlan {
     let provider_route_probe_url = provider_base_url
         .or_else(|| {
-            (mode == ProviderAuthReachabilityMode::ApiKey).then_some("https://api.openai.com/v1")
+            (mode == ProviderAuthReachabilityMode::ApiKey)
+                .then_some("https://staging-ai.myralith.dev/v1")
         })
         .and_then(|url| {
             should_probe_models_route(provider_name, url, is_amazon_bedrock)
@@ -2660,13 +2661,13 @@ fn provider_reachability_plan_from_parts(
         ProviderAuthReachabilityMode::ApiKey => vec![ReachabilityEndpoint {
             label: format!("{provider_id} API"),
             url: provider_base_url
-                .unwrap_or("https://api.openai.com/v1")
+                .unwrap_or("https://staging-ai.myralith.dev/v1")
                 .to_string(),
             required: true,
             route_probe_url: provider_route_probe_url,
         }],
         ProviderAuthReachabilityMode::Chatgpt => vec![ReachabilityEndpoint {
-            label: "ChatGPT".to_string(),
+            label: "MyraRouter account".to_string(),
             url: chatgpt_base_url.to_string(),
             required: true,
             route_probe_url: None,
@@ -2795,7 +2796,7 @@ async fn provider_reachability_check(plan: ReachabilityPlan) -> DoctorCheck {
                     )
                     .measured(format!("{route_probe_url} returned {status}"))
                     .expected("GET /models returns 2xx, 401, or 403")
-                    .remedy("Set base_url to the provider API root, for example https://api.openai.com/v1")
+                    .remedy("Set base_url to the provider API root, for example https://staging-ai.myralith.dev/v1")
                     .field("route probe"),
                 );
             }
@@ -3513,12 +3514,12 @@ mod tests {
             Vec::new(),
             |_| false,
         )
-        .expect("non-OpenAI provider should produce a provider-specific check");
+        .expect("non-gateway provider should produce a provider-specific check");
 
         assert_eq!(check.status, CheckStatus::Ok);
         assert_eq!(
             check.summary,
-            "OpenAI auth is not required for the active model provider"
+            "gateway auth is not required for the active model provider"
         );
     }
 
@@ -3531,7 +3532,7 @@ mod tests {
             Vec::new(),
             |_| false,
         )
-        .expect("non-OpenAI provider should produce a provider-specific check");
+        .expect("non-gateway provider should produce a provider-specific check");
 
         assert_eq!(check.status, CheckStatus::Fail);
         assert_eq!(
@@ -3578,8 +3579,8 @@ mod tests {
         assert_eq!(
             stored_auth_issues(&auth, |_| false),
             vec![
-                "ChatGPT auth is missing token data",
-                "ChatGPT auth is missing refresh metadata",
+                "account auth is missing token data",
+                "account auth is missing refresh metadata",
             ]
         );
     }
@@ -3782,7 +3783,7 @@ mod tests {
         assert_eq!(check.issues.len(), 1);
         assert_eq!(
             check.issues[0].remedy.as_deref(),
-            Some("Set base_url to the provider API root, for example https://api.openai.com/v1")
+            Some("Set base_url to the provider API root, for example https://staging-ai.myralith.dev/v1")
         );
     }
 
