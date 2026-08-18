@@ -167,6 +167,15 @@ impl ChatWidget {
                         .unwrap_or(codex_app_server_protocol::WebSearchAction::Other),
                 );
             }
+            ThreadItem::MyraCtx(item) => match item.status {
+                codex_app_server_protocol::MyraCtxStatus::InProgress => {
+                    self.on_myractx_started(item);
+                }
+                codex_app_server_protocol::MyraCtxStatus::Completed
+                | codex_app_server_protocol::MyraCtxStatus::Failed => {
+                    self.on_myractx_completed(item);
+                }
+            },
             ThreadItem::ImageView { id: _, path } => {
                 self.on_view_image_tool_call(path);
             }

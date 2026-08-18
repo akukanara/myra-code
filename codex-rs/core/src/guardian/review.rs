@@ -751,7 +751,10 @@ pub(super) async fn guardian_review_session_config(
             turn.config.http_client_factory(),
         )
         .await;
-    let default_review_model_id = turn.provider.approval_review_preferred_model();
+    // MyraRouter exposes only the models the current user may call. Reusing
+    // the active model therefore keeps automatic approval review within that
+    // plan-aware catalog instead of requesting an upstream-only reviewer id.
+    let default_review_model_id = turn.model_info.slug.as_str();
     let preferred_reasoning_effort = |supports_low: bool, fallback| {
         if supports_low {
             Some(codex_protocol::openai_models::ReasoningEffort::Low)

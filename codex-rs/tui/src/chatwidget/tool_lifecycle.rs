@@ -108,6 +108,39 @@ impl ChatWidget {
         self.transcript.had_work_activity = true;
     }
 
+    pub(super) fn on_myractx_started(&mut self, item: codex_app_server_protocol::MyraCtxItem) {
+        self.flush_answer_stream_with_separator();
+        self.flush_active_cell();
+        self.transcript.active_cell = Some(Box::new(history_cell::new_myractx_call(
+            item,
+            self.config.animations,
+        )));
+        self.bump_active_cell_revision();
+        self.request_redraw();
+    }
+
+    pub(super) fn on_myractx_completed(&mut self, item: codex_app_server_protocol::MyraCtxItem) {
+        self.flush_answer_stream_with_separator();
+        let mut handled = false;
+        if let Some(cell) = self
+            .transcript
+            .active_cell
+            .as_mut()
+            .and_then(|cell| cell.as_any_mut().downcast_mut::<history_cell::MyraCtxCell>())
+            && cell.call_id() == item.id
+        {
+            cell.update(item.clone());
+            self.bump_active_cell_revision();
+            self.flush_active_cell();
+            handled = true;
+        }
+
+        if !handled {
+            self.add_to_history(history_cell::new_myractx_call(item, self.config.animations));
+        }
+        self.transcript.had_work_activity = true;
+    }
+
     pub(super) fn on_collab_event(&mut self, cell: PlainHistoryCell) {
         self.flush_answer_stream_with_separator();
         self.add_to_history(cell);

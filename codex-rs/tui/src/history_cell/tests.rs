@@ -12,6 +12,8 @@ use crate::session_state::ThreadSessionState;
 use crate::wrapping::word_wrap_lines;
 use codex_app_server_protocol::AskForApproval;
 use codex_app_server_protocol::McpAuthStatus;
+use codex_app_server_protocol::MyraCtxItem;
+use codex_app_server_protocol::MyraCtxStatus;
 use codex_config::types::McpServerConfig;
 use codex_otel::RuntimeMetricTotals;
 use codex_otel::RuntimeMetricsSummary;
@@ -1277,6 +1279,25 @@ fn web_search_history_cell_transcript_snapshot() {
     let rendered = render_lines(&cell.transcript_lines(/*width*/ 64)).join("\n");
 
     insta::assert_snapshot!(rendered);
+}
+
+#[test]
+fn myractx_history_cell_snapshot() {
+    let cell = new_myractx_call(
+        MyraCtxItem {
+            id: "myractx-1".to_string(),
+            library: "next.js".to_string(),
+            query: "How does route caching work in the App Router?".to_string(),
+            status: MyraCtxStatus::Completed,
+        },
+        /*animations_enabled*/ false,
+    );
+    let rendered = render_lines(&cell.display_lines(/*width*/ 80)).join("\n");
+
+    insta::assert_snapshot!(rendered, @r###"
+• MYRACTX  Documentation consulted
+  └ next.js  ·  How does route caching work in the App Router?
+"###);
 }
 
 #[test]

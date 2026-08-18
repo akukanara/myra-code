@@ -9,7 +9,41 @@ use codex_protocol::openai_models::ModelsResponse;
 use http::HeaderMap;
 use http::Method;
 use http::header::ETAG;
+use serde::Deserialize;
 use std::sync::Arc;
+
+/// A model catalog returned by either the Codex or OpenAI-compatible `/models` wire format.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ModelsCatalog {
+    /// The full Codex model metadata schema.
+    Codex(Vec<ModelInfo>),
+    /// The standard OpenAI models-list schema, with optional provider metadata.
+    OpenAiCompatible(Vec<OpenAiCompatibleModel>),
+}
+
+/// Metadata exposed by OpenAI-compatible model-list endpoints.
+///
+/// Providers may omit every field except `id`. MyraRouter includes the optional fields so clients
+/// can present the user's entitled models with useful names and capabilities.
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct OpenAiCompatibleModel {
+    pub id: String,
+    #[serde(default)]
+    pub display_name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub context_window: Option<i64>,
+    #[serde(default)]
+    pub max_output_tokens: Option<i64>,
+    #[serde(default)]
+    pub reasoning_tiers: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAiCompatibleModelsResponse {
+    data: Vec<OpenAiCompatibleModel>,
+}
 
 pub struct ModelsClient<T: HttpTransport> {
     session: EndpointSession<T>,
@@ -48,6 +82,21 @@ impl<T: HttpTransport> ModelsClient<T> {
         request_url: String,
         extra_headers: HeaderMap,
     ) -> Result<(Vec<ModelInfo>, Option<String>), ApiError> {
+        let (catalog, etag) = self.list_catalog(request_url, extra_headers).await?;
+        match catalog {
+            ModelsCatalog::Codex(models) => Ok((models, etag)),
+            ModelsCatalog::OpenAiCompatible(_) => Err(ApiError::Stream(
+                "OpenAI-compatible model catalog requires list_catalog".to_string(),
+            )),
+        }
+    }
+
+    /// Fetch a model catalog while preserving the provider's wire format.
+    pub async fn list_catalog(
+        &self,
+        request_url: String,
+        extra_headers: HeaderMap,
+    ) -> Result<(ModelsCatalog, Option<String>), ApiError> {
         let resp = self
             .session
             .execute_with(
@@ -67,15 +116,21 @@ impl<T: HttpTransport> ModelsClient<T> {
             .and_then(|value| value.to_str().ok())
             .map(ToString::to_string);
 
-        let ModelsResponse { models } = serde_json::from_slice::<ModelsResponse>(&resp.body)
-            .map_err(|e| {
-                ApiError::Stream(format!(
-                    "failed to decode models response: {e}; body: {}",
-                    String::from_utf8_lossy(&resp.body)
-                ))
-            })?;
+        let catalog = match serde_json::from_slice::<ModelsResponse>(&resp.body) {
+            Ok(ModelsResponse { models }) => ModelsCatalog::Codex(models),
+            Err(codex_error) => {
+                serde_json::from_slice::<OpenAiCompatibleModelsResponse>(&resp.body)
+                    .map(|response| ModelsCatalog::OpenAiCompatible(response.data))
+                    .map_err(|openai_error| {
+                        ApiError::Stream(format!(
+                            "failed to decode models response as Codex ({codex_error}) or OpenAI-compatible ({openai_error}); body: {}",
+                            String::from_utf8_lossy(&resp.body)
+                        ))
+                    })?
+            }
+        };
 
-        Ok((models, header_etag))
+        Ok((catalog, header_etag))
     }
 }
 
@@ -176,7 +231,7 @@ mod tests {
             .await
             .expect("request should succeed");
 
-        assert_eq!(models.len(), 0);
+        assert_eq!(models, Vec::new());
 
         let url = transport
             .last_request
@@ -238,7 +293,7 @@ mod tests {
 
         assert_eq!(models.len(), 1);
         assert_eq!(models[0].slug, "gpt-test");
-        assert_eq!(models[0].supported_in_api, true);
+        assert!(models[0].supported_in_api);
         assert_eq!(models[0].priority, 1);
     }
 
@@ -261,7 +316,59 @@ mod tests {
             .await
             .expect("request should succeed");
 
-        assert_eq!(models.len(), 0);
+        assert_eq!(models, Vec::new());
         assert_eq!(etag, Some("\"abc\"".to_string()));
+    }
+
+    #[tokio::test]
+    async fn parses_openai_compatible_models_response() {
+        #[derive(Clone)]
+        struct OpenAiTransport;
+        impl HttpTransport for OpenAiTransport {
+            async fn execute(&self, _req: Request) -> Result<Response, TransportError> {
+                Ok(Response {
+                    status: StatusCode::OK,
+                    headers: HeaderMap::new(),
+                    body: serde_json::to_vec(&serde_json::json!({
+                        "object": "list",
+                        "data": [{
+                            "id": "myra-pro",
+                            "object": "model",
+                            "display_name": "Myra Pro",
+                            "description": "Available on the Pro plan",
+                            "context_window": 200000,
+                            "max_output_tokens": 16000,
+                            "reasoning_tiers": ["low", "high"]
+                        }]
+                    }))
+                    .expect("serializable response")
+                    .into(),
+                })
+            }
+
+            async fn stream(&self, _req: Request) -> Result<StreamResponse, TransportError> {
+                Err(TransportError::Build("stream should not run".to_string()))
+            }
+        }
+
+        let provider = provider("https://example.com/v1");
+        let request_url = ModelsClient::<OpenAiTransport>::request_url(&provider, "0.1.0");
+        let client = ModelsClient::new(OpenAiTransport, provider, Arc::new(DummyAuth));
+        let (catalog, _) = client
+            .list_catalog(request_url, HeaderMap::new())
+            .await
+            .expect("request should succeed");
+
+        assert_eq!(
+            catalog,
+            ModelsCatalog::OpenAiCompatible(vec![OpenAiCompatibleModel {
+                id: "myra-pro".to_string(),
+                display_name: Some("Myra Pro".to_string()),
+                description: Some("Available on the Pro plan".to_string()),
+                context_window: Some(200_000),
+                max_output_tokens: Some(16_000),
+                reasoning_tiers: vec!["low".to_string(), "high".to_string()],
+            }])
+        );
     }
 }

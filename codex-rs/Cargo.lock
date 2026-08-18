@@ -3725,6 +3725,7 @@ version = "0.1.2-celestine"
 dependencies = [
  "codex-core",
  "codex-extension-api",
+ "codex-extension-items",
  "codex-login",
  "codex-model-provider",
  "codex-model-provider-info",

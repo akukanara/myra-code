@@ -5,7 +5,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use codex_api::AgentIdentityTelemetry;
+use codex_api::ModelsCatalog;
 use codex_api::ModelsClient;
+use codex_api::OpenAiCompatibleModel;
 use codex_api::RequestTelemetry;
 use codex_api::ReqwestTransport;
 use codex_api::TransportError;
@@ -23,10 +25,13 @@ use codex_login::default_client::create_client_for_route_async;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_models_manager::manager::ModelsEndpointClient;
 use codex_models_manager::manager::ModelsEndpointFuture;
+use codex_models_manager::model_info::model_info_from_slug;
 use codex_otel::TelemetryAuthMode;
 use codex_protocol::error::CodexErr;
 use codex_protocol::error::Result as CoreResult;
 use codex_protocol::openai_models::ModelInfo;
+use codex_protocol::openai_models::ModelVisibility;
+use codex_protocol::openai_models::ReasoningEffortPreset;
 use codex_response_debug_context::extract_response_debug_context;
 use codex_response_debug_context::telemetry_transport_error_message;
 use http::HeaderMap;
@@ -105,10 +110,17 @@ impl OpenAiModelsEndpoint {
                 .await?;
             let client = ModelsClient::new(transport, api_provider, api_auth)
                 .with_telemetry(Some(request_telemetry));
-            client
-                .list_models(request_url, HeaderMap::new())
+            let (catalog, etag) = client
+                .list_catalog(request_url, HeaderMap::new())
                 .await
-                .map_err(map_api_error)
+                .map_err(map_api_error)?;
+            let models = match catalog {
+                ModelsCatalog::Codex(models) => models,
+                ModelsCatalog::OpenAiCompatible(models) => {
+                    openai_compatible_models_to_model_infos(models)
+                }
+            };
+            Ok((models, etag))
         })
         .await
         .map_err(|_| CodexErr::Timeout)?
@@ -121,6 +133,62 @@ impl OpenAiModelsEndpoint {
             .is_some_and(|auth_manager| auth_manager.codex_api_key_env_enabled());
         collect_auth_env_telemetry(&self.provider_info, codex_api_key_env_enabled)
     }
+}
+
+/// Convert an OpenAI-compatible model list into the internal catalog used by Myra.
+///
+/// MyraRouter owns entitlement filtering, so this intentionally produces only the models it
+/// returned. Bundled entries supply Myra's instruction and tool defaults; unknown router models
+/// receive the normal safe fallback metadata and remain selectable.
+fn openai_compatible_models_to_model_infos(
+    models: Vec<OpenAiCompatibleModel>,
+) -> Vec<ModelInfo> {
+    let bundled_models = codex_models_manager::bundled_models_response()
+        .map(|catalog| catalog.models)
+        .unwrap_or_default();
+
+    models
+        .into_iter()
+        .enumerate()
+        .map(|(priority, model)| {
+            let mut model_info = bundled_models
+                .iter()
+                .find(|bundled| bundled.slug == model.id)
+                .cloned()
+                .unwrap_or_else(|| model_info_from_slug(&model.id));
+
+            model_info.slug = model.id;
+            if let Some(display_name) = model.display_name {
+                model_info.display_name = display_name;
+            }
+            if model.description.is_some() {
+                model_info.description = model.description;
+            }
+            if let Some(context_window) = model.context_window {
+                model_info.context_window = Some(context_window);
+                model_info.max_context_window = Some(context_window);
+            }
+            if !model.reasoning_tiers.is_empty() {
+                model_info.supported_reasoning_levels = model
+                    .reasoning_tiers
+                    .into_iter()
+                    .filter_map(|tier| {
+                        tier.parse().ok().map(|effort| ReasoningEffortPreset {
+                            description: tier,
+                            effort,
+                        })
+                    })
+                    .collect();
+                model_info.default_reasoning_level = model_info
+                    .supported_reasoning_levels
+                    .first()
+                    .map(|preset| preset.effort.clone());
+            }
+            model_info.visibility = ModelVisibility::List;
+            model_info.priority = i32::try_from(priority).unwrap_or(i32::MAX);
+            model_info
+        })
+        .collect()
 }
 
 impl ModelsEndpointClient for OpenAiModelsEndpoint {
@@ -283,6 +351,7 @@ mod tests {
     use codex_login::default_client::create_client;
     use codex_protocol::config_types::ModelProviderAuthInfo;
     use codex_protocol::openai_models::ModelsResponse;
+    use codex_protocol::openai_models::ReasoningEffort;
     use pretty_assertions::assert_eq;
     use wiremock::Mock;
     use wiremock::MockServer;
@@ -389,5 +458,72 @@ mod tests {
                 format!("{}/models?client_version=0.0.0", server.uri()),
             ))
         );
+    }
+
+    #[tokio::test]
+    async fn openai_compatible_catalog_uses_only_models_returned_by_provider() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "object": "list",
+                "data": [{
+                    "id": "gpt-5.2-codex",
+                    "object": "model",
+                    "display_name": "Plan model",
+                    "description": "Available with this plan",
+                    "context_window": 200000,
+                    "max_output_tokens": 16000,
+                    "reasoning_tiers": ["low", "high"]
+                }]
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let endpoint = OpenAiModelsEndpoint {
+            provider_info: ModelProviderInfo::create_openai_provider(Some(server.uri())),
+            auth_manager: None,
+            transport_builder: Arc::new(RecordingTransportBuilder {
+                observed_request: Arc::new(Mutex::new(None)),
+            }),
+        };
+
+        let (models, _) = endpoint
+            .list_models(
+                "0.0.0",
+                HttpClientFactory::new(OutboundProxyPolicy::ReqwestDefault),
+            )
+            .await
+            .expect("models request should succeed");
+
+        assert_eq!(models.len(), 1);
+        let model = &models[0];
+        assert_eq!(model.slug, "gpt-5.2-codex");
+        assert_eq!(model.display_name, "Plan model");
+        assert_eq!(model.description.as_deref(), Some("Available with this plan"));
+        assert_eq!(model.context_window, Some(200_000));
+        assert_eq!(model.max_context_window, Some(200_000));
+        assert_eq!(model.visibility, ModelVisibility::List);
+        assert_eq!(model.priority, 0);
+        assert_eq!(model.default_reasoning_level, Some(ReasoningEffort::Low));
+        assert_eq!(
+            model.supported_reasoning_levels,
+            vec![
+                ReasoningEffortPreset {
+                    effort: ReasoningEffort::Low,
+                    description: "low".to_string(),
+                },
+                ReasoningEffortPreset {
+                    effort: ReasoningEffort::High,
+                    description: "high".to_string(),
+                },
+            ]
+        );
+        assert!(model
+            .model_messages
+            .as_ref()
+            .and_then(|messages| messages.instructions_template.as_ref())
+            .is_some_and(|instructions| instructions.contains("## MyraCtx")));
     }
 }

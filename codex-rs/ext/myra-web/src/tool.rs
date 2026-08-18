@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use codex_extension_api::FunctionCallError;
+use codex_extension_api::ExtensionTurnItem;
 use codex_extension_api::ResponsesApiTool;
 use codex_extension_api::ToolCall;
 use codex_extension_api::ToolExecutor;
@@ -9,6 +10,9 @@ use codex_extension_api::ToolOutput;
 use codex_extension_api::ToolSpec;
 use codex_extension_api::parse_tool_input_schema_without_compaction;
 use codex_login::AuthManager;
+use codex_extension_items::ExtensionItem;
+use codex_extension_items::myractx::MyraCtxItem;
+use codex_extension_items::myractx::MyraCtxStatus;
 use codex_login::default_client::create_client;
 use codex_tools::JsonToolOutput;
 use codex_tools::ToolExposure;
@@ -373,16 +377,48 @@ impl ToolExecutor<ToolCall> for MyraCtxTool {
     fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
         Box::pin(async move {
             let args = arguments(&call)?;
-            let response = self
+            let query = required_str(&args, "query")?;
+            let library = required_str(&args, "library")?;
+            let item = |status| MyraCtxItem {
+                id: call.call_id.clone(),
+                library: library.clone(),
+                query: query.clone(),
+                status,
+            };
+            call.turn_item_emitter
+                .emit_started(ExtensionTurnItem {
+                    item: ExtensionItem::MyraCtx(item(MyraCtxStatus::InProgress)),
+                    legacy_events: Vec::new(),
+                })
+                .await;
+
+            let response = match self
                 .gateway
                 .post(
                     "myractx/search",
-                    json!({
-                        "query": required_str(&args, "query")?,
-                        "libraryId": required_str(&args, "library")?,
-                    }),
+                    json!({ "query": query.clone(), "libraryId": library.clone() }),
                 )
-                .await?;
+                .await
+            {
+                Ok(response) => {
+                    call.turn_item_emitter
+                        .emit_completed(ExtensionTurnItem {
+                            item: ExtensionItem::MyraCtx(item(MyraCtxStatus::Completed)),
+                            legacy_events: Vec::new(),
+                        })
+                        .await;
+                    response
+                }
+                Err(error) => {
+                    call.turn_item_emitter
+                        .emit_completed(ExtensionTurnItem {
+                            item: ExtensionItem::MyraCtx(item(MyraCtxStatus::Failed)),
+                            legacy_events: Vec::new(),
+                        })
+                        .await;
+                    return Err(error);
+                }
+            };
             let output = json!({
                 "status": response.get("status").cloned().unwrap_or(JsonValue::Null),
                 "answer": response.get("answer").cloned().unwrap_or(JsonValue::Null),

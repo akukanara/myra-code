@@ -92,7 +92,9 @@ pub fn should_persist_event_msg(ev: &EventMsg, history_mode: ThreadHistoryMode) 
             matches!(history_mode, ThreadHistoryMode::Paginated)
                 || matches!(
                     event.item,
-                    TurnItem::Plan(_) | TurnItem::Extension(ExtensionItem::Sleep(_))
+                    TurnItem::Plan(_)
+                        | TurnItem::Extension(ExtensionItem::MyraCtx(_))
+                        | TurnItem::Extension(ExtensionItem::Sleep(_))
                 )
         }
         EventMsg::TokenCount(_)
