@@ -133,8 +133,7 @@ impl ConfigContributor<Config> for ImageGenerationExtension {
         new_config: &Config,
     ) {
         let previous_config = thread_store
-            .get::<ImageGenerationExtensionConfig>()
-            .cloned();
+            .get::<ImageGenerationExtensionConfig>();
         let previous_model = previous_config
             .as_ref()
             .map(|config| config.default_model.clone())
