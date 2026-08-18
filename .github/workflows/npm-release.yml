@@ -69,7 +69,7 @@ jobs:
       # scripts/codex_package/v8.py needs tomllib (Python 3.11+). setup-python
       # pins the same interpreter on all three operating systems, which is why
       # this workflow does not need the uv dance the Gitea one performs.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -216,7 +216,7 @@ jobs:
       - name: Install pnpm
         run: corepack enable pnpm
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
