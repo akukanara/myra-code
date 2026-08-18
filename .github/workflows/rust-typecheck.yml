@@ -17,6 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify public Myra branding
+        run: |
+          if rg -n -i 'openai|codex|chatgpt' README.md codex-cli/package.json codex-cli/bin scripts/install codex-rs/login/src/assets; then
+            echo "Found upstream branding in a user-facing release surface." >&2
+            exit 1
+          fi
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -38,6 +45,6 @@ jobs:
           workspaces: "codex-rs -> target"
           cache-targets: "false"
 
-      - name: Typecheck CLI
-        run: cargo check -p codex-cli
+      - name: Typecheck CLI and app server
+        run: cargo check -p codex-cli -p codex-app-server
         working-directory: codex-rs
