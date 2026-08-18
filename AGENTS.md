@@ -26,6 +26,16 @@
 - Before creating a tag, require a successful `main` build artifact, review
   release notes, and verify the intended version has not already been
   published.
+- Treat every version bump as a repository-wide version audit. Before merging
+  the bump, search for the prior version and review every version-bearing
+  source, including workspace manifests and lockfiles, npm package metadata,
+  CLI `--version` output, release scripts, and workflow defaults. Update each
+  user-visible version that belongs to the release; do not leave a stale
+  literal behind.
+- User-facing CLI versions must derive from the package version (for Rust,
+  prefer `env!("CARGO_PKG_VERSION")`) rather than a hardcoded release string.
+  The release validation must run the staged CLI with `--version` and confirm
+  it exactly matches the intended npm/Rust release version before publishing.
 
 In the codex-rs folder where the rust code lives:
 
