@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use codex_core::config::Config;
 use codex_extension_api::ExtensionData;
@@ -11,17 +12,15 @@ use codex_extension_api::ToolContributor;
 use codex_extension_api::ToolExecutor;
 use codex_login::AuthManager;
 use codex_login::CodexAuth;
+use codex_login::default_client::create_client;
+use serde::Deserialize;
 
 use crate::tool::GatewayWeb;
 use crate::tool::MyraCtxTool;
 use crate::tool::WebFetchTool;
 use crate::tool::WebSearchTool;
 
-/// The gateway's key-free providers. Both work on a fresh instance with
-/// nothing configured, which is what makes offering these tools by default
-/// reasonable -- a default that needs an API key is a default that fails.
-const DEFAULT_SEARCH_MODEL: &str = "searxng";
-const DEFAULT_FETCH_MODEL: &str = "direct";
+const MODEL_CATALOG_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone)]
 struct MyraWebExtension {
@@ -33,23 +32,80 @@ struct MyraWebExtension {
 #[derive(Clone)]
 struct MyraWebConfig {
     base_url: Option<String>,
+    search_model: Option<String>,
+    fetch_model: Option<String>,
 }
 
 impl MyraWebConfig {
-    /// The auth mode is not optional here even though the parameter is.
-    /// to_api_provider picks the DEFAULT base URL from it -- the gateway for a
-    /// signed-in session, api.openai.com otherwise -- so passing None sends
-    /// every request to OpenAI, which answers 404 for these paths. Resolving
-    /// the real mode first is what points the tools at the right host.
-    fn from_auth(config: &Config, auth: Option<&CodexAuth>) -> Self {
+    /// Resolve the authenticated gateway endpoint and its plan-aware web tool
+    /// catalog. A static provider id would bypass the router's model contract
+    /// and fail whenever an operator names a different web-model combo.
+    async fn from_auth(config: &Config, auth: Option<&CodexAuth>) -> Self {
         let base_url = config
             .model_provider
             .to_api_provider(auth.map(CodexAuth::api_auth_mode))
             .ok()
             .map(|provider| provider.base_url)
             .filter(|url| !url.trim().is_empty());
-        Self { base_url }
+        let (search_model, fetch_model) = match (&base_url, auth) {
+            (Some(base_url), Some(auth)) => discover_web_models(base_url, auth).await,
+            _ => (None, None),
+        };
+        Self {
+            base_url,
+            search_model,
+            fetch_model,
+        }
     }
+}
+
+#[derive(Deserialize)]
+struct WebModelsResponse {
+    data: Vec<WebModel>,
+}
+
+#[derive(Deserialize)]
+struct WebModel {
+    id: String,
+    kind: String,
+}
+
+async fn discover_web_models(base_url: &str, auth: &CodexAuth) -> (Option<String>, Option<String>) {
+    let url = format!("{}/models/web", base_url.trim_end_matches('/'));
+    let response = match create_client()
+        .get(&url)
+        .timeout(MODEL_CATALOG_TIMEOUT)
+        .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers())
+        .send()
+        .await
+    {
+        Ok(response) if response.status().is_success() => response,
+        Ok(response) => {
+            tracing::debug!(status = %response.status(), "myra-web: web model catalog unavailable");
+            return (None, None);
+        }
+        Err(error) => {
+            tracing::debug!(%error, "myra-web: could not load web model catalog");
+            return (None, None);
+        }
+    };
+    let catalog = match response.json::<WebModelsResponse>().await {
+        Ok(catalog) => catalog,
+        Err(error) => {
+            tracing::debug!(%error, "myra-web: invalid web model catalog");
+            return (None, None);
+        }
+    };
+    let mut search_model = None;
+    let mut fetch_model = None;
+    for model in catalog.data {
+        match model.kind.as_str() {
+            "webSearch" if search_model.is_none() => search_model = Some(model.id),
+            "webFetch" if fetch_model.is_none() => fetch_model = Some(model.id),
+            _ => {}
+        }
+    }
+    (search_model, fetch_model)
 }
 
 impl ThreadLifecycleContributor<Config> for MyraWebExtension {
@@ -61,7 +117,7 @@ impl ThreadLifecycleContributor<Config> for MyraWebExtension {
             let auth = self.auth_manager.auth().await;
             input
                 .thread_store
-                .insert(MyraWebConfig::from_auth(input.config, auth.as_ref()));
+                .insert(MyraWebConfig::from_auth(input.config, auth.as_ref()).await);
         })
     }
 }
@@ -87,17 +143,32 @@ impl ToolContributor for MyraWebExtension {
             base_url,
             auth_manager: self.auth_manager.clone(),
         };
-        vec![
-            Arc::new(WebSearchTool {
+        let mut tools: Vec<Arc<dyn ToolExecutor<ToolCall>>> = vec![Arc::new(MyraCtxTool {
+            gateway: gateway.clone(),
+        })];
+        if let Some(default_model) = thread_store
+            .get::<MyraWebConfig>()
+            .and_then(|config| config.search_model.clone())
+        {
+            tools.push(Arc::new(WebSearchTool {
                 gateway: gateway.clone(),
-                default_model: DEFAULT_SEARCH_MODEL.to_string(),
-            }),
-            Arc::new(WebFetchTool {
+                default_model,
+            }));
+        } else {
+            tracing::debug!("myra-web: no entitled web-search model; tool not offered");
+        }
+        if let Some(default_model) = thread_store
+            .get::<MyraWebConfig>()
+            .and_then(|config| config.fetch_model.clone())
+        {
+            tools.push(Arc::new(WebFetchTool {
                 gateway: gateway.clone(),
-                default_model: DEFAULT_FETCH_MODEL.to_string(),
-            }),
-            Arc::new(MyraCtxTool { gateway }),
-        ]
+                default_model,
+            }));
+        } else {
+            tracing::debug!("myra-web: no entitled web-fetch model; tool not offered");
+        }
+        tools
     }
 }
 
