@@ -1605,7 +1605,7 @@ async fn guardian_request_model_for_auto_review(
         .model_info
         .auto_review_model_override = auto_review_model_override;
     let parent_model = turn.model_info.slug.clone();
-    let preferred_model = turn.provider.approval_review_preferred_model().to_string();
+    let preferred_model = parent_model.clone();
     let parent_turn_id = turn.sub_id.clone();
     seed_guardian_parent_history(&session, &turn).await;
 
@@ -1691,7 +1691,7 @@ async fn guardian_review_uses_model_catalog_override_when_preferred_review_model
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn guardian_review_uses_preferred_review_model_without_model_catalog_override()
+async fn guardian_review_uses_active_model_without_model_catalog_override()
 -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
@@ -1703,7 +1703,7 @@ async fn guardian_review_uses_preferred_review_model_without_model_catalog_overr
         .await?;
 
     assert_eq!(request_model, preferred_model);
-    assert_ne!(request_model, parent_model);
+    assert_eq!(request_model, parent_model);
     assert_eq!(
         analytics_result.guardian_catalog_contains_auto_review,
         Some(true)
@@ -1729,7 +1729,7 @@ async fn guardian_review_uses_preferred_review_model_without_model_catalog_overr
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn guardian_review_records_missing_auto_review_model_in_analytics_metadata()
+async fn guardian_review_records_active_model_when_catalog_only_has_parent()
 -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
@@ -1741,10 +1741,9 @@ async fn guardian_review_records_missing_auto_review_model_in_analytics_metadata
         .await?;
 
     assert_eq!(request_model, parent_model);
-    assert_ne!(request_model, preferred_model);
     assert_eq!(
         analytics_result.guardian_catalog_contains_auto_review,
-        Some(false)
+        Some(true)
     );
     assert_eq!(
         analytics_result.guardian_default_review_model_id.as_deref(),
