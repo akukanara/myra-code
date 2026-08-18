@@ -178,6 +178,15 @@ jobs:
             echo "${name}: $((before / 1048576))MB -> $((after / 1048576))MB"
           done
 
+      - name: Verify staged CLI version
+        run: |
+          set -euo pipefail
+          binary="vendor/${{ matrix.target }}/bin/myra"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then binary="${binary}.exe"; fi
+          actual="$("${binary}" --version)"
+          expected="myra-cli v${{ inputs.version }}"
+          test "$actual" = "$expected"
+
       - name: Stage npm tarball
         run: |
           set -euo pipefail
