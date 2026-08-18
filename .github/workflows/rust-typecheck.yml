@@ -40,3 +40,4 @@ jobs:
 
       - name: Typecheck CLI
         run: cargo check -p codex-cli
+        working-directory: codex-rs
