@@ -253,6 +253,15 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
         ThreadItem::WebSearch(item) => {
             vec![vec!["web search: ".dim(), item.query.clone().into()].into()]
         }
+        ThreadItem::MyraCtx(item) => vec![
+            vec![
+                "MyraCtx: ".cyan(),
+                item.library.clone().into(),
+                " · ".dim(),
+                item.query.clone().dim(),
+            ]
+            .into(),
+        ],
         ThreadItem::ImageView { path, .. } => {
             let path = path.render_for_ui();
             vec![format!("image: {path}").dim().into()]

@@ -9,6 +9,7 @@ use serde::Serialize;
 use ts_rs::TS;
 
 pub mod image_generation;
+pub mod myractx;
 pub mod sleep;
 pub mod web_search;
 
@@ -36,6 +37,9 @@ pub enum ExtensionItem {
     #[serde(rename = "image_gen.generation")]
     #[ts(rename = "image_gen.generation")]
     ImageGeneration(image_generation::ImageGenerationItem),
+    #[serde(rename = "myractx.lookup")]
+    #[ts(rename = "myractx.lookup")]
+    MyraCtx(myractx::MyraCtxItem),
     #[serde(rename = "clock.sleep")]
     #[ts(rename = "clock.sleep")]
     Sleep(sleep::SleepItem),
@@ -50,6 +54,7 @@ impl ExtensionItem {
     pub fn id(&self) -> &str {
         match self {
             Self::ImageGeneration(item) => &item.id,
+            Self::MyraCtx(item) => &item.id,
             Self::Sleep(item) => &item.id,
             Self::WebSearch(item) => &item.id,
         }

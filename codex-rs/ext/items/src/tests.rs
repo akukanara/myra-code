@@ -4,6 +4,8 @@ use ts_rs::TS;
 
 use super::ExtensionItem;
 use super::image_generation::ImageGenerationItem;
+use super::myractx::MyraCtxItem;
+use super::myractx::MyraCtxStatus;
 use super::sleep::SleepItem;
 use super::web_search::WebSearchAction;
 use super::web_search::WebSearchItem;
@@ -129,6 +131,32 @@ fn web_search_item_preserves_stable_wire_shape() {
             },
         }))
         .expect("deserialize legacy extension item without results"),
+        item
+    );
+}
+
+#[test]
+fn myractx_item_preserves_stable_wire_shape() {
+    let item = ExtensionItem::MyraCtx(MyraCtxItem {
+        id: "myractx-1".to_string(),
+        library: "next.js".to_string(),
+        query: "How does route caching work in the App Router?".to_string(),
+        status: MyraCtxStatus::Completed,
+    });
+    let value = serde_json::to_value(&item).expect("serialize extension item");
+
+    assert_eq!(
+        value,
+        json!({
+            "kind": "myractx.lookup",
+            "id": "myractx-1",
+            "library": "next.js",
+            "query": "How does route caching work in the App Router?",
+            "status": "completed",
+        })
+    );
+    assert_eq!(
+        serde_json::from_value::<ExtensionItem>(value).expect("deserialize extension item"),
         item
     );
 }

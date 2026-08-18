@@ -327,6 +327,7 @@ impl ChatWidget {
             ThreadItem::WebSearch(item) => {
                 self.on_web_search_begin(item.id);
             }
+            ThreadItem::MyraCtx(item) => self.on_myractx_started(item),
             ThreadItem::ImageGeneration(_) => {
                 self.on_image_generation_begin();
             }
