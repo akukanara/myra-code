@@ -39,33 +39,14 @@ jobs:
           workspaces: "codex-rs -> target"
           cache-targets: "false"
 
-      # Only the lib test targets: the codex-core integration suites are
-      # already broken on this branch (TestCodex.myra) and would mask this.
-      - name: Typecheck unit tests
+      - name: Run affected tests
         run: |
-          cargo test --no-run --lib \
-            -p codex-app-server-protocol \
-            -p codex-core \
-            -p codex-tui \
-            -p codex-analytics \
-            -p codex-extension-items \
-            -p codex-image-generation-extension \
-            -p codex-myra-web-extension \
-            -p codex-rollout-trace
+          set -x
+          cargo test -p codex-extension-items
+          cargo test -p codex-image-generation-extension
+          cargo test -p codex-myra-web-extension
+          cargo test -p codex-rollout-trace --lib
+          cargo test -p codex-app-server-protocol --lib
+          cargo test -p codex-tui --lib -- image_generation web_fetch web_search myractx
+          cargo test -p codex-core --lib -- spec_plan
         working-directory: codex-rs
-
-      - name: Regenerate app-server schema fixtures
-        if: always()
-        run: python3 app-server-protocol/scripts/write_schema_fixtures.py
-        working-directory: codex-rs
-
-      - name: Show regenerated schema changes
-        if: always()
-        run: git status --short -- codex-rs/app-server-protocol/schema
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: schema-regen
-          path: codex-rs/app-server-protocol/schema
-          include-hidden-files: true
