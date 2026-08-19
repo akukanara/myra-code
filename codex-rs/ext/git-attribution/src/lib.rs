@@ -1,3 +1,12 @@
+//! Commit-attribution instructions, dormant under Myra.
+//!
+//! `install` is a no-op (see the note on it), so nothing here is reachable
+//! from a normal build -- but the machinery and its tests are kept intact so
+//! attribution can be switched back on without rewriting it, and so upstream
+//! changes to it keep applying. The lint would otherwise fire on every item
+//! in the crate.
+#![allow(dead_code)]
+
 mod policy;
 mod world_state;
 

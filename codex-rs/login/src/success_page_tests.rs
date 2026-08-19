@@ -3,6 +3,9 @@ use pretty_assertions::assert_eq;
 use serde_json::json;
 
 use super::*;
+// Only the tests reach for the issuer constant; importing it in the module
+// under test leaves an unused import in every non-test build.
+use crate::server::DEFAULT_ISSUER;
 
 #[test]
 fn compose_success_url_uses_local_page_by_default() {

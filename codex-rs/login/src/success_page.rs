@@ -2,8 +2,6 @@ use base64::Engine;
 use serde_json::Value as JsonValue;
 use url::Url;
 
-use crate::server::DEFAULT_ISSUER;
-
 pub const MYRAROUTER_DASHBOARD_URL: &str = "https://staging-rt.myralith.dev/dashboard";
 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
