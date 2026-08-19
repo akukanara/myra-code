@@ -264,7 +264,9 @@ fn dispatched_tool_kind(tool_name: &str, _payload: &ToolDispatchPayload) -> Tool
         "write_stdin" => ToolCallKind::WriteStdin,
         "apply_patch" => ToolCallKind::ApplyPatch,
         "web_search" | "web_search_preview" => ToolCallKind::Web,
-        "image_generation" | "image_query" | "imagegen" => ToolCallKind::ImageGeneration,
+        "image_generation" | "image_query" | "imagegen" | "myra_imagen" => {
+            ToolCallKind::ImageGeneration
+        }
         "spawn_agent" => ToolCallKind::SpawnAgent,
         "send_message" => ToolCallKind::SendMessage,
         "followup_task" | "assign_task" => ToolCallKind::AssignAgentTask,
@@ -440,15 +442,17 @@ mod tests {
 
     #[test]
     fn classifies_imagegen_as_image_generation() {
-        assert_eq!(
-            dispatched_tool_kind(
-                "imagegen",
-                &ToolDispatchPayload::Function {
-                    arguments: String::new(),
-                },
-            ),
-            ToolCallKind::ImageGeneration
-        );
+        for tool_name in ["imagegen", "myra_imagen"] {
+            assert_eq!(
+                dispatched_tool_kind(
+                    tool_name,
+                    &ToolDispatchPayload::Function {
+                        arguments: String::new(),
+                    },
+                ),
+                ToolCallKind::ImageGeneration
+            );
+        }
     }
 
     fn invocation(

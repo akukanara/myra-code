@@ -101,8 +101,7 @@ use std::sync::Arc;
 use tracing::instrument;
 
 const MULTI_AGENT_V2_NAMESPACE_DESCRIPTION: &str = "Tools for spawning and managing sub-agents.";
-const IMAGE_GEN_NAMESPACE: &str = "image_gen";
-const IMAGEGEN_TOOL_NAME: &str = "imagegen";
+const MYRA_IMAGEN_TOOL: &str = "myra_imagen";
 
 #[derive(Clone, Copy)]
 struct CoreToolPlanContext<'a> {
@@ -551,6 +550,20 @@ fn collab_tools_enabled(turn_context: &TurnContext) -> bool {
     }
 }
 
+/// Whether the client should offer the image-generation tool the extension
+/// built.
+///
+/// This is a veto, not the decision. The extension only hands over an executor
+/// once it has resolved an entitled image model, so everything here is limited
+/// to what the client owns and the backend cannot know: the user's own feature
+/// toggle, and the provider's declared upper bound.
+///
+/// The hosted OpenAI backend additionally lets the client enforce the plan and
+/// namespace-tool rules locally, because the client knows the account. Against
+/// a MyraRouter gateway it does not: entitlement lives in the plan-aware
+/// `/models/image` catalog the extension already queried, so re-deriving it
+/// here from OpenAI auth would reject every gateway account and leave the model
+/// calling a tool that was never registered.
 fn image_generation_available(turn_context: &TurnContext) -> bool {
     if !turn_context
         .config
@@ -559,6 +572,21 @@ fn image_generation_available(turn_context: &TurnContext) -> bool {
         .enabled(Feature::ImageGeneration)
     {
         return false;
+    }
+
+    if !turn_context.provider.capabilities().image_generation {
+        return false;
+    }
+
+    let provider = turn_context.provider.info();
+    let uses_hosted_backend = provider.uses_openai_actor_authorization()
+        || (provider.requires_openai_auth
+            && turn_context
+                .auth_manager
+                .as_deref()
+                .is_some_and(AuthManager::current_auth_uses_codex_backend));
+    if !uses_hosted_backend {
+        return true;
     }
 
     if turn_context
@@ -571,26 +599,10 @@ fn image_generation_available(turn_context: &TurnContext) -> bool {
         return false;
     }
 
-    let capabilities = turn_context.provider.capabilities();
-    if !capabilities.image_generation || !capabilities.namespace_tools {
-        return false;
-    }
-
-    if !turn_context
+    turn_context
         .model_info
         .input_modalities
         .contains(&InputModality::Image)
-    {
-        return false;
-    }
-
-    let provider = turn_context.provider.info();
-    provider.uses_openai_actor_authorization()
-        || (provider.requires_openai_auth
-            && turn_context
-                .auth_manager
-                .as_deref()
-                .is_some_and(AuthManager::current_auth_uses_codex_backend))
 }
 
 fn wait_agent_timeout_options(turn_context: &TurnContext) -> WaitAgentTimeoutOptions {
@@ -1220,7 +1232,7 @@ fn append_extension_tool_executors(
         if is_standalone_web_search && (!standalone_web_search_enabled || !web_search_mode_on) {
             continue;
         }
-        if tool_name == ToolName::namespaced(IMAGE_GEN_NAMESPACE, IMAGEGEN_TOOL_NAME)
+        if tool_name == ToolName::plain(MYRA_IMAGEN_TOOL)
             && !image_generation_available(turn_context)
         {
             continue;

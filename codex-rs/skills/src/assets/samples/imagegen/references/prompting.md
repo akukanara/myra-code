@@ -1,7 +1,7 @@
 # Prompting best practices
 
 These prompting principles are shared by both top-level modes of the skill:
-- built-in `image_gen` tool (default)
+- built-in `myra_imagen` tool (default)
 - explicit `scripts/image_gen.py` CLI fallback
 
 This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, `input_fidelity`, masks, output format, and output paths live in the fallback docs.
@@ -73,7 +73,7 @@ Do not add:
 - Prefer one targeted follow-up at a time over rewriting the whole prompt.
 
 ## Transparent images
-- Use built-in `image_gen` first for transparent-image requests. If the subject is clearly too complex for chroma-key removal, explain the fallback and ask before switching to CLI.
+- Use built-in `myra_imagen` first for transparent-image requests. If the subject is clearly too complex for chroma-key removal, explain the fallback and ask before switching to CLI.
 - Prompt for a perfectly flat solid chroma-key background, usually `#00ff00`; use `#ff00ff` when the subject is green, and avoid key colors that appear in the subject.
 - Explicitly prohibit shadows, gradients, floor planes, reflections, texture, and lighting variation in the background.
 - Ask for crisp edges, generous padding, and no use of the key color inside the subject.
@@ -83,7 +83,7 @@ Do not add:
 
 ## Fallback-only execution controls
 - `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
-- Do not assume they are built-in `image_gen` tool arguments.
+- Do not assume they are built-in `myra_imagen` tool arguments.
 - If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those controls.
 - In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
 - `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.

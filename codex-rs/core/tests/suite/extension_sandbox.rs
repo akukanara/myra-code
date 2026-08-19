@@ -86,10 +86,9 @@ async fn extension_tool_receives_turn_environment_sandbox() -> Result<()> {
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &json!({
                         "prompt": "edit the image",
                         "referenced_image_paths": [denied_path.display().to_string()],
@@ -220,10 +219,9 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
             ]),
             responses::sse(vec![
                 responses::ev_response_created("resp-2"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     image_call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &json!({
                         "prompt": "edit the image",
                         "referenced_image_paths": [image_path.display().to_string()],

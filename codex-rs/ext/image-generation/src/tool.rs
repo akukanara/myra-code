@@ -33,11 +33,8 @@ use codex_protocol::models::ResponseItem;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::ImageGenerationBeginEvent;
 use codex_protocol::protocol::ImageGenerationEndEvent;
-use codex_tools::ResponsesApiNamespace;
-use codex_tools::ResponsesApiNamespaceTool;
 use codex_tools::ResponsesApiTool;
 use codex_tools::ToolExposure;
-use codex_tools::default_namespace_description;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use codex_utils_image::PromptImageMode;
 use codex_utils_image::load_for_prompt_bytes;
@@ -48,8 +45,7 @@ use serde::Deserialize;
 use serde_json::Map;
 use serde_json::Value;
 
-use crate::IMAGE_GEN_NAMESPACE;
-use crate::IMAGEGEN_TOOL_NAME;
+use crate::MYRA_IMAGEN_TOOL;
 use crate::artifact::image_generation_artifact_path;
 use crate::artifact::image_generation_output_hint;
 use crate::backend::CodexImagesBackend;
@@ -111,9 +107,9 @@ fn extension_turn_item(item: ImageGenerationItem, legacy_event: EventMsg) -> Ext
 }
 
 impl ToolExecutor<ToolCall> for ImageGenerationTool {
-    /// Keeps the tool in the existing image-generation Responses namespace.
+    /// Names the tool alongside the other MyraRouter gateway tools.
     fn tool_name(&self) -> ToolName {
-        ToolName::namespaced(IMAGE_GEN_NAMESPACE, IMAGEGEN_TOOL_NAME)
+        ToolName::plain(MYRA_IMAGEN_TOOL)
     }
 
     /// Advertises the model contract: a rewritten prompt and optional edit references.
@@ -475,7 +471,7 @@ fn parse_args(call: &ToolCall) -> Result<ImagegenArgs, FunctionCallError> {
         .map_err(|err| FunctionCallError::RespondToModel(err.to_string()))
 }
 
-/// Builds the namespace function schema exposed to the model.
+/// Builds the function schema exposed to the model.
 fn imagegen_tool_spec() -> ToolSpec {
     let mut schema_value = serde_json::to_value(
         SchemaSettings::draft2019_09()
@@ -493,18 +489,14 @@ fn imagegen_tool_spec() -> ToolSpec {
             input_schema.insert(key.to_string(), value);
         }
     }
-    ToolSpec::Namespace(ResponsesApiNamespace {
-        name: IMAGE_GEN_NAMESPACE.to_string(),
-        description: default_namespace_description(IMAGE_GEN_NAMESPACE),
-        tools: vec![ResponsesApiNamespaceTool::Function(ResponsesApiTool {
-            name: IMAGEGEN_TOOL_NAME.to_string(),
-            description: IMAGEGEN_DESCRIPTION.to_string(),
-            strict: false,
-            parameters: parse_tool_input_schema(&Value::Object(input_schema))
-                .unwrap_or_else(|err| panic!("imagegen input schema should parse: {err}")),
-            output_schema: None,
-            defer_loading: None,
-        })],
+    ToolSpec::Function(ResponsesApiTool {
+        name: MYRA_IMAGEN_TOOL.to_string(),
+        description: IMAGEGEN_DESCRIPTION.to_string(),
+        strict: false,
+        parameters: parse_tool_input_schema(&Value::Object(input_schema))
+            .unwrap_or_else(|err| panic!("imagegen input schema should parse: {err}")),
+        output_schema: None,
+        defer_loading: None,
     })
 }
 

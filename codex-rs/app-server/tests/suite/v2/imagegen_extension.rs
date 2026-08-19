@@ -65,10 +65,9 @@ async fn standalone_image_generation_returns_saved_path_hint_to_model() -> Resul
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &json!({
                         "prompt": "paint a blue whale",
                     })
@@ -195,10 +194,9 @@ async fn transparent_image_preserves_output_metadata_and_persisted_history() -> 
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &json!({"prompt": "a blue whale on a transparent background"}).to_string(),
                 ),
                 responses::ev_completed("resp-1"),
@@ -306,10 +304,9 @@ async fn automatic_image_background_preserves_unknown_transparency() -> Result<(
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &json!({"prompt": "paint a blue whale"}).to_string(),
                 ),
                 responses::ev_completed("resp-1"),
@@ -373,10 +370,9 @@ async fn standalone_image_generation_failure_emits_terminal_item() -> Result<()>
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &json!({"prompt": "paint a blue whale"}).to_string(),
                 ),
                 responses::ev_completed("resp-1"),
@@ -541,7 +537,7 @@ async fn standalone_image_generation_is_exposed_in_code_mode_only() -> Result<()
     assert!(
         response_mock
             .single_request()
-            .body_contains_text("image_gen__imagegen")
+            .body_contains_text("myra_imagen")
     );
 
     Ok(())
@@ -563,7 +559,7 @@ async fn standalone_image_generation_is_callable_from_code_mode_only() -> Result
                     call_id,
                     "exec",
                     r#"
-const result = await tools.image_gen__imagegen({
+const result = await tools.myra_imagen({
   prompt: "paint a blue whale",
 });
 generatedImage(result);
@@ -605,7 +601,7 @@ generatedImage(result);
 
     let requests = response_mock.requests();
     assert_eq!(requests.len(), 2);
-    assert!(requests[0].body_contains_text("image_gen__imagegen"));
+    assert!(requests[0].body_contains_text("myra_imagen"));
     let output = requests[1].custom_tool_call_output(call_id);
     assert_eq!(
         output["output"][1],
@@ -654,10 +650,9 @@ async fn run_image_edit_test(
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call_with_namespace(
+                responses::ev_function_call(
                     call_id,
-                    "image_gen",
-                    "imagegen",
+                    "myra_imagen",
                     &arguments.to_string(),
                 ),
                 responses::ev_completed("resp-1"),

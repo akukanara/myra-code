@@ -69,6 +69,13 @@ fn has_namespaced_tool(tools: &[Value], namespace: &str, tool_name: &str) -> boo
     })
 }
 
+fn has_function_tool(tools: &[Value], tool_name: &str) -> bool {
+    tools.iter().any(|tool| {
+        tool.get("type").and_then(Value::as_str) == Some("function")
+            && tool.get("name").and_then(Value::as_str) == Some(tool_name)
+    })
+}
+
 fn additional_tools(body: &Value) -> Result<&[Value]> {
     body["input"]
         .as_array()
@@ -271,7 +278,7 @@ async fn responses_lite_uses_standalone_web_search_and_image_generation() -> Res
     assert!(body.get("tools").is_none());
     let tools = additional_tools(&body)?;
     assert!(has_namespaced_tool(tools, "web", "run"));
-    assert!(has_namespaced_tool(tools, "image_gen", "imagegen"));
+    assert!(has_function_tool(tools, "myra_imagen"));
     assert!(!has_hosted_tool(tools, "web_search"));
     assert!(!has_hosted_tool(tools, "image_generation"));
 
@@ -317,7 +324,7 @@ async fn responses_lite_exposes_standalone_tools_for_actor_authorized_provider()
     let body = response_mock.single_request().body_json();
     let tools = additional_tools(&body)?;
     assert!(has_namespaced_tool(tools, "web", "run"));
-    assert!(has_namespaced_tool(tools, "image_gen", "imagegen"));
+    assert!(has_function_tool(tools, "myra_imagen"));
 
     Ok(())
 }
@@ -572,11 +579,11 @@ async fn non_lite_uses_standalone_image_generation_by_default() -> Result<()> {
     let request = response_mock.single_request();
     assert_eq!(request.header(RESPONSES_LITE_HEADER), None);
     assert!(request.tool_by_name("web", "run").is_none());
-    assert!(request.tool_by_name("image_gen", "imagegen").is_some());
     let body = request.body_json();
     let tools = body["tools"]
         .as_array()
         .context("Responses request tools should be an array")?;
+    assert!(has_function_tool(tools, "myra_imagen"));
     assert!(has_hosted_tool(tools, "web_search"));
     assert!(!has_hosted_tool(tools, "image_generation"));
 
