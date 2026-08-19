@@ -39,19 +39,6 @@ jobs:
           workspaces: "codex-rs -> target"
           cache-targets: "false"
 
-      - name: Refresh TUI snapshots
-        env:
-          INSTA_UPDATE: always
-          INSTA_FORCE_UPDATE: "1"
-        run: cargo test -p codex-tui --lib -- image_generation web_fetch web_search myractx
-        working-directory: codex-rs
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: tui-snapshots
-          path: codex-rs/tui/src/chatwidget/snapshots
-
       - name: Run affected tests
         run: |
           set -x
