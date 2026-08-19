@@ -1,0 +1,72 @@
+name: scratch-verify
+
+on:
+  push:
+    branches: [feat/myractx-guidance]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Rust
+        run: |
+          set -euo pipefail
+          toolchain="$(python -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("codex-rs/rust-toolchain.toml").read_text())["toolchain"]["channel"])')"
+          rustup toolchain install "$toolchain"
+
+      - name: Set up rusty_v8
+        uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: x86_64-unknown-linux-gnu
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "codex-rs -> target"
+          cache-targets: "false"
+
+      - name: Typecheck tests
+        run: |
+          cargo check --tests \
+            -p codex-core \
+            -p codex-tui \
+            -p codex-app-server \
+            -p codex-analytics \
+            -p codex-extension-items \
+            -p codex-image-generation-extension \
+            -p codex-myra-web-extension \
+            -p codex-rollout-trace
+        working-directory: codex-rs
+
+      - name: Regenerate app-server schema fixtures
+        if: always()
+        run: python3 app-server-protocol/scripts/write_schema_fixtures.py
+        working-directory: codex-rs
+
+      - name: Bundle regenerated schema
+        if: always()
+        run: |
+          git -C . status --short
+          git -C . diff > /tmp/schema.patch || true
+          git -C . status --porcelain >> /tmp/schema.patch
+          wc -c /tmp/schema.patch
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: schema-regen
+          path: /tmp/schema.patch
