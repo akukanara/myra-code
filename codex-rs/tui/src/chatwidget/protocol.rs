@@ -327,9 +327,10 @@ impl ChatWidget {
             ThreadItem::WebSearch(item) => {
                 self.on_web_search_begin(item.id);
             }
+            ThreadItem::WebFetch(item) => self.on_web_fetch_started(item),
             ThreadItem::MyraCtx(item) => self.on_myractx_started(item),
-            ThreadItem::ImageGeneration(_) => {
-                self.on_image_generation_begin();
+            ThreadItem::ImageGeneration(item) => {
+                self.on_image_generation_begin(item.id, item.revised_prompt);
             }
             ThreadItem::CollabAgentToolCall {
                 id,

@@ -11,6 +11,7 @@ use ts_rs::TS;
 pub mod image_generation;
 pub mod myractx;
 pub mod sleep;
+pub mod web_fetch;
 pub mod web_search;
 
 /// Canonical extension-owned turn item carried through core lifecycle events.
@@ -43,6 +44,9 @@ pub enum ExtensionItem {
     #[serde(rename = "clock.sleep")]
     #[ts(rename = "clock.sleep")]
     Sleep(sleep::SleepItem),
+    #[serde(rename = "web.fetch")]
+    #[ts(rename = "web.fetch")]
+    WebFetch(web_fetch::WebFetchItem),
     #[serde(rename = "web.search")]
     #[ts(rename = "web.search")]
     WebSearch(web_search::WebSearchItem),
@@ -56,6 +60,7 @@ impl ExtensionItem {
             Self::ImageGeneration(item) => &item.id,
             Self::MyraCtx(item) => &item.id,
             Self::Sleep(item) => &item.id,
+            Self::WebFetch(item) => &item.id,
             Self::WebSearch(item) => &item.id,
         }
     }

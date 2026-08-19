@@ -179,6 +179,9 @@ fn activity_summary(item: &ThreadItem) -> Option<String> {
         ThreadItem::WebSearch(item) => {
             return bounded_summary(&format!("Web search: {}", item.query));
         }
+        ThreadItem::WebFetch(item) => {
+            return bounded_summary(&format!("Web fetch: {}", item.url));
+        }
         ThreadItem::MyraCtx(item) => {
             return bounded_summary(&format!("MyraCtx: {}", item.library));
         }

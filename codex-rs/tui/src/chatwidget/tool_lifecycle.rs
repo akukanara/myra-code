@@ -20,11 +20,28 @@ impl ChatWidget {
         self.request_redraw();
     }
 
-    pub(super) fn on_image_generation_begin(&mut self) {
+    pub(super) fn on_image_generation_begin(
+        &mut self,
+        call_id: String,
+        revised_prompt: Option<String>,
+    ) {
         self.flush_answer_stream_with_separator();
+        self.flush_active_cell();
+        // Generation runs for minutes. Holding an active cell open keeps the
+        // prompt and a spinner on screen for that whole time, instead of the
+        // transcript going quiet until the image lands.
+        self.transcript.active_cell = Some(Box::new(history_cell::new_image_generation_cell(
+            call_id,
+            "in_progress",
+            revised_prompt,
+            /*saved_path*/ None,
+            self.config.animations,
+        )));
+        self.bump_active_cell_revision();
         if self.bottom_pane.is_task_running() {
             self.bottom_pane.ensure_status_indicator();
         }
+        self.request_redraw();
     }
 
     pub(super) fn on_image_generation_end(
@@ -35,12 +52,33 @@ impl ChatWidget {
         saved_path: Option<AbsolutePathBuf>,
     ) {
         self.flush_answer_stream_with_separator();
-        self.add_to_history(history_cell::new_image_generation_call(
-            call_id,
-            &status,
-            revised_prompt,
-            saved_path,
-        ));
+        let mut handled = false;
+        if let Some(cell) = self
+            .transcript
+            .active_cell
+            .as_mut()
+            .and_then(|cell| {
+                cell.as_any_mut()
+                    .downcast_mut::<history_cell::ImageGenerationCell>()
+            })
+            && cell.call_id() == call_id
+        {
+            cell.update(&status, revised_prompt.clone(), saved_path.clone());
+            self.bump_active_cell_revision();
+            self.flush_active_cell();
+            handled = true;
+        }
+
+        if !handled {
+            self.add_to_history(history_cell::new_image_generation_cell(
+                call_id,
+                &status,
+                revised_prompt,
+                saved_path,
+                self.config.animations,
+            ));
+        }
+        self.transcript.had_work_activity = true;
         self.request_redraw();
     }
 
@@ -85,6 +123,7 @@ impl ChatWidget {
         call_id: String,
         query: String,
         action: codex_app_server_protocol::WebSearchAction,
+        result_count: Option<usize>,
     ) {
         self.flush_answer_stream_with_separator();
         let mut handled = false;
@@ -96,6 +135,7 @@ impl ChatWidget {
             && cell.call_id() == call_id
         {
             cell.update(action.clone(), query.clone());
+            cell.set_result_count(result_count);
             cell.complete();
             self.bump_active_cell_revision();
             self.flush_active_cell();
@@ -103,7 +143,42 @@ impl ChatWidget {
         }
 
         if !handled {
-            self.add_to_history(history_cell::new_web_search_call(call_id, query, action));
+            let mut cell = history_cell::new_web_search_call(call_id, query, action);
+            cell.set_result_count(result_count);
+            self.add_to_history(cell);
+        }
+        self.transcript.had_work_activity = true;
+    }
+
+    pub(super) fn on_web_fetch_started(&mut self, item: codex_app_server_protocol::WebFetchItem) {
+        self.flush_answer_stream_with_separator();
+        self.flush_active_cell();
+        self.transcript.active_cell = Some(Box::new(history_cell::new_web_fetch_call(
+            item,
+            self.config.animations,
+        )));
+        self.bump_active_cell_revision();
+        self.request_redraw();
+    }
+
+    pub(super) fn on_web_fetch_completed(&mut self, item: codex_app_server_protocol::WebFetchItem) {
+        self.flush_answer_stream_with_separator();
+        let mut handled = false;
+        if let Some(cell) = self
+            .transcript
+            .active_cell
+            .as_mut()
+            .and_then(|cell| cell.as_any_mut().downcast_mut::<history_cell::WebFetchCell>())
+            && cell.call_id() == item.id
+        {
+            cell.update(item.clone());
+            self.bump_active_cell_revision();
+            self.flush_active_cell();
+            handled = true;
+        }
+
+        if !handled {
+            self.add_to_history(history_cell::new_web_fetch_call(item, self.config.animations));
         }
         self.transcript.had_work_activity = true;
     }

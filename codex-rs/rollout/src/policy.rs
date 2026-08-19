@@ -94,6 +94,7 @@ pub fn should_persist_event_msg(ev: &EventMsg, history_mode: ThreadHistoryMode) 
                     event.item,
                     TurnItem::Plan(_)
                         | TurnItem::Extension(ExtensionItem::MyraCtx(_))
+                        | TurnItem::Extension(ExtensionItem::WebFetch(_))
                         | TurnItem::Extension(ExtensionItem::Sleep(_))
                 )
         }

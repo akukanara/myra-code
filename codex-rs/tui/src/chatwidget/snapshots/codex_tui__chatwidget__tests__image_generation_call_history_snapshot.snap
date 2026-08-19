@@ -1,7 +1,7 @@
 ---
-source: tui/src/chatwidget/tests.rs
+source: tui/src/chatwidget/tests/exec_flow.rs
 expression: combined
 ---
-• Generated Image:
+• IMAGE  Image generated
   └ A tiny blue square
-  └ Saved to: file:///tmp/ig-1.png
+    Saved to file:///tmp/ig-1.png

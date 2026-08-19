@@ -143,7 +143,11 @@ impl ImageGenerationTool {
                 ImageGenerationItem {
                     id: call.call_id.clone(),
                     status: "in_progress".to_string(),
-                    revised_prompt: None,
+                    // The requested prompt stands in until the backend returns
+                    // its revision. Generation runs for minutes, and a started
+                    // item with no prompt gives the transcript nothing to show
+                    // for that whole time.
+                    revised_prompt: Some(args.prompt.clone()),
                     result: String::new(),
                     transparent_background: None,
                     saved_path: None,

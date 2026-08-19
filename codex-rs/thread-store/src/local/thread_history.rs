@@ -480,6 +480,7 @@ WHERE thread_id = ?
             | ThreadItem::CollabAgentToolCall { .. }
             | ThreadItem::SubAgentActivity { .. }
             | ThreadItem::WebSearch(_)
+            | ThreadItem::WebFetch(_)
             | ThreadItem::MyraCtx(_)
             | ThreadItem::ImageView { .. }
             | ThreadItem::Sleep(_)

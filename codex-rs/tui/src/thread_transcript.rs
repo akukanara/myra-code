@@ -253,6 +253,9 @@ fn fallback_transcript_cell(item: &ThreadItem) -> Option<PlainHistoryCell> {
         ThreadItem::WebSearch(item) => {
             vec![vec!["web search: ".dim(), item.query.clone().into()].into()]
         }
+        ThreadItem::WebFetch(item) => {
+            vec![vec!["web fetch: ".dim(), item.url.clone().into()].into()]
+        }
         ThreadItem::MyraCtx(item) => vec![
             vec![
                 "MyraCtx: ".cyan(),

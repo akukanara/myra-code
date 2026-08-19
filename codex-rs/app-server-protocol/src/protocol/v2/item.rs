@@ -19,6 +19,8 @@ pub use codex_extension_items::image_generation::ImageGenerationItem;
 pub use codex_extension_items::myractx::MyraCtxItem;
 pub use codex_extension_items::myractx::MyraCtxStatus;
 pub use codex_extension_items::sleep::SleepItem;
+pub use codex_extension_items::web_fetch::WebFetchItem;
+pub use codex_extension_items::web_fetch::WebFetchStatus;
 pub use codex_extension_items::web_search::WebSearchAction;
 pub use codex_extension_items::web_search::WebSearchItem;
 use codex_protocol::approvals::GuardianAssessmentAction as CoreGuardianAssessmentAction;
@@ -344,6 +346,9 @@ pub enum ThreadItem {
     MyraCtx(MyraCtxItem),
     #[serde(rename_all = "camelCase")]
     #[ts(rename_all = "camelCase")]
+    WebFetch(WebFetchItem),
+    #[serde(rename_all = "camelCase")]
+    #[ts(rename_all = "camelCase")]
     CollabAgentToolCall {
         /// Unique identifier for this collab tool call.
         id: String,
@@ -439,6 +444,7 @@ impl ThreadItem {
             | ThreadItem::ExitedReviewMode { id, .. }
             | ThreadItem::ContextCompaction { id, .. } => id,
             ThreadItem::WebSearch(item) => &item.id,
+            ThreadItem::WebFetch(item) => &item.id,
             ThreadItem::MyraCtx(item) => &item.id,
             ThreadItem::Sleep(item) => &item.id,
             ThreadItem::ImageGeneration(item) => &item.id,
@@ -926,6 +932,7 @@ impl From<CoreTurnItem> for ThreadItem {
             CoreTurnItem::Extension(extension) => match extension {
                 ExtensionItem::ImageGeneration(item) => ThreadItem::ImageGeneration(item),
                 ExtensionItem::MyraCtx(item) => ThreadItem::MyraCtx(item),
+                ExtensionItem::WebFetch(item) => ThreadItem::WebFetch(item),
                 ExtensionItem::Sleep(item) => ThreadItem::Sleep(item),
                 ExtensionItem::WebSearch(item) => ThreadItem::WebSearch(item),
             },
