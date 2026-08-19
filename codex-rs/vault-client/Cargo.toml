@@ -18,7 +18,7 @@ base64 = { workspace = true }
 hkdf = { workspace = true }
 p256 = { workspace = true, features = ["ecdh"] }
 rand = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
+reqwest = { workspace = true, features = ["json", "rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }

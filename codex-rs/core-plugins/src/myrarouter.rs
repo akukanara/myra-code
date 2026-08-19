@@ -5,6 +5,7 @@ use anyhow::Context;
 use anyhow::Result;
 use codex_app_server_protocol::PluginAuthPolicy;
 use codex_app_server_protocol::PluginAvailability;
+use codex_app_server_protocol::PluginDisabledReason;
 use codex_app_server_protocol::PluginInstallPolicy;
 use codex_app_server_protocol::PluginInterface;
 use codex_login::CodexAuth;
@@ -54,6 +55,15 @@ struct CatalogItem {
     keywords: Vec<String>,
     #[serde(default)]
     source: Option<String>,
+    /// Whether the gateway can actually serve this capability right now. Absent on older
+    /// gateways, which published every tool unconditionally -- so absence means available and
+    /// this stays backward compatible.
+    #[serde(default)]
+    available: Option<bool>,
+    /// Why it cannot be served, when it cannot. Shown to the user, because the fix is almost
+    /// always "configure a provider" rather than anything the CLI can do.
+    #[serde(default)]
+    unavailable_reason: Option<String>,
 }
 
 /// Fetches the catalog exposed by the active MyraRouter model provider.
@@ -110,10 +120,24 @@ fn catalog_item_to_summary(item: CatalogItem) -> Option<RemotePluginSummary> {
             return None;
         }
     };
+    // Absent means available: an older gateway published its whole static catalog and had no way
+    // to say otherwise.
+    let is_available = item.available.unwrap_or(true);
+    let unavailable_reason = item
+        .unavailable_reason
+        .filter(|reason| !reason.trim().is_empty());
+
     let short_description = item
         .short_description
         .filter(|description| !description.trim().is_empty())
         .or_else(|| Some(item.description.clone()));
+    // The reason rides along in the description because that is what the picker shows. Without it
+    // the entry reads as simply broken, when the fix is usually one page away in the dashboard.
+    let short_description = match (&unavailable_reason, short_description) {
+        (Some(reason), Some(description)) => Some(format!("{description} — {reason}")),
+        (Some(reason), None) => Some(reason.clone()),
+        (None, description) => description,
+    };
 
     Some(RemotePluginSummary {
         id: plugin_id.as_key(),
@@ -124,7 +148,10 @@ fn catalog_item_to_summary(item: CatalogItem) -> Option<RemotePluginSummary> {
         share_context: None,
         installed: is_required,
         installed_at: None,
-        enabled: is_required,
+        // A capability whose provider is not configured must not be offered as working. This is
+        // the substantive half of the fix: the gateway now reports availability, and the CLI stops
+        // presenting an unavailable tool as one the model can call.
+        enabled: is_required && is_available,
         install_policy: if is_required {
             PluginInstallPolicy::InstalledByDefault
         } else {
@@ -133,8 +160,20 @@ fn catalog_item_to_summary(item: CatalogItem) -> Option<RemotePluginSummary> {
         install_policy_source: None,
         must_show_installation_interstitial: None,
         auth_policy: PluginAuthPolicy::OnUse,
-        availability: PluginAvailability::Available,
-        disabled_reason: None,
+        // DisabledByAdmin is the only non-available variant this protocol has, and it is not
+        // strictly what happened -- nobody disabled anything, the provider was never configured.
+        // Reusing it beats adding a protocol variant plus its TS bindings for one case, and
+        // disabled_reason carries the accurate detail: the thing the tool depends on is missing.
+        availability: if is_available {
+            PluginAvailability::Available
+        } else {
+            PluginAvailability::DisabledByAdmin
+        },
+        disabled_reason: if is_available {
+            None
+        } else {
+            Some(PluginDisabledReason::RequiredAppUnavailable)
+        },
         eligible_plan_types: None,
         interface: Some(PluginInterface {
             display_name: Some(item.display_name),
@@ -229,6 +268,10 @@ fn required_tool(
         capabilities: vec![capability.to_string()],
         keywords: vec!["myrarouter".to_string(), "required".to_string()],
         source: Some("myrarouter".to_string()),
+        // These placeholders stand in for a gateway that did not answer, so there is nothing to
+        // report about availability -- leave it unstated rather than assert either way.
+        available: None,
+        unavailable_reason: None,
     }
 }
 

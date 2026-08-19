@@ -27,7 +27,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["json", "rustls-tls-native-roots"] }
 tokio = { workspace = true, features = ["fs", "sync"] }
 
 [dev-dependencies]

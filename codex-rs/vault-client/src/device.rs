@@ -62,6 +62,10 @@ struct StoredDeviceKey {
 }
 
 /// This machine's key, plus the identifiers the server needs to recognise it.
+///
+/// `Debug` is implemented by hand rather than derived: `SecretKey` would print, and a
+/// `{identity:?}` in a log line or a test failure would put this machine's private key in
+/// plain text.
 pub struct DeviceIdentity {
     path: PathBuf,
     secret: SecretKey,
@@ -69,6 +73,18 @@ pub struct DeviceIdentity {
     public_y: String,
     fingerprint: String,
     device_id: Option<String>,
+}
+
+impl std::fmt::Debug for DeviceIdentity {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("DeviceIdentity")
+            .field("path", &self.path)
+            .field("fingerprint", &self.fingerprint)
+            .field("device_id", &self.device_id)
+            .field("secret", &"<redacted>")
+            .finish()
+    }
 }
 
 impl DeviceIdentity {
@@ -193,8 +209,6 @@ fn key_path(root: &Path, vault_id: &str) -> PathBuf {
 
 #[cfg(unix)]
 async fn write_private(path: &Path, contents: &[u8]) -> Result<(), DeviceError> {
-    use std::os::unix::fs::OpenOptionsExt;
-
     // Created 0600 from the outset rather than written and then chmodded -- the gap
     // between those two is a window where the key is world-readable.
     let mut options = tokio::fs::OpenOptions::new();

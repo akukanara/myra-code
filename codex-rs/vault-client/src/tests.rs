@@ -1,3 +1,5 @@
+use base64::Engine;
+
 use crate::crypto;
 use crate::crypto::VaultKey;
 use crate::search;
@@ -33,7 +35,16 @@ fn base64_accepts_both_forms_the_dashboard_and_other_tools_emit() {
     let url_safe = crypto::encode_base64(&bytes);
     assert!(!url_safe.contains('+') && !url_safe.contains('/') && !url_safe.contains('='));
     assert_eq!(crypto::decode_base64(&url_safe).unwrap(), bytes);
-    assert_eq!(crypto::decode_base64("++--//__").is_err(), false);
+
+    // The standard alphabet, padded, decodes to the same bytes -- these inputs contain the
+    // characters the url-safe alphabet rejects, so this exercises the fallback rather than
+    // passing on the first attempt.
+    let standard = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    assert!(standard.contains('+') || standard.contains('/'));
+    assert_eq!(crypto::decode_base64(&standard).unwrap(), bytes);
+
+    // A string mixing both alphabets belongs to neither and must be rejected, not guessed at.
+    assert!(crypto::decode_base64("++--//__").is_err());
 }
 
 #[test]
