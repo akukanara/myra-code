@@ -84,7 +84,7 @@ async fn continue_after_stream_error() {
         supports_standalone_web_search: false,
     };
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(move |config| {
             config.base_instructions = Some("You are a helpful assistant".to_string());
             config.model_provider = provider;

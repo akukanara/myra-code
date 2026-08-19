@@ -196,7 +196,7 @@ async fn remote_models_config_context_window_override_clamps_to_max_context_wind
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(requested_model.to_string());
@@ -263,7 +263,7 @@ async fn remote_models_config_override_above_max_uses_max_context_window() -> Re
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(requested_model.to_string());
@@ -330,7 +330,7 @@ async fn remote_models_use_context_window_when_config_override_is_absent() -> Re
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(requested_model.to_string());
@@ -409,7 +409,7 @@ async fn remote_models_long_model_slug_is_sent_with_custom_reasoning() -> Result
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(requested_model.to_string());
@@ -462,7 +462,7 @@ async fn namespaced_model_slug_uses_catalog_metadata_without_fallback_warning() 
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model(requested_model)
         .build(&server)
         .await?;
@@ -572,7 +572,7 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
             config.model = Some("gpt-5.4".to_string());
         });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         config,
         thread_manager,
@@ -858,7 +858,7 @@ async fn remote_models_apply_legacy_instructions() -> Result<()> {
             config.model = Some("gpt-5.2".to_string());
         });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         config,
         thread_manager,

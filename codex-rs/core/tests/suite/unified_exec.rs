@@ -2529,7 +2529,7 @@ async fn unified_exec_keeps_long_running_session_after_turn_end() -> Result<()> 
             .expect("test config should allow feature update");
     });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -2639,7 +2639,7 @@ async fn unified_exec_interrupt_preserves_long_running_session() -> Result<()> {
             .expect("test config should allow feature update");
     });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -3142,7 +3142,7 @@ async fn unified_exec_runs_under_sandbox() -> Result<()> {
             .expect("test config should allow feature update");
     });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -3254,7 +3254,7 @@ async fn unified_exec_enforces_glob_deny_read_policy() -> Result<()> {
             .expect("set permission profile");
     });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -3381,7 +3381,7 @@ async fn unified_exec_python_prompt_under_seatbelt() -> Result<()> {
             .expect("test config should allow feature update");
     });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..

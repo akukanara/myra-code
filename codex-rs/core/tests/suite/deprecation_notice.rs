@@ -30,7 +30,7 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
         config.use_experimental_unified_exec_tool = true;
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestCodex { myra: codex, .. } = builder.build(&server).await?;
 
     let notice = wait_for_event_match(&codex, |event| match event {
         EventMsg::DeprecationNotice(ev) => Some(ev.clone()),
@@ -71,7 +71,7 @@ async fn emits_deprecation_notice_for_web_search_feature_flag_values() -> anyhow
                 .expect("test config should allow managed feature map updates");
         });
 
-        let TestCodex { codex, .. } = builder.build(&server).await?;
+        let TestCodex { myra: codex, .. } = builder.build(&server).await?;
 
         let notice = wait_for_event_match(&codex, |event| match event {
             EventMsg::DeprecationNotice(ev)
@@ -117,7 +117,7 @@ async fn emits_deprecation_notice_for_use_legacy_landlock() -> anyhow::Result<()
             .expect("test config should allow managed feature map updates");
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestCodex { myra: codex, .. } = builder.build(&server).await?;
 
     let notice = wait_for_event_match(&codex, |event| match event {
         EventMsg::DeprecationNotice(ev)
