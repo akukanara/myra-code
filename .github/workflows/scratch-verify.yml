@@ -59,16 +59,13 @@ jobs:
         run: python3 app-server-protocol/scripts/write_schema_fixtures.py
         working-directory: codex-rs
 
-      - name: Bundle regenerated schema
+      - name: Show regenerated schema changes
         if: always()
-        run: |
-          git -C . status --short
-          git -C . diff > /tmp/schema.patch || true
-          git -C . status --porcelain >> /tmp/schema.patch
-          wc -c /tmp/schema.patch
+        run: git status --short -- codex-rs/app-server-protocol/schema
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: schema-regen
-          path: /tmp/schema.patch
+          path: codex-rs/app-server-protocol/schema
+          include-hidden-files: true
