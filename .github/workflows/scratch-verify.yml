@@ -39,6 +39,19 @@ jobs:
           workspaces: "codex-rs -> target"
           cache-targets: "false"
 
+      - name: Regenerate app-server schema fixtures
+        run: |
+          python3 app-server-protocol/scripts/write_schema_fixtures.py
+          python3 app-server-protocol/scripts/write_schema_fixtures.py --experimental
+          git status --short -- app-server-protocol/schema
+        working-directory: codex-rs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: schema-regen
+          path: codex-rs/app-server-protocol/schema
+          include-hidden-files: true
+
       - name: Run affected tests
         run: |
           set -x
