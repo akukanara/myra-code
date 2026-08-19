@@ -1,0 +1,49 @@
+name: scratch-verify
+
+on:
+  push:
+    branches: [feat/myractx-guidance]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Rust
+        run: |
+          set -euo pipefail
+          toolchain="$(python -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("codex-rs/rust-toolchain.toml").read_text())["toolchain"]["channel"])')"
+          rustup toolchain install "$toolchain"
+
+      - name: Set up rusty_v8
+        uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: x86_64-unknown-linux-gnu
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "codex-rs -> target"
+          cache-targets: "false"
+
+      - name: core integration suites
+        run: cargo test -p codex-core --test all -- responses_lite extension_sandbox --test-threads 4
+        working-directory: codex-rs
+
+      - name: app-server imagegen suite
+        if: always()
+        run: cargo test -p codex-app-server --test all -- imagegen_extension --test-threads 4
+        working-directory: codex-rs
