@@ -118,8 +118,9 @@ impl HistoryCell for ImageGenerationCell {
         let detail_width = (width as usize).saturating_sub(4).max(1);
         let mut detail_lines: Vec<Line<'static>> = Vec::new();
         if let Some(prompt) = self.prompt.as_deref().filter(|prompt| !prompt.is_empty()) {
+            let prompt_line = Line::from(prompt.to_string());
             let wrapped = adaptive_wrap_line(
-                &Line::from(prompt.to_string()),
+                &prompt_line,
                 RtOptions::new(detail_width)
                     .initial_indent("".into())
                     .subsequent_indent("    ".into()),
