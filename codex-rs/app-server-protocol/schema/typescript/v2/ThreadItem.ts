@@ -4,8 +4,10 @@
 import type { ImageGenerationItem } from "../ImageGenerationItem";
 import type { LegacyAppPathString } from "../LegacyAppPathString";
 import type { MessagePhase } from "../MessagePhase";
+import type { MyraCtxItem } from "../MyraCtxItem";
 import type { ReasoningEffort } from "../ReasoningEffort";
 import type { SleepItem } from "../SleepItem";
+import type { WebFetchItem } from "../WebFetchItem";
 import type { WebSearchItem } from "../WebSearchItem";
 import type { JsonValue } from "../serde_json/JsonValue";
 import type { CollabAgentState } from "./CollabAgentState";
@@ -77,7 +79,7 @@ durationMs: number | null, } | { "type": "dynamicToolCall", id: string, namespac
 /**
  * The duration of the dynamic tool call in milliseconds.
  */
-durationMs: number | null, } | { "type": "collabAgentToolCall",
+durationMs: number | null, } | { "type": "myraCtx" } & MyraCtxItem | { "type": "webFetch" } & WebFetchItem | { "type": "collabAgentToolCall",
 /**
  * Unique identifier for this collab tool call.
  */
