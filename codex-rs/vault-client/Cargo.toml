@@ -18,7 +18,12 @@ base64 = { workspace = true }
 hkdf = { workspace = true }
 p256 = { workspace = true, features = ["ecdh"] }
 rand = { workspace = true }
-reqwest = { workspace = true, features = ["json", "rustls-tls-native-roots"] }
+# Declared directly rather than inherited, which is the one deviation from the workspace
+# convention here and is deliberate. Cargo refuses `default-features = false` on an inherited
+# dependency whose workspace entry has defaults on, and defaults-off is what keeps this crate
+# free of native-tls -- and therefore buildable, and its example runnable, without a system
+# OpenSSL. Version tracks the workspace pin; update both together.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
