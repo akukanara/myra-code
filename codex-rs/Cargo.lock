@@ -3590,13 +3590,16 @@ dependencies = [
  "codex-utils-absolute-path",
  "codex-utils-output-truncation",
  "codex-utils-template",
+ "codex-vault-client",
  "pretty_assertions",
+ "reqwest 0.12.28",
  "schemars 0.8.22",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -4663,6 +4666,26 @@ version = "0.1.2-celestine"
 dependencies = [
  "pretty_assertions",
  "v8",
+]
+
+[[package]]
+name = "codex-vault-client"
+version = "0.1.2-celestine"
+dependencies = [
+ "aes-gcm",
+ "base64 0.22.1",
+ "hkdf 0.12.4",
+ "p256",
+ "pretty_assertions",
+ "rand 0.9.3",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -5916,6 +5939,7 @@ dependencies = [
  "ff",
  "generic-array",
  "group",
+ "hkdf 0.12.4",
  "pem-rfc7468",
  "pkcs8",
  "rand_core 0.6.4",
