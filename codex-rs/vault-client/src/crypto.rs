@@ -224,8 +224,10 @@ pub fn public_key_from_jwk(x: &str, y: &str) -> Result<PublicKey, CryptoError> {
 /// travel: the server rejects a JWK carrying private key material.
 pub fn jwk_coordinates(public: &PublicKey) -> (String, String) {
     let point = public.as_affine().to_encoded_point(false);
-    let x = point.x().map(|x| encode_base64(&x)).unwrap_or_default();
-    let y = point.y().map(|y| encode_base64(&y)).unwrap_or_default();
+    // `x()`/`y()` already hand back references; taking another one is a needless borrow the
+    // workspace lints deny.
+    let x = point.x().map(|x| encode_base64(x)).unwrap_or_default();
+    let y = point.y().map(|y| encode_base64(y)).unwrap_or_default();
     (x, y)
 }
 
@@ -235,11 +237,15 @@ pub fn jwk_coordinates(public: &PublicKey) -> (String, String) {
 pub fn jwk_fingerprint(x: &str, y: &str) -> String {
     let canonical = format!(r#"{{"crv":"P-256","kty":"EC","x":"{x}","y":"{y}"}}"#);
     let digest = Sha256::digest(canonical.as_bytes());
-    let hex: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
-    hex[..16]
-        .as_bytes()
-        .chunks(4)
-        .map(|chunk| String::from_utf8_lossy(chunk).to_uppercase())
+    // First 8 bytes as hex, in four-character groups: the same 19-character shape
+    // fingerprintJwk produces in src/lib/memory/pairing.js.
+    digest
+        .iter()
+        .take(8)
+        .map(|byte| format!("{byte:02X}"))
+        .collect::<Vec<_>>()
+        .chunks(2)
+        .map(<[String]>::concat)
         .collect::<Vec<_>>()
         .join("-")
 }
