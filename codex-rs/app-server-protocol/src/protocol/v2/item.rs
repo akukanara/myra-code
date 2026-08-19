@@ -341,11 +341,10 @@ pub enum ThreadItem {
         #[ts(type = "number | null")]
         duration_ms: Option<i64>,
     },
-    #[serde(rename_all = "camelCase")]
-    #[ts(rename_all = "camelCase")]
+    // No `rename_all` on these two: they are newtype variants, so the
+    // attribute has nothing to rename, and ts-rs rejects it outright.
+    // The field casing comes from the inner item type.
     MyraCtx(MyraCtxItem),
-    #[serde(rename_all = "camelCase")]
-    #[ts(rename_all = "camelCase")]
     WebFetch(WebFetchItem),
     #[serde(rename_all = "camelCase")]
     #[ts(rename_all = "camelCase")]
