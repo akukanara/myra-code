@@ -102,7 +102,7 @@ jobs:
           key: ${{ steps.package-cache.outputs.cache-primary-key }}
 
       - name: Upload MyraCode Linux package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: myra-linux-x64
           path: vendor/x86_64-unknown-linux-musl
