@@ -729,6 +729,71 @@ async fn status_snapshot_shows_active_user_defined_profile() {
     assert_snapshot!(sanitized);
 }
 
+/// A provider that reports its own limits does not need the chatgpt.com link.
+///
+/// The reported symptom was the other half of this: MyraRouter sends the x-codex-* rate-limit
+/// headers, so /status has real numbers, and pointing the reader at chatgpt.com for "up-to-date
+/// information on rate limits and credits" sends them somewhere those numbers do not exist. The
+/// sibling test above keeps the opposite case honest -- an OpenAI-auth proxy that reports nothing
+/// still gets the link, because its limits genuinely do live there.
+#[tokio::test]
+async fn status_hides_usage_link_when_the_provider_reports_its_own_limits() {
+    let mut config = test_status_config().await;
+    config.model_provider_id = "myrarouter".to_string();
+    config.model_provider = ModelProviderInfo {
+        name: "MyraRouter".to_string(),
+        base_url: Some("https://example.invalid/v1".to_string()),
+        requires_openai_auth: true,
+        ..ModelProviderInfo::default()
+    };
+
+    let now = Local::now();
+    let usage = TokenUsage::default();
+    let snapshot = RateLimitSnapshotDisplay {
+        limit_name: "Xenolith".to_string(),
+        captured_at: now,
+        primary: Some(RateLimitWindowDisplay {
+            used_percent: 40.0,
+            resets_at: Some("soon".to_string()),
+            window_minutes: Some(300),
+        }),
+        secondary: None,
+        credits: None,
+        individual_limit: None,
+    };
+
+    let (composite, _handle) = new_status_output_with_rate_limits_handle(
+        &config,
+        /*runtime_model_provider_base_url*/ Some("https://example.invalid/v1"),
+        /*remote_connection*/ None,
+        test_status_account_display().as_ref(),
+        /*token_info*/ None,
+        &usage,
+        &None,
+        /*thread_name*/ None,
+        /*forked_from*/ None,
+        /*rate_limits*/ &[snapshot],
+        None,
+        now,
+        "gpt-5",
+        /*collaboration_mode*/ None,
+        /*reasoning_effort_override*/ None,
+        "<none>".to_string(),
+        /*refreshing_rate_limits*/ false,
+    );
+    let rendered = render_lines(&composite.display_lines(/*width*/ 120)).join("\n");
+
+    assert!(
+        !rendered.contains("https://chatgpt.com/codex/settings/usage"),
+        "expected /status to drop the ChatGPT usage link once the provider reports limits, got: {rendered}"
+    );
+    // And the limits it reported are what the reader sees instead of a permanent "refresh requested".
+    assert!(
+        !rendered.contains("refresh requested"),
+        "expected reported limits to replace the refresh notice, got: {rendered}"
+    );
+}
+
 #[tokio::test]
 async fn status_model_provider_uses_bedrock_runtime_base_url_and_gates_usage_link() {
     let temp_home = TempDir::new().expect("temp home");
