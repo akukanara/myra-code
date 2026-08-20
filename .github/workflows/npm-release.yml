@@ -68,7 +68,7 @@ jobs:
             target: aarch64-pc-windows-msvc
             npm_package: myra-win32-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # scripts/codex_package/v8.py needs tomllib (Python 3.11+). setup-python
       # pins the same interpreter on all three operating systems, which is why
@@ -210,7 +210,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
