@@ -20,7 +20,11 @@ on:
         description: "npm version to publish (e.g. 0.1.0 or 0.1.0-alpha.1)"
         required: true
       npm_tag:
-        description: "dist-tag for the root and sdk packages (blank = latest)"
+        description: "primary dist-tag for the root and SDK packages (use latest for a prerelease promoted to latest)"
+        required: false
+        default: ""
+      additional_npm_tag:
+        description: "optional additional dist-tag for the root and SDK packages (for example, celestine)"
         required: false
         default: ""
       dry_run:
@@ -259,6 +263,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           VERSION: ${{ inputs.version }}
           NPM_TAG: ${{ inputs.npm_tag }}
+          ADDITIONAL_NPM_TAG: ${{ inputs.additional_npm_tag }}
         run: |
           set -euo pipefail
 
@@ -281,6 +286,13 @@ jobs:
             echo "already published, skipping"
           }
 
+          add_tag() {
+            package_version="$1"; tag="$2"
+            if [ -n "$tag" ]; then
+              npm dist-tag add "$package_version" "$tag"
+            fi
+          }
+
           prefix="${NPM_TAG:+${NPM_TAG}-}"
           publish "dist/myra-linux-x64-${VERSION}.tgz"     "${prefix}linux-x64"
           publish "dist/myra-linux-arm64-${VERSION}.tgz"   "${prefix}linux-arm64"
@@ -290,3 +302,15 @@ jobs:
           publish "dist/myra-win32-arm64-${VERSION}.tgz"   "${prefix}win32-arm64"
           publish "dist/myra-${VERSION}.tgz"               "$NPM_TAG"
           publish "dist/myra-sdk-${VERSION}.tgz"           "$NPM_TAG"
+
+          if [ -n "$ADDITIONAL_NPM_TAG" ]; then
+            additional_prefix="${ADDITIONAL_NPM_TAG}-"
+            add_tag "@myralith/myra@${VERSION}-linux-x64" "${additional_prefix}linux-x64"
+            add_tag "@myralith/myra@${VERSION}-linux-arm64" "${additional_prefix}linux-arm64"
+            add_tag "@myralith/myra@${VERSION}-darwin-x64" "${additional_prefix}darwin-x64"
+            add_tag "@myralith/myra@${VERSION}-darwin-arm64" "${additional_prefix}darwin-arm64"
+            add_tag "@myralith/myra@${VERSION}-win32-x64" "${additional_prefix}win32-x64"
+            add_tag "@myralith/myra@${VERSION}-win32-arm64" "${additional_prefix}win32-arm64"
+            add_tag "@myralith/myra@${VERSION}" "$ADDITIONAL_NPM_TAG"
+            add_tag "@myralith/myra-sdk@${VERSION}" "$ADDITIONAL_NPM_TAG"
+          fi
