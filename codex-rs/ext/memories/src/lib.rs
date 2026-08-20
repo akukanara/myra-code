@@ -5,6 +5,7 @@ mod metrics;
 mod prompts;
 mod schema;
 mod tools;
+mod vault;
 
 pub use extension::install;
 

@@ -59,7 +59,7 @@ python "$IMAGE_GEN" edit \
 - Use the bundled CLI directly (`python "$IMAGE_GEN" ...`) after activating the correct environment.
 - Do **not** create one-off runners (for example `gen_images.py`) unless the user explicitly asks for a custom wrapper.
 - **Never modify** `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
-- Do not silently downgrade from CLI `gpt-image-2` or built-in `image_gen` to CLI `gpt-image-1.5`; ask first unless the user already explicitly requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- Do not silently downgrade from CLI `gpt-image-2` or built-in `myra_imagen` to CLI `gpt-image-1.5`; ask first unless the user already explicitly requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
 
 ## Defaults
 - Model: `gpt-image-2`
@@ -79,7 +79,7 @@ python "$IMAGE_GEN" edit \
 - Square images are typically fastest. Use `--size 1024x1024` for quick square drafts.
 - If the user asks for 4K-style output, use `--size 3840x2160` for landscape or `--size 2160x3840` for portrait.
 - Do not pass `--input-fidelity` with `gpt-image-2`; this model always uses high fidelity for image inputs.
-- Do not use `--background transparent` with `gpt-image-2`; the default transparent-image workflow uses built-in `image_gen` on a flat chroma-key background plus local removal. Use `gpt-image-1.5` only after the user explicitly confirms the true-transparent CLI fallback, unless they already requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- Do not use `--background transparent` with `gpt-image-2`; the default transparent-image workflow uses built-in `myra_imagen` on a flat chroma-key background plus local removal. Use `gpt-image-1.5` only after the user explicitly confirms the true-transparent CLI fallback, unless they already requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
 
 Popular `gpt-image-2` sizes:
 - `1024x1024`
@@ -141,10 +141,10 @@ python "$IMAGE_GEN" generate \
   --out output/imagegen/product-cutout.png
 ```
 
-When using this path, explain briefly that built-in `image_gen` plus chroma-key removal is the default transparent-image path, but this request needs true model-native transparency. `gpt-image-2` does not support `background=transparent`, so `gpt-image-1.5` is required for this confirmed fallback.
+When using this path, explain briefly that built-in `myra_imagen` plus chroma-key removal is the default transparent-image path, but this request needs true model-native transparency. `gpt-image-2` does not support `background=transparent`, so `gpt-image-1.5` is required for this confirmed fallback.
 
 ## Quality, input fidelity, and masks (CLI fallback only)
-These are explicit CLI controls. They are not built-in `image_gen` tool arguments.
+These are explicit CLI controls. They are not built-in `myra_imagen` tool arguments.
 
 - `--quality` works for `generate`, `edit`, and `generate-batch`: `low|medium|high|auto`
 - `--input-fidelity` is **edit-only** and validated as `low|high`; it is not supported for `gpt-image-2`

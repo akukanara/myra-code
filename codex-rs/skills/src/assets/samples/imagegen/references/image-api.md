@@ -2,11 +2,11 @@
 
 This file is for the fallback CLI mode only. Use it when the user explicitly asks to use `scripts/image_gen.py` / CLI / API / model controls, or after the user explicitly confirms that a transparent-output request should use the `gpt-image-1.5` true-transparency fallback path.
 
-These parameters describe the Image API and bundled CLI fallback surface. Do not assume they are normal arguments on the built-in `image_gen` tool.
+These parameters describe the Image API and bundled CLI fallback surface. Do not assume they are normal arguments on the built-in `myra_imagen` tool.
 
 ## Scope
 - This fallback CLI is intended for GPT Image models (`gpt-image-2`, `gpt-image-1.5`, `gpt-image-1`, and `gpt-image-1-mini`).
-- The built-in `image_gen` tool and the fallback CLI do not expose the same controls.
+- The built-in `myra_imagen` tool and the fallback CLI do not expose the same controls.
 
 ## Model summary
 
@@ -68,7 +68,7 @@ Model-specific note for `input_fidelity`:
 
 ## Transparent backgrounds
 
-`gpt-image-2` does not currently support the Image API `background=transparent` parameter. The skill's default transparent-image path is built-in `image_gen` with a flat chroma-key background, followed by local alpha extraction with `python "${MYRA_HOME:-$HOME/.myra}/skills/.system/imagegen/scripts/remove_chroma_key.py"`.
+`gpt-image-2` does not currently support the Image API `background=transparent` parameter. The skill's default transparent-image path is built-in `myra_imagen` with a flat chroma-key background, followed by local alpha extraction with `python "${MYRA_HOME:-$HOME/.myra}/skills/.system/imagegen/scripts/remove_chroma_key.py"`.
 
 Use CLI `gpt-image-1.5` with `background=transparent` and a transparent-capable output format such as `png` or `webp` only after the user explicitly confirms that fallback, unless they already requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback. If the user asks for true/native transparency, the subject is too complex for clean chroma-key removal, or local background removal fails validation, explain the tradeoff and ask before switching.
 
@@ -87,4 +87,4 @@ Use CLI `gpt-image-1.5` with `background=transparent` and a transparent-capable 
 
 ## Important boundary
 - `quality`, `input_fidelity`, explicit masks, `background`, `output_format`, and related parameters are fallback-only execution controls.
-- Do not assume they are built-in `image_gen` tool arguments.
+- Do not assume they are built-in `myra_imagen` tool arguments.

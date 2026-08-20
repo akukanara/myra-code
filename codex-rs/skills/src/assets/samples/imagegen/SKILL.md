@@ -11,7 +11,7 @@ Generates or edits images for the current project (for example website assets, g
 
 This skill has exactly two top-level modes:
 
-- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Default built-in tool mode (preferred):** built-in `myra_imagen` tool for normal image generation, editing, and simple transparent-image requests. Does not require `OPENAI_API_KEY`.
 - **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires `OPENAI_API_KEY`.
 
 Within CLI fallback, the CLI exposes three subcommands:
@@ -21,10 +21,10 @@ Within CLI fallback, the CLI exposes three subcommands:
 - `generate-batch`
 
 Rules:
-- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Use the built-in `myra_imagen` tool by default for normal image generation and editing requests.
 - Do not switch to CLI fallback for ordinary quality, size, or file-path control.
-- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a flat removable chroma-key background, then remove it locally with the installed helper at `$MYRA_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
-- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a model/path downgrade and ask the user before doing it, unless the user has already explicitly requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If the user explicitly asks for a transparent image/background, stay on built-in `myra_imagen` first: prompt for a flat removable chroma-key background, then remove it locally with the installed helper at `$MYRA_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `myra_imagen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a model/path downgrade and ask the user before doing it, unless the user has already explicitly requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
 - If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent --output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run the CLI fallback only after the user confirms.
 - The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per requested asset or variant.
 - If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
@@ -34,7 +34,7 @@ Rules:
 Built-in save-path policy:
 - In built-in tool mode, Codex saves generated images under `$MYRA_HOME/*` by default.
 - Do not describe or rely on OS temp as the default built-in destination.
-- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$MYRA_HOME/generated_images/...`.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `myra_imagen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$MYRA_HOME/generated_images/...`.
 - Save-path precedence in built-in mode:
   1. If the user names a destination, move or copy the selected output there.
   2. If the image is meant for the current project, move or copy the final selected image into the workspace before finishing.
@@ -106,8 +106,8 @@ Assume the user wants a new image unless they clearly ask to change an existing 
 9. Augment the prompt based on specificity:
    - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requirements.
    - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
-10. Use the built-in `image_gen` tool by default.
-11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed `$MYRA_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+10. Use the built-in `myra_imagen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `myra_imagen` on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed `$MYRA_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
 12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
 13. Iterate with a single targeted change, then re-check.
 14. For preview-only work, render the image inline; the underlying file may remain at the default `$MYRA_HOME/generated_images/...` path.
@@ -118,10 +118,10 @@ Assume the user wants a new image unless they clearly ask to change an existing 
 
 ## Transparent image requests
 
-Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true transparent-background control, create a removable chroma-key source image and then convert the key color to alpha locally.
+Transparent-image requests still use built-in `myra_imagen` first. Because the built-in tool does not expose a true transparent-background control, create a removable chroma-key source image and then convert the key color to alpha locally.
 
 Default sequence:
-1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+1. Use built-in `myra_imagen` to generate the requested subject on a perfectly flat solid chroma-key background.
 2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, and avoid `#0000ff` for blue subjects.
 3. After generation, move or copy the selected source image from `$MYRA_HOME/generated_images/...` into the workspace or `tmp/imagegen/`.
 4. Run the installed helper path, not a project-relative script path:
@@ -202,7 +202,7 @@ Edit:
 - identity-preserve — try-on, person-in-scene; lock face/body/pose.
 - precise-object-edit — remove/replace a specific element (including interior swaps).
 - lighting-weather — time-of-day/season/atmosphere changes only.
-- background-extraction — transparent background / clean cutout. Use built-in `image_gen` with chroma-key removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- background-extraction — transparent background / clean cutout. Use built-in `myra_imagen` with chroma-key removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
 - style-transfer — apply reference style while changing subject/scene.
 - compositing — multi-image insert/merge with matched lighting/perspective.
 - sketch-to-render — drawing/line art to photoreal render.
@@ -231,7 +231,7 @@ Avoid: <negative constraints>
 Notes:
 - `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
 - `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which controls output transparency behavior.
-- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in the CLI path only. Do not treat them as built-in `myra_imagen` tool arguments.
 
 Augmentation rules:
 - Keep it short.
@@ -307,7 +307,7 @@ Popular `gpt-image-2` sizes:
 ## Fallback CLI mode only
 
 ### Temp and output conventions
-These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+These conventions apply only to the CLI fallback. They do not describe built-in `myra_imagen` output behavior.
 - Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
 - Write final artifacts under `output/imagegen/`.
 - Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
@@ -331,7 +331,7 @@ Portability note:
 
 ### Environment
 - `OPENAI_API_KEY` must be set for live API calls.
-- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `myra_imagen` tool.
 - Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
 
 If the key is missing, give the user these steps:

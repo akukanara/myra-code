@@ -78,7 +78,7 @@ async fn request_user_input_round_trip_for_mode(mode: ModeKind) -> anyhow::Resul
 
     let builder = test_codex();
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -242,7 +242,7 @@ async fn request_user_input_interrupt_emits_deferred_token_count() -> anyhow::Re
 
     let server = start_mock_server().await;
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -336,7 +336,7 @@ where
 
     let mut builder = test_codex();
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..

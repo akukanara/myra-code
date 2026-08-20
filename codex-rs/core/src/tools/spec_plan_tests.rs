@@ -299,6 +299,21 @@ fn use_bedrock_provider(turn: &mut TurnContext) {
     turn.provider = create_model_provider(provider_info, turn.auth_manager.clone());
 }
 
+/// A MyraRouter-style gateway: an OpenAI-compatible endpoint that is neither
+/// the hosted OpenAI backend nor carries OpenAI actor authorization.
+fn use_gateway_provider(turn: &mut TurnContext) {
+    let mut provider_info = turn.config.model_provider.clone();
+    provider_info.name = "myrarouter".to_string();
+    provider_info.base_url = Some("https://gateway.example/v1".to_string());
+    provider_info.requires_openai_auth = false;
+    provider_info.http_headers = None;
+    update_config(turn, |config| {
+        config.model_provider_id = "myrarouter".to_string();
+        config.model_provider = provider_info.clone();
+    });
+    turn.provider = create_model_provider(provider_info, turn.auth_manager.clone());
+}
+
 struct TestNamespaceExtensionTool {
     namespace: &'static str,
     tool_name: &'static str,
@@ -376,6 +391,29 @@ impl ToolExecutor<ExtensionToolCall> for GatewayWebSearchExtensionTool {
         ToolSpec::Function(ResponsesApiTool {
             name: "web_search".to_string(),
             description: "Search through the configured gateway.".to_string(),
+            strict: true,
+            defer_loading: None,
+            parameters: codex_tools::JsonSchema::default(),
+            output_schema: None,
+        })
+    }
+
+    fn handle(&self, _call: ExtensionToolCall) -> codex_tools::ToolExecutorFuture<'_> {
+        Box::pin(async { panic!("spec planning should not execute extension tools") })
+    }
+}
+
+struct GatewayImagenExtensionTool;
+
+impl ToolExecutor<ExtensionToolCall> for GatewayImagenExtensionTool {
+    fn tool_name(&self) -> ToolName {
+        ToolName::plain("myra_imagen")
+    }
+
+    fn spec(&self) -> ToolSpec {
+        ToolSpec::Function(ResponsesApiTool {
+            name: "myra_imagen".to_string(),
+            description: "Generate images through the configured gateway.".to_string(),
             strict: true,
             defer_loading: None,
             parameters: codex_tools::JsonSchema::default(),
@@ -2571,10 +2609,7 @@ async fn hosted_web_search_fallback_follows_winning_browser_runtime() {
 
 #[tokio::test]
 async fn hosted_web_search_and_standalone_image_generation_follow_runtime_gates() {
-    let image_generation_tool = Arc::new(TestNamespaceExtensionTool {
-        namespace: "image_gen",
-        tool_name: "imagegen",
-    });
+    let image_generation_tool = Arc::new(GatewayImagenExtensionTool);
     let image_generation = probe_with(
         |turn| {
             use_chatgpt_auth(turn);
@@ -2586,7 +2621,7 @@ async fn hosted_web_search_and_standalone_image_generation_follow_runtime_gates(
         },
     )
     .await;
-    image_generation.assert_visible_contains(&["image_gen"]);
+    image_generation.assert_visible_contains(&["myra_imagen"]);
 
     let extension_disabled = probe_with(
         |turn| {
@@ -2600,7 +2635,7 @@ async fn hosted_web_search_and_standalone_image_generation_follow_runtime_gates(
         },
     )
     .await;
-    extension_disabled.assert_visible_lacks(&["image_gen"]);
+    extension_disabled.assert_visible_lacks(&["myra_imagen"]);
 
     let text_only_model = probe_with(
         |turn| {
@@ -2613,7 +2648,26 @@ async fn hosted_web_search_and_standalone_image_generation_follow_runtime_gates(
         },
     )
     .await;
-    text_only_model.assert_visible_lacks(&["image_gen"]);
+    text_only_model.assert_visible_lacks(&["myra_imagen"]);
+
+    // A gateway account is not an OpenAI account. Deriving entitlement from
+    // OpenAI auth withdrew the tool from every gateway user while the
+    // extension still advertised it, leaving the model to call something that
+    // was never registered. Entitlement there belongs to the gateway's own
+    // plan-aware catalog, which the extension consults before handing over an
+    // executor at all.
+    let gateway_provider = probe_with(
+        |turn| {
+            use_gateway_provider(turn);
+            turn.model_info.input_modalities = vec![];
+        },
+        ToolPlanInputs {
+            extension_tool_executors: vec![image_generation_tool.clone()],
+            ..Default::default()
+        },
+    )
+    .await;
+    gateway_provider.assert_visible_contains(&["myra_imagen"]);
 
     let unsupported_provider = probe_with(
         |turn| {
@@ -2626,7 +2680,7 @@ async fn hosted_web_search_and_standalone_image_generation_follow_runtime_gates(
         },
     )
     .await;
-    unsupported_provider.assert_visible_lacks(&["image_gen"]);
+    unsupported_provider.assert_visible_lacks(&["myra_imagen"]);
 
     let live_web_search = probe(|turn| {
         set_web_search_mode(turn, WebSearchMode::Live);

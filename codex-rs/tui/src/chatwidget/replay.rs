@@ -159,14 +159,25 @@ impl ChatWidget {
             } => self.on_mcp_tool_call_started(item),
             item @ ThreadItem::McpToolCall { .. } => self.on_mcp_tool_call_completed(item),
             ThreadItem::WebSearch(item) => {
+                let result_count = item.results.as_ref().map(Vec::len);
                 self.on_web_search_begin(item.id.clone());
                 self.on_web_search_end(
                     item.id,
                     item.query,
                     item.action
                         .unwrap_or(codex_app_server_protocol::WebSearchAction::Other),
+                    result_count,
                 );
             }
+            ThreadItem::WebFetch(item) => match item.status {
+                codex_app_server_protocol::WebFetchStatus::InProgress => {
+                    self.on_web_fetch_started(item);
+                }
+                codex_app_server_protocol::WebFetchStatus::Completed
+                | codex_app_server_protocol::WebFetchStatus::Failed => {
+                    self.on_web_fetch_completed(item);
+                }
+            },
             ThreadItem::MyraCtx(item) => match item.status {
                 codex_app_server_protocol::MyraCtxStatus::InProgress => {
                     self.on_myractx_started(item);

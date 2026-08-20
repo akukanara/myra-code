@@ -316,6 +316,18 @@ pub struct MemoriesToml {
     pub extract_model: Option<String>,
     /// Model used for memory consolidation.
     pub consolidation_model: Option<String>,
+    /// When `true`, read and write memories from a MyraRouter Personal Memory vault
+    /// instead of the local filesystem. The vault is encrypted on this machine; MyraRouter
+    /// stores ciphertext it cannot read.
+    pub vault: Option<bool>,
+    /// Base URL of the MyraRouter instance holding the vault, for example
+    /// `http://localhost:20128`.
+    pub vault_base_url: Option<String>,
+    /// Name of the environment variable holding the MyraRouter API key. The key itself is
+    /// deliberately not a config value: config files get committed.
+    pub vault_api_key_env: Option<String>,
+    /// Which vault to use. Omit, or use `"auto"`, for the account's default vault.
+    pub vault_id: Option<String>,
 }
 
 /// Effective memories settings after defaults are applied.
@@ -333,6 +345,10 @@ pub struct MemoriesConfig {
     pub min_rate_limit_remaining_percent: i64,
     pub extract_model: Option<String>,
     pub consolidation_model: Option<String>,
+    pub vault: bool,
+    pub vault_base_url: Option<String>,
+    pub vault_api_key_env: Option<String>,
+    pub vault_id: Option<String>,
 }
 
 impl Default for MemoriesConfig {
@@ -350,6 +366,11 @@ impl Default for MemoriesConfig {
             min_rate_limit_remaining_percent: DEFAULT_MEMORIES_MIN_RATE_LIMIT_REMAINING_PERCENT,
             extract_model: None,
             consolidation_model: None,
+            // Off unless asked for: turning it on changes where every memory lives.
+            vault: false,
+            vault_base_url: None,
+            vault_api_key_env: None,
+            vault_id: None,
         }
     }
 }
@@ -396,6 +417,14 @@ impl From<MemoriesToml> for MemoriesConfig {
                 .clamp(0, 100),
             extract_model: toml.extract_model,
             consolidation_model: toml.consolidation_model,
+            vault: toml.vault.unwrap_or(defaults.vault),
+            vault_base_url: toml.vault_base_url,
+            vault_api_key_env: toml.vault_api_key_env,
+            // "auto" is the spelling a user writes for "the account's default vault"; it
+            // means the same thing as leaving it out.
+            vault_id: toml
+                .vault_id
+                .filter(|value| !value.trim().is_empty() && value != "auto"),
         }
     }
 }

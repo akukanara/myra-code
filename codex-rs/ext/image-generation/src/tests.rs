@@ -14,7 +14,6 @@ use codex_protocol::models::FunctionCallOutputContentItem;
 use codex_protocol::models::FunctionCallOutputPayload;
 use codex_protocol::models::ResponseInputItem;
 use codex_protocol::models::ResponseItem;
-use codex_tools::ResponsesApiNamespaceTool;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 
@@ -23,8 +22,7 @@ use super::ImageRequest;
 use super::ImagegenArgs;
 use super::imagegen_tool_spec;
 use super::request_for_call_args;
-use crate::IMAGE_GEN_NAMESPACE;
-use crate::IMAGEGEN_TOOL_NAME;
+use crate::MYRA_IMAGEN_TOOL;
 use crate::artifact::image_generation_artifact_path;
 use crate::artifact::image_generation_output_hint;
 
@@ -46,15 +44,14 @@ fn artifact_path_sanitizes_session_and_call_ids() {
 }
 
 #[test]
-fn uses_reserved_image_gen_namespace() {
-    let ToolSpec::Namespace(spec) = imagegen_tool_spec() else {
-        panic!("imagegen should advertise a namespace tool");
+fn advertises_a_flat_gateway_function_tool() {
+    // A namespace tool would be dropped by any provider that does not declare
+    // the namespace-tools capability. The gateway serves this as a plain
+    // client-executed function, like the other Myra tools.
+    let ToolSpec::Function(spec) = imagegen_tool_spec() else {
+        panic!("myra_imagen should advertise a plain function tool");
     };
-    assert_eq!(spec.name, IMAGE_GEN_NAMESPACE);
-    let ResponsesApiNamespaceTool::Function(function) = &spec.tools[0] else {
-        panic!("imagegen should advertise a function tool");
-    };
-    assert_eq!(function.name, IMAGEGEN_TOOL_NAME);
+    assert_eq!(spec.name, MYRA_IMAGEN_TOOL);
 }
 
 #[tokio::test]

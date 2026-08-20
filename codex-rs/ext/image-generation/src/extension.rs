@@ -76,31 +76,62 @@ struct ImageModel {
 
 /// MyraRouter filters this catalog by the signed-in account's plan. Fall back
 /// to the hosted API default when a compatible provider has no image catalog.
+///
+/// Every failure is logged rather than swallowed: an empty catalog withdraws
+/// the tool entirely, and a silent withdrawal is indistinguishable to the user
+/// from the tool being broken.
 async fn image_model_for_provider(
     provider: &ModelProviderInfo,
     auth: Option<&CodexAuth>,
 ) -> Option<String> {
-    let auth = auth?;
-    let base_url = provider.to_api_provider(Some(auth.api_auth_mode())).ok()?.base_url;
+    let Some(auth) = auth else {
+        tracing::debug!("image-generation: not signed in; no image model catalog");
+        return None;
+    };
+    let base_url = match provider.to_api_provider(Some(auth.api_auth_mode())) {
+        Ok(provider) => provider.base_url,
+        Err(error) => {
+            tracing::debug!(%error, "image-generation: provider has no API endpoint");
+            return None;
+        }
+    };
     let url = format!("{}/models/image", base_url.trim_end_matches('/'));
-    let response = create_client()
+    let response = match create_client()
         .get(&url)
         .timeout(MODEL_CATALOG_TIMEOUT)
         .headers(codex_model_provider::auth_provider_from_auth(auth).to_auth_headers())
         .send()
         .await
-        .ok()?;
-    if !response.status().is_success() {
-        return None;
-    }
-    response
-        .json::<ImageModelsResponse>()
-        .await
-        .ok()?
+    {
+        Ok(response) if response.status().is_success() => response,
+        Ok(response) => {
+            tracing::debug!(
+                status = %response.status(),
+                "image-generation: image model catalog unavailable"
+            );
+            return None;
+        }
+        Err(error) => {
+            tracing::debug!(%error, "image-generation: could not load image model catalog");
+            return None;
+        }
+    };
+    let catalog = match response.json::<ImageModelsResponse>().await {
+        Ok(catalog) => catalog,
+        Err(error) => {
+            tracing::debug!(%error, "image-generation: invalid image model catalog");
+            return None;
+        }
+    };
+    let model = catalog
         .data
         .into_iter()
         .map(|model| model.id)
-        .find(|model| !model.trim().is_empty())
+        .find(|model| !model.trim().is_empty());
+    if model.is_none() {
+        tracing::debug!("image-generation: no entitled image model in catalog");
+    }
+    model
 }
 
 impl ThreadLifecycleContributor<Config> for ImageGenerationExtension {
@@ -161,6 +192,7 @@ impl ToolContributor for ImageGenerationExtension {
             return Vec::new();
         };
         if !config.available {
+            tracing::debug!("image-generation: provider has no image backend; tool not offered");
             return Vec::new();
         }
 

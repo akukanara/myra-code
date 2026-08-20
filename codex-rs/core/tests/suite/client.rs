@@ -2210,7 +2210,7 @@ async fn includes_configured_max_effort_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model("gpt-5.4")
         .with_config(|config| {
             config.model_reasoning_effort = Some(ReasoningEffort::Max);
@@ -2258,7 +2258,7 @@ async fn includes_no_effort_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestCodex { myra: codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
 
     codex
         .submit(Op::UserInput {
@@ -2301,7 +2301,7 @@ async fn includes_default_reasoning_effort_in_request_when_defined_by_model_info
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestCodex { myra: codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
 
     codex
         .submit(Op::UserInput {
@@ -2343,7 +2343,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, config, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestCodex { myra: codex, config, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
 
     let collaboration_mode = CollaborationMode {
         mode: ModeKind::Default,
@@ -2403,7 +2403,7 @@ async fn configured_reasoning_summary_is_sent() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(|config| {
             config.model_reasoning_summary = Some(ReasoningSummary::Concise);
             let _ = config
@@ -2474,7 +2474,7 @@ async fn model_without_summary_parameter_support_omits_configured_summary() -> a
         .expect("gpt-5.4 exists in bundled models.json");
     model.supports_reasoning_summary_parameter = false;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model("gpt-5.4")
         .with_config(move |config| {
             config.model_catalog = Some(model_catalog);
@@ -2524,7 +2524,7 @@ async fn sequential_cutoff_is_omitted_for_non_openai_provider() -> anyhow::Resul
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(|config| {
             config.model_provider.name = "mock".to_string();
             let _ = config
@@ -2568,7 +2568,7 @@ async fn responses_lite_sets_all_turns_context_and_disables_parallel_tool_calls(
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
             model_info.supports_parallel_tool_calls = true;
@@ -2625,7 +2625,7 @@ async fn user_turn_explicit_reasoning_summary_overrides_model_catalog_default() 
     model.default_reasoning_summary = ReasoningSummary::Detailed;
 
     let TestCodex {
-        codex,
+        myra: codex,
         config,
         session_configured,
         ..
@@ -2690,7 +2690,7 @@ async fn reasoning_summary_is_omitted_when_disabled() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(|config| {
             config.model_reasoning_summary = Some(ReasoningSummary::None);
         })
@@ -2746,7 +2746,7 @@ async fn reasoning_summary_none_overrides_model_catalog_default() -> anyhow::Res
         .expect("gpt-5.4 exists in bundled models.json");
     model.default_reasoning_summary = ReasoningSummary::Detailed;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model("gpt-5.4")
         .with_config(move |config| {
             config.model_reasoning_summary = Some(ReasoningSummary::None);
@@ -2792,7 +2792,7 @@ async fn includes_default_verbosity_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestCodex { myra: codex, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
 
     codex
         .submit(Op::UserInput {
@@ -2834,7 +2834,7 @@ async fn configured_verbosity_not_sent_for_models_without_support() -> anyhow::R
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model("test-no-verbosity")
         .with_config(|config| {
             config.model_verbosity = Some(Verbosity::High);
@@ -2881,7 +2881,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_model("gpt-5.4")
         .with_config(|config| {
             config.model_verbosity = Some(Verbosity::High);
@@ -3495,7 +3495,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(|config| {
             config.model = Some("gpt-5.4".to_string());
             config.model_context_window = Some(272_000);
@@ -3597,7 +3597,7 @@ async fn incomplete_response_emits_content_filter_error_message() -> anyhow::Res
 
     let responses_mock = mount_sse_once(&server, incomplete_response).await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(|config| {
             config.model_provider.stream_max_retries = Some(0);
         })

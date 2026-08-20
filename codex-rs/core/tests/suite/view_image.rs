@@ -234,7 +234,7 @@ async fn assert_user_turn_local_image_resizes_to(
     });
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -423,7 +423,7 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
     });
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         config,
         ..
@@ -841,7 +841,7 @@ async fn view_image_tool_can_preserve_original_resolution_when_requested_on_gpt5
     let mut builder = test_codex().with_model("gpt-5.4");
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1008,7 +1008,7 @@ async fn view_image_tool_errors_clearly_for_unsupported_detail_values() -> anyho
     let mut builder = test_codex().with_model("gpt-5.4");
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1086,7 +1086,7 @@ async fn view_image_tool_treats_null_detail_as_omitted() -> anyhow::Result<()> {
     let mut builder = test_codex().with_model("gpt-5.4");
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1195,7 +1195,7 @@ async fn assert_view_image_tool_resizes_without_original_support(
         });
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1289,7 +1289,7 @@ async fn view_image_tool_does_not_force_original_resolution_with_capability_only
     let mut builder = test_codex().with_model("gpt-5.4");
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1380,7 +1380,7 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1450,7 +1450,7 @@ async fn view_image_tool_turns_invalid_image_into_placeholder() -> anyhow::Resul
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1521,7 +1521,7 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         ..
     } = &test;
@@ -1663,7 +1663,7 @@ async fn view_image_tool_returns_unsupported_message_for_text_only_model() -> an
             config.model = Some(model_slug.to_string());
         });
     let test = builder.build_with_auto_env(&server).await?;
-    let TestCodex { codex, .. } = &test;
+    let TestCodex { myra: codex, .. } = &test;
 
     let rel_path = "assets/example.png";
     write_workspace_png(

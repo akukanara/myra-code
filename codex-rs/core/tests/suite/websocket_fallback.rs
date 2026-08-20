@@ -145,7 +145,7 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
         }
     });
     let TestCodex {
-        codex,
+        myra: codex,
         session_configured,
         cwd,
         ..

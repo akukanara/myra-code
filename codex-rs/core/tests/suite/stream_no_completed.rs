@@ -67,7 +67,7 @@ async fn retries_on_early_close() {
         supports_standalone_web_search: false,
     };
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestCodex { myra: codex, .. } = test_codex()
         .with_config(move |config| {
             config.model_provider = model_provider;
         })

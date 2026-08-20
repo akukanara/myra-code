@@ -65,7 +65,7 @@ async fn shell_command_tool_executes_command_and_streams_output() -> anyhow::Res
 
     let mut builder = test_codex().with_model("test-gpt-5-codex");
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -142,7 +142,7 @@ async fn update_plan_tool_emits_plan_update_event() -> anyhow::Result<()> {
 
     let mut builder = test_codex();
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -237,7 +237,7 @@ async fn update_plan_tool_rejects_malformed_payload() -> anyhow::Result<()> {
 
     let mut builder = test_codex();
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -334,7 +334,7 @@ async fn apply_patch_tool_executes_and_emits_patch_events() -> anyhow::Result<()
 
     let mut builder = test_codex();
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..
@@ -477,7 +477,7 @@ async fn apply_patch_reports_parse_diagnostics() -> anyhow::Result<()> {
 
     let mut builder = test_codex();
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         session_configured,
         ..

@@ -520,22 +520,66 @@ fn raw_mode_toggle_transcript_snapshot() {
 fn image_generation_call_renders_saved_path() {
     let saved_path = test_path_buf("/tmp/generated-image.png").abs();
     let expected_saved_path = format!(
-        "  └ Saved to: {}",
+        "    Saved to {}",
         Url::from_file_path(saved_path.as_path()).expect("test path should convert to file URL")
     );
-    let cell = new_image_generation_call(
+    let cell = new_image_generation_cell(
         "call-image-generation".to_string(),
         "completed",
         Some("A tiny blue square".to_string()),
         Some(saved_path),
+        /*animations_enabled*/ false,
     );
 
     assert_eq!(
         render_lines(&cell.display_lines(/*width*/ 80)),
         vec![
-            "• Generated Image:".to_string(),
+            "• IMAGE  Image generated".to_string(),
             "  └ A tiny blue square".to_string(),
             expected_saved_path,
+        ],
+    );
+}
+
+#[test]
+fn image_generation_call_renders_prompt_while_running() {
+    let cell = new_image_generation_cell(
+        "call-image-generation".to_string(),
+        "in_progress",
+        Some("A tiny blue square".to_string()),
+        /*saved_path*/ None,
+        /*animations_enabled*/ false,
+    );
+
+    assert_eq!(
+        render_lines(&cell.display_lines(/*width*/ 80)),
+        vec![
+            "• IMAGE  Generating image".to_string(),
+            "  └ A tiny blue square".to_string(),
+        ],
+    );
+}
+
+#[test]
+fn web_fetch_call_renders_title_and_url() {
+    use codex_app_server_protocol::WebFetchItem;
+    use codex_app_server_protocol::WebFetchStatus;
+
+    let cell = new_web_fetch_call(
+        WebFetchItem {
+            id: "call-web-fetch".to_string(),
+            url: "https://www.example.com/docs/api/".to_string(),
+            title: Some("API reference".to_string()),
+            status: WebFetchStatus::Completed,
+        },
+        /*animations_enabled*/ false,
+    );
+
+    assert_eq!(
+        render_lines(&cell.display_lines(/*width*/ 80)),
+        vec![
+            "• WEB  Page read".to_string(),
+            "  └ API reference  ·  example.com/docs/api".to_string(),
         ],
     );
 }

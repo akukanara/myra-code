@@ -13,6 +13,10 @@ use codex_login::AuthManager;
 use codex_extension_items::ExtensionItem;
 use codex_extension_items::myractx::MyraCtxItem;
 use codex_extension_items::myractx::MyraCtxStatus;
+use codex_extension_items::web_fetch::WebFetchItem;
+use codex_extension_items::web_fetch::WebFetchStatus;
+use codex_extension_items::web_search::WebSearchAction;
+use codex_extension_items::web_search::WebSearchItem;
 use codex_login::default_client::create_client;
 use codex_tools::JsonToolOutput;
 use codex_tools::ToolExposure;
@@ -102,6 +106,16 @@ fn required_str(args: &JsonValue, key: &str) -> Result<String, FunctionCallError
         .ok_or_else(|| FunctionCallError::RespondToModel(format!("`{key}` is required")))
 }
 
+/// Wraps an extension item for the transcript. These tools carry no legacy
+/// `EventMsg`: nothing consumes one for them, and the typed item is what both
+/// the TUI and app-server read.
+fn turn_item(item: ExtensionItem) -> ExtensionTurnItem {
+    ExtensionTurnItem {
+        item,
+        legacy_events: Vec::new(),
+    }
+}
+
 // ── web_search ───────────────────────────────────────────────────────────────
 
 pub(crate) struct WebSearchTool {
@@ -176,10 +190,11 @@ impl ToolExecutor<ToolCall> for WebSearchTool {
     fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
         Box::pin(async move {
             let args = arguments(&call)?;
+            let query = required_str(&args, "query")?;
             let mut body = json!({
                 "model": args.get("model").and_then(JsonValue::as_str)
                     .unwrap_or(&self.default_model),
-                "query": required_str(&args, "query")?,
+                "query": query.clone(),
                 "max_results": args.get("max_results").and_then(JsonValue::as_u64).unwrap_or(5),
             });
             if let Some(search_type) = args.get("search_type").and_then(JsonValue::as_str) {
@@ -189,7 +204,36 @@ impl ToolExecutor<ToolCall> for WebSearchTool {
                 body["provider_options"] = json!({ "engines": engines });
             }
 
-            let response = self.gateway.post("search", body).await?;
+            // Announce the search before running it. A federated query polls
+            // several engines and can take seconds; without a started item the
+            // transcript sits blank and the turn reads as wedged.
+            let item = |results| {
+                ExtensionItem::WebSearch(WebSearchItem {
+                    id: call.call_id.clone(),
+                    query: query.clone(),
+                    action: Some(WebSearchAction::Search {
+                        query: Some(query.clone()),
+                        queries: None,
+                    }),
+                    results,
+                })
+            };
+            call.turn_item_emitter
+                .emit_started(turn_item(item(None)))
+                .await;
+
+            let response = match self.gateway.post("search", body).await {
+                Ok(response) => response,
+                Err(error) => {
+                    // Close the item even on failure; a started item with no
+                    // completion leaves the spinner running for the rest of
+                    // the session.
+                    call.turn_item_emitter
+                        .emit_completed(turn_item(item(None)))
+                        .await;
+                    return Err(error);
+                }
+            };
             // Only the fields a model can use. The raw response carries
             // per-result scores, favicons, citation objects and timing, none of
             // which help it answer and all of which cost context.
@@ -211,6 +255,10 @@ impl ToolExecutor<ToolCall> for WebSearchTool {
                         .collect()
                 })
                 .unwrap_or_default();
+
+            call.turn_item_emitter
+                .emit_completed(turn_item(item(Some(results.clone()))))
+                .await;
 
             if results.is_empty() {
                 return Ok(Box::new(JsonToolOutput::new(json!({
@@ -291,20 +339,52 @@ impl ToolExecutor<ToolCall> for WebFetchTool {
     fn handle(&self, call: ToolCall) -> codex_extension_api::ToolExecutorFuture<'_> {
         Box::pin(async move {
             let args = arguments(&call)?;
+            let url = required_str(&args, "url")?;
             let body = json!({
                 "model": args.get("model").and_then(JsonValue::as_str)
                     .unwrap_or(&self.default_model),
-                "url": required_str(&args, "url")?,
+                "url": url.clone(),
                 "format": args.get("format").and_then(JsonValue::as_str).unwrap_or("markdown"),
                 "max_characters": args.get("max_characters").and_then(JsonValue::as_u64)
                     .unwrap_or(DEFAULT_MAX_CHARACTERS),
             });
 
-            let response = self.gateway.post("web/fetch", body).await?;
+            // The URL is worth showing before the page comes back: it is the
+            // only clue to what the agent is reading, and a slow page would
+            // otherwise be indistinguishable from a stall.
+            let item = |title, status| {
+                ExtensionItem::WebFetch(WebFetchItem {
+                    id: call.call_id.clone(),
+                    url: url.clone(),
+                    title,
+                    status,
+                })
+            };
+            call.turn_item_emitter
+                .emit_started(turn_item(item(None, WebFetchStatus::InProgress)))
+                .await;
+
+            let response = match self.gateway.post("web/fetch", body).await {
+                Ok(response) => response,
+                Err(error) => {
+                    call.turn_item_emitter
+                        .emit_completed(turn_item(item(None, WebFetchStatus::Failed)))
+                        .await;
+                    return Err(error);
+                }
+            };
             let text = response
                 .pointer("/content/text")
                 .and_then(JsonValue::as_str)
                 .unwrap_or_default();
+            let title = response
+                .get("title")
+                .and_then(JsonValue::as_str)
+                .map(str::to_string)
+                .filter(|title| !title.trim().is_empty());
+            call.turn_item_emitter
+                .emit_completed(turn_item(item(title, WebFetchStatus::Completed)))
+                .await;
 
             let mut output = json!({
                 "url": response.get("url").cloned().unwrap_or(JsonValue::Null),
@@ -386,10 +466,9 @@ impl ToolExecutor<ToolCall> for MyraCtxTool {
                 status,
             };
             call.turn_item_emitter
-                .emit_started(ExtensionTurnItem {
-                    item: ExtensionItem::MyraCtx(item(MyraCtxStatus::InProgress)),
-                    legacy_events: Vec::new(),
-                })
+                .emit_started(turn_item(ExtensionItem::MyraCtx(item(
+                    MyraCtxStatus::InProgress,
+                ))))
                 .await;
 
             let response = match self
@@ -402,19 +481,17 @@ impl ToolExecutor<ToolCall> for MyraCtxTool {
             {
                 Ok(response) => {
                     call.turn_item_emitter
-                        .emit_completed(ExtensionTurnItem {
-                            item: ExtensionItem::MyraCtx(item(MyraCtxStatus::Completed)),
-                            legacy_events: Vec::new(),
-                        })
+                        .emit_completed(turn_item(ExtensionItem::MyraCtx(item(
+                            MyraCtxStatus::Completed,
+                        ))))
                         .await;
                     response
                 }
                 Err(error) => {
                     call.turn_item_emitter
-                        .emit_completed(ExtensionTurnItem {
-                            item: ExtensionItem::MyraCtx(item(MyraCtxStatus::Failed)),
-                            legacy_events: Vec::new(),
-                        })
+                        .emit_completed(turn_item(ExtensionItem::MyraCtx(item(
+                            MyraCtxStatus::Failed,
+                        ))))
                         .await;
                     return Err(error);
                 }

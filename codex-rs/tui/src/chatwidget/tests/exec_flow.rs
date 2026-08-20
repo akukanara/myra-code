@@ -884,7 +884,10 @@ async fn image_generation_begin_restores_working_status_after_single_line_preamb
 
     chat.on_task_started();
     chat.on_agent_message_delta("Generating an image.".to_string());
-    chat.on_image_generation_begin();
+    chat.on_image_generation_begin(
+        "call-image-generation".to_string(),
+        Some("A tiny blue square".to_string()),
+    );
 
     assert!(chat.bottom_pane.is_task_running());
     assert!(chat.bottom_pane.status_indicator_visible());

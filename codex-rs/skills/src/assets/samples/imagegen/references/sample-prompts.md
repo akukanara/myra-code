@@ -1,7 +1,7 @@
 # Sample prompts (copy/paste)
 
 These prompt recipes are shared across both top-level modes of the skill:
-- built-in `image_gen` tool (default)
+- built-in `myra_imagen` tool (default)
 - `scripts/image_gen.py` CLI fallback for explicit CLI/API/model requests or user-confirmed true-transparent-output fallback requests
 
 Use these as starting points. They are intentionally complete prompt recipes, not the default amount of augmentation to add to every user request.

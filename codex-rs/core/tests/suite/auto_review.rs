@@ -130,7 +130,7 @@ async fn remote_model_override_uses_catalog_model_for_strict_auto_review() -> Re
                 .expect("test config should allow feature update");
         });
     let TestCodex {
-        codex,
+        myra: codex,
         cwd,
         config,
         thread_manager,

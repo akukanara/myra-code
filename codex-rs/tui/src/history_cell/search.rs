@@ -37,6 +37,14 @@ fn web_search_action_detail(action: &WebSearchAction) -> String {
     }
 }
 
+fn result_count_label(count: usize) -> String {
+    match count {
+        0 => "no results".to_string(),
+        1 => "1 result".to_string(),
+        count => format!("{count} results"),
+    }
+}
+
 fn web_search_detail(action: Option<&WebSearchAction>, query: &str) -> String {
     let detail = action.map(web_search_action_detail).unwrap_or_default();
     if detail.is_empty() {
@@ -51,6 +59,9 @@ pub(crate) struct WebSearchCell {
     call_id: String,
     query: String,
     action: Option<WebSearchAction>,
+    /// How many results came back, when the search reports them. Hosted
+    /// Responses search does not, so this stays `None` there.
+    result_count: Option<usize>,
     start_time: Instant,
     completed: bool,
     animations_enabled: bool,
@@ -67,10 +78,15 @@ impl WebSearchCell {
             call_id,
             query,
             action,
+            result_count: None,
             start_time: Instant::now(),
             completed: false,
             animations_enabled,
         }
+    }
+
+    pub(crate) fn set_result_count(&mut self, result_count: Option<usize>) {
+        self.result_count = result_count;
     }
 
     pub(crate) fn call_id(&self) -> &str {
@@ -101,12 +117,25 @@ impl HistoryCell for WebSearchCell {
         };
         let header = web_search_header(self.completed);
         let detail = web_search_detail(self.action.as_ref(), &self.query);
-        let text: Text<'static> = if detail.is_empty() {
-            Line::from(vec![header.bold()]).into()
+        // The count is the one thing that tells a reader whether the search
+        // actually found anything, and it costs a few characters on the line
+        // that is already there.
+        let count = self
+            .completed
+            .then_some(self.result_count)
+            .flatten()
+            .map(result_count_label);
+        let mut spans = if detail.is_empty() {
+            vec![header.bold()]
         } else {
             let separator = if self.completed { " for " } else { " " };
-            Line::from(vec![header.bold(), separator.into(), detail.into()]).into()
+            vec![header.bold(), separator.into(), detail.into()]
         };
+        if let Some(count) = count {
+            spans.push("  ·  ".dim());
+            spans.push(count.dim());
+        }
+        let text: Text<'static> = Line::from(spans).into();
         PrefixedWrappedHistoryCell::new(text, vec![bullet, " ".into()], "  ").display_lines(width)
     }
 

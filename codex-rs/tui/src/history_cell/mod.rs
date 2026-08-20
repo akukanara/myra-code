@@ -112,6 +112,7 @@ mod approvals;
 mod base;
 mod exec;
 mod hook_cell;
+mod image_generation;
 mod markdown_render_cache;
 mod mcp;
 mod myractx;
@@ -123,6 +124,7 @@ mod request_user_input;
 mod search;
 mod separators;
 mod session;
+mod web_fetch;
 
 pub(crate) use approvals::*;
 pub(crate) use base::*;
@@ -130,6 +132,7 @@ pub(crate) use exec::*;
 pub(crate) use hook_cell::HookCell;
 pub(crate) use hook_cell::new_active_hook_cell;
 pub(crate) use hook_cell::new_completed_hook_cell;
+pub(crate) use image_generation::*;
 pub(crate) use mcp::*;
 pub(crate) use myractx::*;
 pub(crate) use messages::*;
@@ -140,6 +143,7 @@ pub(crate) use request_user_input::*;
 pub(crate) use search::*;
 pub(crate) use separators::*;
 pub(crate) use session::*;
+pub(crate) use web_fetch::*;
 
 #[cfg(test)]
 mod tests;

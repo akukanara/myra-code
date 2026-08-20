@@ -590,6 +590,14 @@
         }
       ]
     },
+    "MyraCtxStatus": {
+      "enum": [
+        "inProgress",
+        "completed",
+        "failed"
+      ],
+      "type": "string"
+    },
     "NonSteerableTurnKind": {
       "enum": [
         "review",
@@ -1146,6 +1154,75 @@
             "type"
           ],
           "title": "DynamicToolCallThreadItem",
+          "type": "object"
+        },
+        {
+          "description": "A version-aware documentation lookup served by MyraCtx.",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "library": {
+              "type": "string"
+            },
+            "query": {
+              "type": "string"
+            },
+            "status": {
+              "$ref": "#/definitions/MyraCtxStatus"
+            },
+            "type": {
+              "enum": [
+                "myraCtx"
+              ],
+              "title": "MyraCtxThreadItemType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "library",
+            "query",
+            "status",
+            "type"
+          ],
+          "title": "MyraCtxThreadItem",
+          "type": "object"
+        },
+        {
+          "description": "A page read through the gateway's fetcher.\n\nSeparate from [`crate::web_search::WebSearchItem`] because a fetch is a different act with a different useful detail: one URL and the title behind it, rather than a query and a result set.",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "status": {
+              "$ref": "#/definitions/WebFetchStatus"
+            },
+            "title": {
+              "description": "The page's own title, known only once the fetch returns.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "enum": [
+                "webFetch"
+              ],
+              "title": "WebFetchThreadItemType",
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "status",
+            "type",
+            "url"
+          ],
+          "title": "WebFetchThreadItem",
           "type": "object"
         },
         {
@@ -1791,6 +1868,14 @@
           "type": "object"
         }
       ]
+    },
+    "WebFetchStatus": {
+      "enum": [
+        "inProgress",
+        "completed",
+        "failed"
+      ],
+      "type": "string"
     },
     "WebSearchAction": {
       "oneOf": [
