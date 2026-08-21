@@ -132,14 +132,65 @@ fn file_exists(path: &std::path::Path) -> Option<PathBuf> {
     }
 }
 
-fn get_shell_path(
+/// A resolved interpreter, split by whether it can actually be launched under the Windows sandbox.
+struct ShellPathCandidates {
+    /// A real executable on disk.
+    real: Option<PathBuf>,
+    /// A Windows app execution alias: fine from a normal shell, never from the sandbox.
+    alias: Option<PathBuf>,
+}
+
+impl ShellPathCandidates {
+    fn preferred(self) -> Option<PathBuf> {
+        self.real.or(self.alias)
+    }
+}
+
+/// Whether a path is a Windows app execution alias rather than a real interpreter.
+///
+/// `%LOCALAPPDATA%\Microsoft\WindowsApps` holds zero-byte reparse points that only start their
+/// target through AppX activation, and `C:\Program Files\WindowsApps` -- where the package itself
+/// lives -- is readable only under the package identity. Neither is reachable from the restricted
+/// token the Windows sandbox spawns with, so `CreateProcessAsUserW` on one fails with
+/// ERROR_ACCESS_DENIED every time, whatever the command was. `WindowsApps` is on PATH by default,
+/// so a Store-installed PowerShell wins the `which` lookup and would otherwise make every
+/// sandboxed command unrunnable. Keep such a hit as a last resort, behind any real install.
+fn is_app_execution_alias(path: &std::path::Path) -> bool {
+    // Split on both separators rather than using `Path::components`: on a non-Windows host a
+    // Windows path is a single component, which would silently make this always false and leave the
+    // behaviour untestable off Windows.
+    path.to_string_lossy()
+        .split(['\\', '/'])
+        .any(|segment| segment.eq_ignore_ascii_case("WindowsApps"))
+}
+
+fn classify_shell_path(path: PathBuf) -> ShellPathCandidates {
+    if is_app_execution_alias(&path) {
+        ShellPathCandidates {
+            real: None,
+            alias: Some(path),
+        }
+    } else {
+        ShellPathCandidates {
+            real: Some(path),
+            alias: None,
+        }
+    }
+}
+
+fn get_shell_path_candidates(
     shell_type: ShellType,
     provided_path: Option<&PathBuf>,
     binary_name: &str,
     fallback_paths: &[&str],
-) -> Option<PathBuf> {
+) -> ShellPathCandidates {
+    let mut alias = None;
     if let Some(path) = provided_path.and_then(|path| file_exists(path)) {
-        return Some(path);
+        let candidate = classify_shell_path(path);
+        if candidate.real.is_some() {
+            return candidate;
+        }
+        alias = candidate.alias;
     }
 
     let default_shell_path = get_user_shell_path();
@@ -147,20 +198,42 @@ fn get_shell_path(
         && detect_shell_type(&default_shell_path) == Some(shell_type)
         && file_exists(&default_shell_path).is_some()
     {
-        return Some(default_shell_path);
+        return ShellPathCandidates {
+            real: Some(default_shell_path),
+            alias: None,
+        };
     }
 
-    if let Ok(path) = which::which(binary_name) {
-        return Some(path);
+    match which::which(binary_name) {
+        Ok(path) => {
+            let candidate = classify_shell_path(path);
+            if candidate.real.is_some() {
+                return candidate;
+            }
+            alias = alias.or(candidate.alias);
+        }
+        Err(_) => {}
     }
 
     for path in fallback_paths {
         if let Some(path) = file_exists(std::path::Path::new(path)) {
-            return Some(path);
+            return ShellPathCandidates {
+                real: Some(path),
+                alias,
+            };
         }
     }
 
-    None
+    ShellPathCandidates { real: None, alias }
+}
+
+fn get_shell_path(
+    shell_type: ShellType,
+    provided_path: Option<&PathBuf>,
+    binary_name: &str,
+    fallback_paths: &[&str],
+) -> Option<PathBuf> {
+    get_shell_path_candidates(shell_type, provided_path, binary_name, fallback_paths).preferred()
 }
 
 const ZSH_FALLBACK_PATHS: &[&str] = &["/bin/zsh"];
@@ -212,16 +285,31 @@ const POWERSHELL_FALLBACK_PATHS: &[&str] =
 #[cfg(not(windows))]
 const POWERSHELL_FALLBACK_PATHS: &[&str] = &[];
 
+/// Pick between the two PowerShell flavours, real installs first.
+///
+/// Keeps the usual pwsh-before-powershell preference, but falling all the way through to System32's
+/// powershell.exe beats returning a Store alias the sandbox cannot launch. An alias is only worth
+/// handing back when no real interpreter exists at all.
+fn prefer_real_interpreter(
+    pwsh: ShellPathCandidates,
+    powershell: ShellPathCandidates,
+) -> Option<PathBuf> {
+    pwsh.real
+        .or(powershell.real)
+        .or(pwsh.alias)
+        .or(powershell.alias)
+}
+
 fn get_powershell_shell(path: Option<&PathBuf>) -> Option<DetectedShell> {
-    let shell_path = get_shell_path(ShellType::PowerShell, path, "pwsh", PWSH_FALLBACK_PATHS)
-        .or_else(|| {
-            get_shell_path(
-                ShellType::PowerShell,
-                path,
-                "powershell",
-                POWERSHELL_FALLBACK_PATHS,
-            )
-        });
+    let pwsh = get_shell_path_candidates(ShellType::PowerShell, path, "pwsh", PWSH_FALLBACK_PATHS);
+    let powershell = get_shell_path_candidates(
+        ShellType::PowerShell,
+        path,
+        "powershell",
+        POWERSHELL_FALLBACK_PATHS,
+    );
+
+    let shell_path = prefer_real_interpreter(pwsh, powershell);
 
     shell_path.map(|shell_path| DetectedShell {
         shell_type: ShellType::PowerShell,
@@ -298,6 +386,90 @@ pub fn default_user_shell_from_path(user_shell_path: Option<PathBuf>) -> Detecte
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    fn real(path: &str) -> ShellPathCandidates {
+        ShellPathCandidates {
+            real: Some(PathBuf::from(path)),
+            alias: None,
+        }
+    }
+
+    fn alias(path: &str) -> ShellPathCandidates {
+        ShellPathCandidates {
+            real: None,
+            alias: Some(PathBuf::from(path)),
+        }
+    }
+
+    fn none() -> ShellPathCandidates {
+        ShellPathCandidates {
+            real: None,
+            alias: None,
+        }
+    }
+
+    #[test]
+    fn recognizes_app_execution_aliases() {
+        for path in [
+            r"C:\Users\A Y\AppData\Local\Microsoft\WindowsApps\pwsh.exe",
+            r"C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.3.0_x64__8wekyb3d8bbwe\pwsh.exe",
+            r"c:\users\a y\appdata\local\microsoft\windowsapps\pwsh.exe",
+        ] {
+            assert!(is_app_execution_alias(std::path::Path::new(path)), "{path}");
+        }
+
+        for path in [
+            r"C:\Program Files\PowerShell\7\pwsh.exe",
+            r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+            "/usr/local/bin/pwsh",
+        ] {
+            assert!(
+                !is_app_execution_alias(std::path::Path::new(path)),
+                "{path}"
+            );
+        }
+    }
+
+    #[test]
+    fn prefers_real_pwsh_over_everything() {
+        assert_eq!(
+            prefer_real_interpreter(
+                real(r"C:\Program Files\PowerShell\7\pwsh.exe"),
+                real(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"),
+            ),
+            Some(PathBuf::from(r"C:\Program Files\PowerShell\7\pwsh.exe"))
+        );
+    }
+
+    #[test]
+    fn falls_through_provided_alias_pwsh_to_real_powershell() {
+        // The regression this guards: a Store-installed pwsh puts an app execution alias on PATH,
+        // and a model can also explicitly select that path. Spawning it under the sandbox's
+        // restricted token always fails with ERROR_ACCESS_DENIED, so System32's powershell.exe has
+        // to win instead.
+        let alias_path = r"C:\Users\A Y\AppData\Local\Microsoft\WindowsApps\pwsh.exe";
+        assert_eq!(
+            prefer_real_interpreter(
+                classify_shell_path(PathBuf::from(alias_path)),
+                real(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"),
+            ),
+            Some(PathBuf::from(
+                r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+            ))
+        );
+    }
+
+    #[test]
+    fn returns_alias_only_as_a_last_resort() {
+        // Better to run the alias -- which works fine outside the sandbox -- than to report no
+        // PowerShell at all and fall back to cmd.exe.
+        let alias_path = r"C:\Users\A Y\AppData\Local\Microsoft\WindowsApps\pwsh.exe";
+        assert_eq!(
+            prefer_real_interpreter(alias(alias_path), none()),
+            Some(PathBuf::from(alias_path))
+        );
+        assert_eq!(prefer_real_interpreter(none(), none()), None);
+    }
 
     #[test]
     fn test_detect_shell_type() {
