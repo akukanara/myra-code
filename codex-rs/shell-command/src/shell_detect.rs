@@ -164,19 +164,33 @@ fn is_app_execution_alias(path: &std::path::Path) -> bool {
         .any(|segment| segment.eq_ignore_ascii_case("WindowsApps"))
 }
 
+fn classify_shell_path(path: PathBuf) -> ShellPathCandidates {
+    if is_app_execution_alias(&path) {
+        ShellPathCandidates {
+            real: None,
+            alias: Some(path),
+        }
+    } else {
+        ShellPathCandidates {
+            real: Some(path),
+            alias: None,
+        }
+    }
+}
+
 fn get_shell_path_candidates(
     shell_type: ShellType,
     provided_path: Option<&PathBuf>,
     binary_name: &str,
     fallback_paths: &[&str],
 ) -> ShellPathCandidates {
-    // An explicitly configured path is taken as-is: the user asked for that interpreter, and it is
-    // not this function's place to second-guess it.
+    let mut alias = None;
     if let Some(path) = provided_path.and_then(|path| file_exists(path)) {
-        return ShellPathCandidates {
-            real: Some(path),
-            alias: None,
-        };
+        let candidate = classify_shell_path(path);
+        if candidate.real.is_some() {
+            return candidate;
+        }
+        alias = candidate.alias;
     }
 
     let default_shell_path = get_user_shell_path();
@@ -190,14 +204,13 @@ fn get_shell_path_candidates(
         };
     }
 
-    let mut alias = None;
     match which::which(binary_name) {
-        Ok(path) if is_app_execution_alias(&path) => alias = Some(path),
         Ok(path) => {
-            return ShellPathCandidates {
-                real: Some(path),
-                alias: None,
-            };
+            let candidate = classify_shell_path(path);
+            if candidate.real.is_some() {
+                return candidate;
+            }
+            alias = alias.or(candidate.alias);
         }
         Err(_) => {}
     }
@@ -429,13 +442,15 @@ mod tests {
     }
 
     #[test]
-    fn falls_through_alias_pwsh_to_real_powershell() {
+    fn falls_through_provided_alias_pwsh_to_real_powershell() {
         // The regression this guards: a Store-installed pwsh puts an app execution alias on PATH,
-        // which `which` finds first. Spawning it under the sandbox's restricted token always fails
-        // with ERROR_ACCESS_DENIED, so System32's powershell.exe has to win instead.
+        // and a model can also explicitly select that path. Spawning it under the sandbox's
+        // restricted token always fails with ERROR_ACCESS_DENIED, so System32's powershell.exe has
+        // to win instead.
+        let alias_path = r"C:\Users\A Y\AppData\Local\Microsoft\WindowsApps\pwsh.exe";
         assert_eq!(
             prefer_real_interpreter(
-                alias(r"C:\Users\A Y\AppData\Local\Microsoft\WindowsApps\pwsh.exe"),
+                classify_shell_path(PathBuf::from(alias_path)),
                 real(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"),
             ),
             Some(PathBuf::from(
