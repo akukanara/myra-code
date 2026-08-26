@@ -101,7 +101,12 @@ impl VaultKey {
     /// Decrypt with associated data. AES-GCM authenticates the AAD, which is how a
     /// ciphertext moved between items or vaults fails instead of decrypting into the
     /// wrong place.
-    pub fn open(&self, nonce: &[u8], aad: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    pub fn open(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        ciphertext: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
         expect_len("nonce", nonce, 12)?;
         self.cipher()
             .decrypt(
@@ -114,12 +119,7 @@ impl VaultKey {
             .map_err(|_| CryptoError::Decrypt)
     }
 
-    pub fn seal(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[u8],
-    ) -> Result<Vec<u8>, CryptoError> {
+    pub fn seal(&self, nonce: &[u8], aad: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
         expect_len("nonce", nonce, 12)?;
         self.cipher()
             .encrypt(
@@ -196,7 +196,10 @@ fn device_wrapping_key(
     ephemeral_public: &PublicKey,
     aad_salt: &str,
 ) -> Result<VaultKey, CryptoError> {
-    let shared = diffie_hellman(device_secret.to_nonzero_scalar(), ephemeral_public.as_affine());
+    let shared = diffie_hellman(
+        device_secret.to_nonzero_scalar(),
+        ephemeral_public.as_affine(),
+    );
     let salt = decode_base64(aad_salt)?;
     let mut derived = Zeroizing::new([0u8; 32]);
     // HKDF over the raw shared secret, matching hkdfWrappingKey in the dashboard's

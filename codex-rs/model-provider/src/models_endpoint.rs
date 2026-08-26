@@ -140,9 +140,7 @@ impl OpenAiModelsEndpoint {
 /// MyraRouter owns entitlement filtering, so this intentionally produces only the models it
 /// returned. Bundled entries supply Myra's instruction and tool defaults; unknown router models
 /// receive the normal safe fallback metadata and remain selectable.
-fn openai_compatible_models_to_model_infos(
-    models: Vec<OpenAiCompatibleModel>,
-) -> Vec<ModelInfo> {
+fn openai_compatible_models_to_model_infos(models: Vec<OpenAiCompatibleModel>) -> Vec<ModelInfo> {
     let bundled_models = codex_models_manager::bundled_models_response()
         .map(|catalog| catalog.models)
         .unwrap_or_default();
@@ -501,7 +499,10 @@ mod tests {
         let model = &models[0];
         assert_eq!(model.slug, "gpt-5.2-codex");
         assert_eq!(model.display_name, "Plan model");
-        assert_eq!(model.description.as_deref(), Some("Available with this plan"));
+        assert_eq!(
+            model.description.as_deref(),
+            Some("Available with this plan")
+        );
         assert_eq!(model.context_window, Some(200_000));
         assert_eq!(model.max_context_window, Some(200_000));
         assert_eq!(model.visibility, ModelVisibility::List);
@@ -520,10 +521,12 @@ mod tests {
                 },
             ]
         );
-        assert!(model
-            .model_messages
-            .as_ref()
-            .and_then(|messages| messages.instructions_template.as_ref())
-            .is_some_and(|instructions| instructions.contains("## MyraCtx")));
+        assert!(
+            model
+                .model_messages
+                .as_ref()
+                .and_then(|messages| messages.instructions_template.as_ref())
+                .is_some_and(|instructions| instructions.contains("## MyraCtx"))
+        );
     }
 }

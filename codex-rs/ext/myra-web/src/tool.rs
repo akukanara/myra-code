@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use codex_extension_api::FunctionCallError;
 use codex_extension_api::ExtensionTurnItem;
+use codex_extension_api::FunctionCallError;
 use codex_extension_api::ResponsesApiTool;
 use codex_extension_api::ToolCall;
 use codex_extension_api::ToolExecutor;
@@ -9,7 +9,6 @@ use codex_extension_api::ToolName;
 use codex_extension_api::ToolOutput;
 use codex_extension_api::ToolSpec;
 use codex_extension_api::parse_tool_input_schema_without_compaction;
-use codex_login::AuthManager;
 use codex_extension_items::ExtensionItem;
 use codex_extension_items::myractx::MyraCtxItem;
 use codex_extension_items::myractx::MyraCtxStatus;
@@ -17,6 +16,7 @@ use codex_extension_items::web_fetch::WebFetchItem;
 use codex_extension_items::web_fetch::WebFetchStatus;
 use codex_extension_items::web_search::WebSearchAction;
 use codex_extension_items::web_search::WebSearchItem;
+use codex_login::AuthManager;
 use codex_login::default_client::create_client;
 use codex_tools::JsonToolOutput;
 use codex_tools::ToolExposure;

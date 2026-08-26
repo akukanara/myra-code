@@ -142,14 +142,14 @@ impl ThreadLifecycleContributor<Config> for ImageGenerationExtension {
     ) -> ExtensionFuture<'a, ()> {
         Box::pin(async move {
             let auth = self.auth_manager.auth().await;
-            input
-                .thread_store
-                .insert(ImageGenerationExtensionConfig::from_config(
+            input.thread_store.insert(
+                ImageGenerationExtensionConfig::from_config(
                     input.config,
                     auth.as_ref(),
                     self.resolve_save_root.as_ref(),
                 )
-                .await);
+                .await,
+            );
         })
     }
 }
@@ -163,8 +163,7 @@ impl ConfigContributor<Config> for ImageGenerationExtension {
         _previous_config: &Config,
         new_config: &Config,
     ) {
-        let previous_config = thread_store
-            .get::<ImageGenerationExtensionConfig>();
+        let previous_config = thread_store.get::<ImageGenerationExtensionConfig>();
         let previous_model = previous_config
             .as_ref()
             .map(|config| config.default_model.clone())

@@ -63,8 +63,13 @@ impl VaultSettings {
         }
         // The key is read from the environment by name. Putting a gateway key in a config file
         // is how it ends up in a commit.
-        let variable = memories.vault_api_key_env.as_deref().unwrap_or("MYRAROUTER_API_KEY");
-        let api_key = std::env::var(variable).ok().filter(|key| !key.trim().is_empty())?;
+        let variable = memories
+            .vault_api_key_env
+            .as_deref()
+            .unwrap_or("MYRAROUTER_API_KEY");
+        let api_key = std::env::var(variable)
+            .ok()
+            .filter(|key| !key.trim().is_empty())?;
         Some(Self {
             base_url,
             api_key,
@@ -183,7 +188,10 @@ fn open_vault_backend(
             );
             // The device key is per vault, so "auto" resolves against a placeholder until the
             // server names the vault it chose.
-            let vault_key_scope = settings.vault_id.clone().unwrap_or_else(|| "default".to_string());
+            let vault_key_scope = settings
+                .vault_id
+                .clone()
+                .unwrap_or_else(|| "default".to_string());
             let mut identity =
                 codex_vault_client::DeviceIdentity::load_or_create(&root, &vault_key_scope).await?;
             codex_vault_client::VaultSession::open(

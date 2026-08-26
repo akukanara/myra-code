@@ -71,4 +71,3 @@ pub(crate) fn new_view_image_tool_call(path: LegacyAppPathString, cwd: &Path) ->
 
     PlainHistoryCell { lines }
 }
-

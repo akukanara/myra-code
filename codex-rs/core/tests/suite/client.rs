@@ -2343,7 +2343,11 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { myra: codex, config, .. } = test_codex().with_model("gpt-5.4").build(&server).await?;
+    let TestCodex {
+        myra: codex,
+        config,
+        ..
+    } = test_codex().with_model("gpt-5.4").build(&server).await?;
 
     let collaboration_mode = CollaborationMode {
         mode: ModeKind::Default,

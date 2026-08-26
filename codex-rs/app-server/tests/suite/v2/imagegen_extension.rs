@@ -650,11 +650,7 @@ async fn run_image_edit_test(
         vec![
             responses::sse(vec![
                 responses::ev_response_created("resp-1"),
-                responses::ev_function_call(
-                    call_id,
-                    "myra_imagen",
-                    &arguments.to_string(),
-                ),
+                responses::ev_function_call(call_id, "myra_imagen", &arguments.to_string()),
                 responses::ev_completed("resp-1"),
             ]),
             responses::sse(vec![

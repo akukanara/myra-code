@@ -18,7 +18,9 @@ use codex_vault_client::VaultSession;
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
-    let base_url = args.next().ok_or("usage: <base_url> <api_key> <state_dir>")?;
+    let base_url = args
+        .next()
+        .ok_or("usage: <base_url> <api_key> <state_dir>")?;
     let api_key = args.next().ok_or("missing api key")?;
     let state_dir = PathBuf::from(args.next().ok_or("missing state dir")?);
 
@@ -43,7 +45,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(error) => return Err(error.into()),
     };
 
-    println!("opened vault: {} (key v{})", session.vault().name, session.vault().key_version);
+    println!(
+        "opened vault: {} (key v{})",
+        session.vault().name,
+        session.vault().key_version
+    );
 
     // Read what the dashboard wrote.
     let mut index = VaultIndex::new();
@@ -81,7 +87,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "2026-08-19T18:00:00.000Z".to_string(),
     );
     let written = session.write(payload, None).await?;
-    println!("WROTE id={} seq={} rev={}", written.id, written.seq, written.rev);
+    println!(
+        "WROTE id={} seq={} rev={}",
+        written.id, written.seq, written.rev
+    );
 
     Ok(())
 }

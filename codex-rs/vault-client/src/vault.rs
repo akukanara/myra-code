@@ -65,7 +65,12 @@ pub struct MemoryPayload {
 }
 
 impl MemoryPayload {
-    pub fn new(title: impl Into<String>, body: impl Into<String>, tags: Vec<String>, now: String) -> Self {
+    pub fn new(
+        title: impl Into<String>,
+        body: impl Into<String>,
+        tags: Vec<String>,
+        now: String,
+    ) -> Self {
         Self {
             version: crypto::SCHEMA_VERSION,
             title: title.into(),
@@ -239,7 +244,10 @@ impl VaultSession {
 
     /// Fetch one page of ciphertext. Needs no lock and mutates nothing.
     pub async fn fetch_since(&self, since: u64) -> Result<crate::client::ItemPage, VaultError> {
-        Ok(self.api.pull(&self.vault.id, &self.device_id, since).await?)
+        Ok(self
+            .api
+            .pull(&self.vault.id, &self.device_id, since)
+            .await?)
     }
 
     /// Encrypt and store one memory, returning the entry to add to an index.
@@ -367,14 +375,22 @@ impl VaultIndex {
     }
 
     /// Merge a decrypted page. Synchronous by design: no lock is ever held across an await.
-    pub fn apply(&mut self, cursor: u64, decrypted: Vec<Option<MemoryEntry>>, tombstones: Vec<String>) {
+    pub fn apply(
+        &mut self,
+        cursor: u64,
+        decrypted: Vec<Option<MemoryEntry>>,
+        tombstones: Vec<String>,
+    ) {
         self.cursor = self.cursor.max(cursor);
         if !tombstones.is_empty() {
-            self.entries
-                .retain(|entry| !tombstones.contains(&entry.id));
+            self.entries.retain(|entry| !tombstones.contains(&entry.id));
         }
         for entry in decrypted.into_iter().flatten() {
-            match self.entries.iter_mut().find(|existing| existing.id == entry.id) {
+            match self
+                .entries
+                .iter_mut()
+                .find(|existing| existing.id == entry.id)
+            {
                 Some(existing) => *existing = entry,
                 None => self.entries.push(entry),
             }

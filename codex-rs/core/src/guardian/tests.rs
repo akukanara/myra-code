@@ -1691,8 +1691,7 @@ async fn guardian_review_uses_model_catalog_override_when_preferred_review_model
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn guardian_review_uses_active_model_without_model_catalog_override()
--> anyhow::Result<()> {
+async fn guardian_review_uses_active_model_without_model_catalog_override() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let (request_model, parent_model, preferred_model, analytics_result) =
@@ -1729,8 +1728,7 @@ async fn guardian_review_uses_active_model_without_model_catalog_override()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn guardian_review_records_active_model_when_catalog_only_has_parent()
--> anyhow::Result<()> {
+async fn guardian_review_records_active_model_when_catalog_only_has_parent() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let (request_model, parent_model, preferred_model, analytics_result) =

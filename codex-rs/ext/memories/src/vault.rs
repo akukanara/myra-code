@@ -190,7 +190,11 @@ impl MemoriesBackend for VaultMemoriesBackend {
             .trim_end_matches(".md")
             .replace(['-', '_'], " ");
         let payload = MemoryPayload::new(
-            if title.is_empty() { "Note".to_string() } else { title },
+            if title.is_empty() {
+                "Note".to_string()
+            } else {
+                title
+            },
             request.note,
             Vec::new(),
             now_iso8601(),
@@ -475,7 +479,11 @@ mod tests {
 
     #[test]
     fn rendering_puts_the_title_and_tags_where_a_reader_expects_them() {
-        let rendered = render(&payload("Postgres decision", "Staging moved.", &["infra", "db"]));
+        let rendered = render(&payload(
+            "Postgres decision",
+            "Staging moved.",
+            &["infra", "db"],
+        ));
         assert!(rendered.starts_with("# Postgres decision\n"));
         assert!(rendered.contains("Tags: infra, db"));
         assert!(rendered.ends_with("Staging moved.\n"));
@@ -489,7 +497,11 @@ mod tests {
         assert!(satisfies(&SearchMatchMode::Any, &queries, &one));
         assert!(!satisfies(&SearchMatchMode::Any, &queries, &[]));
         assert!(!satisfies(&SearchMatchMode::AllOnSameLine, &queries, &one));
-        assert!(satisfies(&SearchMatchMode::AllOnSameLine, &queries, &queries));
+        assert!(satisfies(
+            &SearchMatchMode::AllOnSameLine,
+            &queries,
+            &queries
+        ));
         assert!(satisfies(
             &SearchMatchMode::AllWithinLines { line_count: 3 },
             &queries,

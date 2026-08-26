@@ -14,7 +14,7 @@ fn compose_success_url_uses_local_page_by_default() {
         DEFAULT_ISSUER,
         "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
         "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
-            /*myra_streamlined_login*/ false,
+        /*myra_streamlined_login*/ false,
         &LoginSuccessPage::default(),
     ) else {
         panic!("expected local success redirect");
@@ -25,8 +25,7 @@ fn compose_success_url_uses_local_page_by_default() {
     assert_eq!(url.path(), "/success");
     for key in ["id_token", "org_id", "project_id", "plan_type"] {
         assert_eq!(
-            url.query_pairs()
-                .find(|(query_key, _)| query_key == key),
+            url.query_pairs().find(|(query_key, _)| query_key == key),
             None,
             "{key} must not be exposed in the browser callback URL"
         );
@@ -68,7 +67,7 @@ fn compose_success_url_uses_hosted_page_when_requested() {
             DEFAULT_ISSUER,
             "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
             "e30.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnt9fQ.sig",
-        /*myra_streamlined_login*/ false,
+            /*myra_streamlined_login*/ false,
             &LoginSuccessPage::Hosted {
                 url: Url::parse(MYRAROUTER_DASHBOARD_URL)
                     .expect("MyraRouter dashboard URL should parse"),

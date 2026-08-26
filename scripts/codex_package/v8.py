@@ -152,9 +152,7 @@ def ensure_valid_artifact(artifact: Path, checksum: str, url: str) -> None:
         return
 
     artifact.unlink(missing_ok=True)
-    raise RuntimeError(
-        f"Myra-built V8 artifact {artifact} failed checksum validation."
-    )
+    raise RuntimeError(f"Myra-built V8 artifact {artifact} failed checksum validation.")
 
 
 def has_checksum(path: Path, expected: str) -> bool:
