@@ -35,7 +35,7 @@ jobs:
           path: vendor/x86_64-unknown-linux-musl
           key: myra-linux-x64-package-v1-${{ hashFiles('codex-rs/**/*.rs', 'codex-rs/Cargo.toml', 'codex-rs/Cargo.lock', 'codex-rs/**/Cargo.toml', 'scripts/build_codex_package.py', 'scripts/codex_package/**', '.github/actions/setup-rusty-v8/**', '.github/scripts/install-musl-build-tools.sh') }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.package-cache.outputs.cache-hit != 'true'
         with:
           python-version: "3.11"
