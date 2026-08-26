@@ -29,7 +29,11 @@ pub fn similarity(left: &[i8], right: &[i8]) -> f64 {
         .map(|(a, b)| f64::from(*a) * f64::from(*b))
         .sum();
     let denominator = vector_norm(left) * vector_norm(right);
-    if denominator == 0.0 { 0.0 } else { dot / denominator }
+    if denominator == 0.0 {
+        0.0
+    } else {
+        dot / denominator
+    }
 }
 
 /// Quantize a float embedding to int8 with a per-vector scale.
@@ -114,15 +118,16 @@ pub fn combined<'a>(
     limit: usize,
 ) -> Vec<SearchHit<'a>> {
     let mut best: Vec<SearchHit<'a>> = Vec::new();
-    let mut push = |hit: SearchHit<'a>| {
-        match best.iter_mut().find(|existing| existing.entry.id == hit.entry.id) {
-            Some(existing) => {
-                if hit.score > existing.score {
-                    existing.score = hit.score;
-                }
+    let mut push = |hit: SearchHit<'a>| match best
+        .iter_mut()
+        .find(|existing| existing.entry.id == hit.entry.id)
+    {
+        Some(existing) => {
+            if hit.score > existing.score {
+                existing.score = hit.score;
             }
-            None => best.push(hit),
         }
+        None => best.push(hit),
     };
 
     if let Some(query_vector) = query_vector {

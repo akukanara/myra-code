@@ -79,7 +79,11 @@ fn ciphertext_moved_to_another_item_or_vault_fails() {
     let key = VaultKey::from_bytes(&[7u8; 32]).unwrap();
     let nonce = crypto::random_nonce();
     let sealed = key
-        .seal(&nonce, &crypto::item_aad("vault-1", "item-1", 1), b"a memory")
+        .seal(
+            &nonce,
+            &crypto::item_aad("vault-1", "item-1", 1),
+            b"a memory",
+        )
         .unwrap();
 
     for wrong in [
@@ -141,8 +145,8 @@ fn the_device_wrapped_key_opens_only_with_that_device_key() {
     let vault_key = crypto::random_bytes(32);
 
     // The wrapping side derives from (ephemeral private, device public).
-    let wrapping = crypto::device_wrapping_key_for_test(&ephemeral, &device.public_key(), &aad_salt)
-        .unwrap();
+    let wrapping =
+        crypto::device_wrapping_key_for_test(&ephemeral, &device.public_key(), &aad_salt).unwrap();
     let nonce = crypto::random_nonce();
     let wrapped = wrapping
         .seal(&nonce, &crypto::wrap_aad(&aad_salt), &vault_key)
@@ -158,7 +162,13 @@ fn the_device_wrapped_key_opens_only_with_that_device_key() {
     )
     .unwrap();
     assert_eq!(
-        opened.open(&nonce, b"probe", &opened.seal(&nonce, b"probe", b"x").unwrap()).unwrap(),
+        opened
+            .open(
+                &nonce,
+                b"probe",
+                &opened.seal(&nonce, b"probe", b"x").unwrap()
+            )
+            .unwrap(),
         b"x"
     );
 
@@ -218,15 +228,35 @@ fn similarity_is_bounded_and_handles_degenerate_input() {
 #[test]
 fn vector_search_ranks_and_respects_the_floor() {
     let entries = vec![
-        entry("a", "db", "x", &["infra"], Some(search::quantize(&[1.0, 0.0, 0.0]))),
-        entry("b", "ui", "x", &["design"], Some(search::quantize(&[0.9, 0.1, 0.0]))),
-        entry("c", "far", "x", &["infra"], Some(search::quantize(&[-1.0, 0.0, 0.0]))),
+        entry(
+            "a",
+            "db",
+            "x",
+            &["infra"],
+            Some(search::quantize(&[1.0, 0.0, 0.0])),
+        ),
+        entry(
+            "b",
+            "ui",
+            "x",
+            &["design"],
+            Some(search::quantize(&[0.9, 0.1, 0.0])),
+        ),
+        entry(
+            "c",
+            "far",
+            "x",
+            &["infra"],
+            Some(search::quantize(&[-1.0, 0.0, 0.0])),
+        ),
     ];
     let query = search::quantize(&[1.0, 0.0, 0.0]);
 
     let hits = search::by_vector(&entries, &query, 5, 0.0);
     assert_eq!(
-        hits.iter().map(|hit| hit.entry.id.as_str()).collect::<Vec<_>>(),
+        hits.iter()
+            .map(|hit| hit.entry.id.as_str())
+            .collect::<Vec<_>>(),
         vec!["a", "b"]
     );
     // Lowering the floor lets the opposite-facing memory through.
@@ -259,8 +289,20 @@ fn text_search_prefers_a_title_hit() {
 #[test]
 fn combined_search_keeps_an_exact_phrase_that_the_vectors_would_bury() {
     let entries = vec![
-        entry("a", "alpha", "the quick brown fox", &[], Some(search::quantize(&[0.0, 1.0]))),
-        entry("b", "beta", "something else", &[], Some(search::quantize(&[1.0, 0.0]))),
+        entry(
+            "a",
+            "alpha",
+            "the quick brown fox",
+            &[],
+            Some(search::quantize(&[0.0, 1.0])),
+        ),
+        entry(
+            "b",
+            "beta",
+            "something else",
+            &[],
+            Some(search::quantize(&[1.0, 0.0])),
+        ),
     ];
     let query_vector = search::quantize(&[1.0, 0.0]);
     let hits = search::combined(&entries, "quick brown", Some(&query_vector), 5);
@@ -345,14 +387,21 @@ async fn a_device_key_is_written_private_and_a_loose_one_is_refused() {
         .await
         .unwrap();
     let path = identity.path().to_path_buf();
-    let mode = tokio::fs::metadata(&path).await.unwrap().permissions().mode() & 0o777;
+    let mode = tokio::fs::metadata(&path)
+        .await
+        .unwrap()
+        .permissions()
+        .mode()
+        & 0o777;
     assert_eq!(mode, 0o600, "device key must not be readable by others");
 
     // Loosened by hand: refused rather than quietly used, because a key another account can
     // read is a key another account can use.
     let mut permissions = tokio::fs::metadata(&path).await.unwrap().permissions();
     permissions.set_mode(0o644);
-    tokio::fs::set_permissions(&path, permissions).await.unwrap();
+    tokio::fs::set_permissions(&path, permissions)
+        .await
+        .unwrap();
     let error = crate::DeviceIdentity::load_or_create(root.path(), "vault-1")
         .await
         .expect_err("a world-readable device key must be refused");
@@ -369,6 +418,9 @@ async fn a_device_key_file_never_contains_a_vault_key() {
     // The stored shape is the device keypair and identifiers -- nothing that opens a vault
     // on its own, and no cached vault key.
     for forbidden in ["vaultKey", "vault_key", "vdk", "wrappedKey"] {
-        assert!(!contents.contains(forbidden), "{forbidden} must not be stored");
+        assert!(
+            !contents.contains(forbidden),
+            "{forbidden} must not be stored"
+        );
     }
 }

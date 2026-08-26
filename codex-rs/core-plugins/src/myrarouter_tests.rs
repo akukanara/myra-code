@@ -141,7 +141,10 @@ fn the_reason_reaches_the_text_the_picker_shows() {
         .and_then(|interface| interface.short_description)
         .expect("short description");
     assert!(short.contains("Search the live web."), "{short}");
-    assert!(short.contains("No web-search provider is connected yet."), "{short}");
+    assert!(
+        short.contains("No web-search provider is connected yet."),
+        "{short}"
+    );
 }
 
 #[test]

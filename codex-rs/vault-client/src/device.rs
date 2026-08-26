@@ -42,7 +42,9 @@ pub enum DeviceError {
         #[source]
         source: serde_json::Error,
     },
-    #[error("the device key at {path} is readable by other users (mode {mode:o}); fix it with chmod 600")]
+    #[error(
+        "the device key at {path} is readable by other users (mode {mode:o}); fix it with chmod 600"
+    )]
     Permissions { path: PathBuf, mode: u32 },
     #[error("the device key at {path} is malformed")]
     Malformed { path: PathBuf },
@@ -96,21 +98,18 @@ impl DeviceIdentity {
         let path = key_path(root, vault_id);
         match tokio::fs::read(&path).await {
             Ok(bytes) => Self::from_stored(path, &bytes).await,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                Self::create(path).await
-            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Self::create(path).await,
             Err(source) => Err(DeviceError::Read { path, source }),
         }
     }
 
     async fn from_stored(path: PathBuf, bytes: &[u8]) -> Result<Self, DeviceError> {
         check_permissions(&path).await?;
-        let stored: StoredDeviceKey = serde_json::from_slice(bytes).map_err(|source| {
-            DeviceError::Parse {
+        let stored: StoredDeviceKey =
+            serde_json::from_slice(bytes).map_err(|source| DeviceError::Parse {
                 path: path.clone(),
                 source,
-            }
-        })?;
+            })?;
         let secret_bytes = crypto::decode_base64(&stored.secret)
             .map_err(|_| DeviceError::Malformed { path: path.clone() })?;
         let secret = SecretKey::from_slice(&secret_bytes)
@@ -126,9 +125,8 @@ impl DeviceIdentity {
     }
 
     async fn create(path: PathBuf) -> Result<Self, DeviceError> {
-        let secret = crypto::generate_secret_key().map_err(|_| DeviceError::Malformed {
-            path: path.clone(),
-        })?;
+        let secret = crypto::generate_secret_key()
+            .map_err(|_| DeviceError::Malformed { path: path.clone() })?;
         let (public_x, public_y) = crypto::jwk_coordinates(&secret.public_key());
         let fingerprint = crypto::jwk_fingerprint(&public_x, &public_y);
         let identity = Self {
@@ -202,7 +200,13 @@ fn key_path(root: &Path, vault_id: &str) -> PathBuf {
     // that cannot escape the directory.
     let safe: String = vault_id
         .chars()
-        .map(|character| if character.is_ascii_alphanumeric() { character } else { '-' })
+        .map(|character| {
+            if character.is_ascii_alphanumeric() {
+                character
+            } else {
+                '-'
+            }
+        })
         .collect();
     root.join("vault").join(format!("device-{safe}.json"))
 }

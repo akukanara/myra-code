@@ -3783,7 +3783,9 @@ mod tests {
         assert_eq!(check.issues.len(), 1);
         assert_eq!(
             check.issues[0].remedy.as_deref(),
-            Some("Set base_url to the provider API root, for example https://staging-ai.myralith.dev/v1")
+            Some(
+                "Set base_url to the provider API root, for example https://staging-ai.myralith.dev/v1"
+            )
         );
     }
 

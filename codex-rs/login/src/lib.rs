@@ -22,9 +22,9 @@ pub use server::LoginServer;
 pub use server::ServerOptions;
 pub use server::ShutdownHandle;
 pub use server::run_login_server;
-pub use success_page::MYRAROUTER_DASHBOARD_URL;
 pub use success_page::LoginSuccessPage;
 pub use success_page::LoginSuccessPageBrand;
+pub use success_page::MYRAROUTER_DASHBOARD_URL;
 
 pub use auth::AgentIdentityAuthPolicy;
 pub use auth::AuthConfig;

@@ -319,7 +319,21 @@ impl StatusHistoryCell {
             workspace_root_suffix.as_deref(),
         );
         let model_provider = format_model_provider(config, runtime_model_provider_base_url);
-        let show_chatgpt_usage_link = config.model_provider.requires_openai_auth;
+        // requires_openai_auth answers "how do I sign in", not "where do my limits live", and the
+        // two came apart once a base_url override was allowed: a gateway can authenticate the
+        // OpenAI way and still meter and bill on its own, which sent its users to chatgpt.com for
+        // numbers that are not there.
+        //
+        // Decided by what the endpoint actually reports rather than guessed from its URL. A
+        // provider that sends its own rate-limit headers is telling us where the limits live, so
+        // the link is redundant; one that sends nothing while using OpenAI auth is a transparent
+        // proxy whose limits really are on chatgpt.com, and it keeps the link. Checking the URL
+        // instead would have taken the link away from that second case too.
+        let reports_own_limits = rate_limits
+            .iter()
+            .any(|snapshot| snapshot.primary.is_some() || snapshot.secondary.is_some());
+        let show_chatgpt_usage_link =
+            config.model_provider.requires_openai_auth && !reports_own_limits;
         let account = compose_account_display(account_display);
         let session_id = session_id.as_ref().map(std::string::ToString::to_string);
         let forked_from = forked_from.map(|id| id.to_string());

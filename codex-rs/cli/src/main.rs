@@ -2762,8 +2762,9 @@ mod tests {
 
     #[test]
     fn exec_server_remote_api_key_auth_rejects_suffix_spoof() {
-        let error = validate_api_key_remote_host("https://staging-rt.myralith.dev.evil.example/api")
-            .expect_err("reject suffix spoof");
+        let error =
+            validate_api_key_remote_host("https://staging-rt.myralith.dev.evil.example/api")
+                .expect_err("reject suffix spoof");
 
         assert_eq!(
             error.to_string(),
